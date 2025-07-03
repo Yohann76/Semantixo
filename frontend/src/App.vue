@@ -1,19 +1,34 @@
 <template>
   <div id="app">
+    <!-- Test console.log -->
+    <script>
+      console.log('🧪 [TEST] App.vue template chargé')
+    </script>
+    
     <Navbar />
     <router-view />
   </div>
 </template>
 
-<script>
+<script setup>
+import { watch, onMounted } from 'vue'
+import { useAuthStore } from './stores/auth.js'
 import Navbar from './components/Navbar.vue'
 
-export default {
-  name: 'App',
-  components: {
-    Navbar
-  }
-}
+const authStore = useAuthStore()
+
+onMounted(() => {
+  console.log('🎯 [APP] Application montée')
+})
+
+// Watcher global pour forcer la réactivité de l'application
+watch(() => authStore.isAuthenticated, (newVal, oldVal) => {
+  console.log('🔄 [APP] État d\'authentification changé:', { old: oldVal, new: newVal })
+}, { immediate: true })
+
+watch(() => authStore.user, (newVal, oldVal) => {
+  console.log('🔄 [APP] Utilisateur changé:', { old: oldVal, new: newVal })
+}, { immediate: true })
 </script>
 
 <style>

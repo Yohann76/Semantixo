@@ -43,6 +43,8 @@
 </template>
 
 <script>
+import { useAuthStore } from '../stores/auth.js'
+
 export default {
   name: 'VerifyTextComponent',
   data() {
@@ -65,24 +67,27 @@ export default {
       this.analysisResult = null;
       
       try {
-        // TODO: Implémenter l'appel API vers le backend pour l'analyse SEO
-        // Pour l'instant, simulation d'une réponse
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        const authStore = useAuthStore();
+        if (!authStore.getToken) {
+          this.error = 'Vous devez être connecté pour analyser un texte';
+          return;
+        }
+
+        const response = await fetch('http://localhost:3000/api/analysis', {
+          method: 'POST',
+          headers: authStore.getAuthHeaders(),
+          body: JSON.stringify({
+            text: this.textToAnalyze
+          })
+        });
         
-        this.analysisResult = {
-          message: 'Analyse terminée',
-          data: {
-            wordCount: this.textToAnalyze.split(' ').length,
-            characterCount: this.textToAnalyze.length,
-            seoScore: Math.floor(Math.random() * 100),
-            suggestions: [
-              'Ajoutez plus de mots-clés pertinents',
-              'Optimisez la densité des mots-clés',
-              'Améliorez la structure des titres'
-            ]
-          },
-          status: 'success'
-        };
+        const data = await response.json();
+        
+        if (response.ok) {
+          this.analysisResult = data.data.analysis;
+        } else {
+          this.error = data.message || 'Erreur lors de l\'analyse';
+        }
       } catch (err) {
         this.error = `Erreur lors de l'analyse: ${err.message}`;
         console.error('Erreur analyse:', err);

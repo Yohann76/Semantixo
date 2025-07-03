@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  # Database MongoDB
+  mongodb:
+    image: mongo:7.0
+    container_name: semantixo-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: semantixo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./backend/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    networks:
+      - semantixo-network
+
+  # Backend Node.js
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: semantixo-backend
+    restart: unless-stopped
+    environment:
+      MONGODB_URI: mongodb://admin:password123@mongodb:27017/semantixo?authSource=admin
+      JWT_SECRET: votre_secret_jwt_tres_securise_ici_changez_le_en_production
+      JWT_EXPIRES_IN: 7d
+      PORT: 3000
+      NODE_ENV: development
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongodb
+    networks:
+      - semantixo-network
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+
+  # Frontend Vue.js (optional - you can continue to use npm run serve)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: semantixo-frontend
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    depends_on:
+      - backend
+    networks:
+      - semantixo-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  semantixo-network:
+    driver: bridge 

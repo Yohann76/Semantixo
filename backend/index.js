@@ -1,46 +1,54 @@
 // backend/index.js
+require('dotenv').config({ path: './config.env' });
 const express = require('express');
+const cors = require('cors');
+const connectDB = require('./config/database');
+
+// Import des routes
+const authRoutes = require('./routes/auth');
+const analysisRoutes = require('./routes/analysis');
+
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
-// Middleware for parsing JSON
-app.use(express.json());
+// Connexion à la base de données
+connectDB();
 
-// CORS middleware pour permettre les requêtes depuis le frontend
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  if (req.method === 'OPTIONS') {
-    res.sendStatus(200);
-  } else {
-    next();
-  }
-});
+// Middleware
+app.use(cors());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
 
-// Route principale
+// Routes API
+app.use('/api/auth', authRoutes);
+app.use('/api/analysis', analysisRoutes);
+
+// Routes de test (à supprimer en production)
 app.get('/', (req, res) => {
   res.json({ 
-    message: 'Hello SEO Tool!',
+    message: 'API Semantixo - Analyse SEO',
+    version: '1.0.0',
     status: 'success',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      auth: '/api/auth',
+      analysis: '/api/analysis'
+    }
   });
 });
 
-// Route de test pour l'API
 app.get('/api/test', (req, res) => {
   res.json({
     message: 'API test réussie !',
     data: {
       version: '1.0.0',
-      features: ['SEO Analysis', 'Text Processing', 'API Testing'],
+      features: ['SEO Analysis', 'Text Processing', 'User Authentication', 'Database Integration'],
       serverTime: new Date().toISOString()
     },
     status: 'success'
   });
 });
 
-// Route pour tester les paramètres
 app.get('/api/hello/:name', (req, res) => {
   const { name } = req.params;
   res.json({
@@ -50,6 +58,26 @@ app.get('/api/hello/:name', (req, res) => {
   });
 });
 
+// Middleware de gestion d'erreurs
+app.use((err, req, res, next) => {
+  console.error('Erreur serveur:', err);
+  res.status(500).json({
+    success: false,
+    message: 'Erreur serveur interne',
+    error: process.env.NODE_ENV === 'development' ? err.message : 'Une erreur est survenue'
+  });
+});
+
+// Route 404
+app.use('*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'Route non trouvée'
+  });
+});
+
 app.listen(port, () => {
-  console.log(`Backend Express server running on http://localhost:${port}`);
+  console.log(`🚀 Serveur Semantixo démarré sur http://localhost:${port}`);
+  console.log(`📊 Base de données: ${process.env.MONGODB_URI || 'mongodb://localhost:27017/semantixo'}`);
+  console.log(`🌍 Environnement: ${process.env.NODE_ENV || 'development'}`);
 });

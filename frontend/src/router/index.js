@@ -11,6 +11,16 @@ const routes = [
     path: '/verify-text',
     name: 'VerifyText',
     component: () => import('../components/VerifyText.vue')
+  },
+  {
+    path: '/register',
+    name: 'Register',
+    component: () => import('../components/Register.vue')
+  },
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('../components/Login.vue')
   }
 ]
 
