@@ -109,6 +109,7 @@ export default {
   max-width: 800px;
   margin: 0 auto;
   padding: 20px;
+  padding-top: 90px;
 }
 
 .hero-section {

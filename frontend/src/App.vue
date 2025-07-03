@@ -1,16 +1,17 @@
 <template>
   <div id="app">
-    <HomePage />
+    <Navbar />
+    <router-view />
   </div>
 </template>
 
 <script>
-import HomePage from './components/Home.vue'
+import Navbar from './components/Navbar.vue'
 
 export default {
   name: 'App',
   components: {
-    HomePage
+    Navbar
   }
 }
 </script>
@@ -23,5 +24,16 @@ export default {
   color: #2c3e50;
   min-height: 100vh;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
 }
 </style>
