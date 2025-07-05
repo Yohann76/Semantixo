@@ -6,6 +6,12 @@
         Analysez votre texte pour optimiser son référencement SEO
       </p>
       
+      <!-- Composant de test d'authentification -->
+      <AuthStatus />
+      
+      <!-- Composant de débogage -->
+      <DebugAuth />
+      
       <div class="analysis-form">
         <div class="form-group">
           <label for="text-input" class="form-label">Texte à analyser :</label>
@@ -42,59 +48,81 @@
   </div>
 </template>
 
-<script>
-import { useAuthStore } from '../stores/auth.js'
+<script setup>
+import { ref, computed, watch } from 'vue'
+import { useAuth } from '../composables/useGlobalStores.js'
+import AuthStatus from './AuthStatus.vue'
+import DebugAuth from './DebugAuth.vue'
 
-export default {
-  name: 'VerifyTextComponent',
-  data() {
-    return {
-      textToAnalyze: '',
-      analysisResult: null,
-      error: null,
-      loading: false
-    }
-  },
-  methods: {
-    async analyzeText() {
-      if (!this.textToAnalyze.trim()) {
-        this.error = 'Veuillez entrer un texte à analyser';
-        return;
-      }
-      
-      this.loading = true;
-      this.error = null;
-      this.analysisResult = null;
-      
-      try {
-        const authStore = useAuthStore();
-        if (!authStore.getToken) {
-          this.error = 'Vous devez être connecté pour analyser un texte';
-          return;
-        }
+// État réactif
+const textToAnalyze = ref('')
+const analysisResult = ref(null)
+const error = ref(null)
+const loading = ref(false)
 
-        const response = await fetch('http://localhost:3000/api/analysis', {
-          method: 'POST',
-          headers: authStore.getAuthHeaders(),
-          body: JSON.stringify({
-            text: this.textToAnalyze
-          })
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-          this.analysisResult = data.data.analysis;
-        } else {
-          this.error = data.message || 'Erreur lors de l\'analyse';
-        }
-      } catch (err) {
-        this.error = `Erreur lors de l'analyse: ${err.message}`;
-        console.error('Erreur analyse:', err);
-      } finally {
-        this.loading = false;
-      }
+// Utilisation du composable d'authentification
+const { isAuthenticated, getAuthHeaders, user, token } = useAuth()
+
+// Computed pour vérifier l'authentification
+const isUserAuthenticated = computed(() => isAuthenticated.value)
+const currentUser = computed(() => user.value)
+
+// Watcher pour déboguer les changements d'état
+watch(isUserAuthenticated, (newVal, oldVal) => {
+  console.log('👁️ [VerifyText] État d\'authentification changé:', { old: oldVal, new: newVal })
+}, { immediate: true })
+
+watch(currentUser, (newVal, oldVal) => {
+  console.log('👁️ [VerifyText] Utilisateur changé:', { old: oldVal, new: newVal })
+}, { immediate: true })
+
+// Méthode d'analyse
+const analyzeText = async () => {
+  if (!textToAnalyze.value.trim()) {
+    error.value = 'Veuillez entrer un texte à analyser'
+    return
+  }
+  
+  loading.value = true
+  error.value = null
+  analysisResult.value = null
+  
+  try {
+    console.log('🔍 [VerifyText] État auth au moment de l\'analyse:', {
+      isAuthenticated: isUserAuthenticated.value,
+      hasUser: !!currentUser.value,
+      user: currentUser.value,
+      token: token.value ? 'Présent' : 'Absent'
+    })
+    
+    if (!isUserAuthenticated.value) {
+      error.value = 'Vous devez être connecté pour analyser un texte'
+      return
     }
+
+    const headers = getAuthHeaders()
+    console.log('📤 [VerifyText] Headers envoyés:', headers)
+    
+    const response = await fetch('http://localhost:3000/api/analysis', {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify({
+        text: textToAnalyze.value
+      })
+    })
+    
+    const data = await response.json()
+    
+    if (response.ok) {
+      analysisResult.value = data.data.analysis
+    } else {
+      error.value = data.message || 'Erreur lors de l\'analyse'
+    }
+  } catch (err) {
+    error.value = `Erreur lors de l'analyse: ${err.message}`
+    console.error('Erreur analyse:', err)
+  } finally {
+    loading.value = false
   }
 }
 </script>
@@ -229,24 +257,11 @@ export default {
 .error-message h3 {
   color: #721c24;
   margin-bottom: 10px;
+  font-size: 1.2rem;
 }
 
-@media (max-width: 768px) {
-  .container {
-    padding: 15px;
-  }
-  
-  .page-title {
-    font-size: 2rem;
-  }
-  
-  .analysis-form {
-    padding: 20px;
-  }
-  
-  .analyze-btn {
-    padding: 12px 24px;
-    font-size: 1rem;
-  }
+.error-message p {
+  margin: 0;
+  font-size: 1rem;
 }
 </style> 

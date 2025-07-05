@@ -17,14 +17,7 @@
       </div>
       
       <div class="navbar-auth">
-        <script>
-          console.log('🎨 [NAVBAR] Rendu template, état:', {
-            isAuthenticated: authStore.isAuthenticated,
-            user: authStore.user
-          })
-        </script>
-        
-        <template v-if="!authStore.isAuthenticated">
+        <template v-if="!isAuthenticated">
           <router-link to="/register" class="register-btn">
             S'inscrire
           </router-link>
@@ -35,11 +28,11 @@
         <template v-else>
           <div class="user-profile">
             <div class="user-avatar">
-              {{ getUserInitial(authStore.user?.email) }}
+              {{ getUserInitial(currentUser?.email) }}
             </div>
             <div class="user-info">
-              <span class="user-email">{{ authStore.user?.email }}</span>
-              <span class="user-name">{{ authStore.user?.name }}</span>
+              <span class="user-email">{{ currentUser?.email }}</span>
+              <span class="user-name">{{ currentUser?.name }}</span>
             </div>
           </div>
           <button @click="handleLogout" class="logout-btn">
@@ -52,26 +45,14 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { useAuthStore } from '../stores/auth.js'
-import { watch, onMounted } from 'vue'
 
 const authStore = useAuthStore()
 
-// Debug: surveiller les changements d'état
-watch(() => authStore.isAuthenticated, (newVal, oldVal) => {
-  console.log('👁️ [NAVBAR] État d\'authentification changé:', { old: oldVal, new: newVal })
-}, { immediate: true })
-
-watch(() => authStore.user, (newVal, oldVal) => {
-  console.log('👁️ [NAVBAR] Utilisateur changé:', { old: oldVal, new: newVal })
-}, { immediate: true })
-
-onMounted(() => {
-  console.log('🎯 [NAVBAR] Composant monté, état actuel:', {
-    isAuthenticated: authStore.isAuthenticated,
-    user: authStore.user
-  })
-})
+// Computed properties pour la réactivité
+const isAuthenticated = computed(() => authStore.isAuthenticated)
+const currentUser = computed(() => authStore.user)
 
 const handleLogout = () => {
   console.log('🚪 [NAVBAR] Déconnexion demandée')
@@ -198,41 +179,37 @@ export default {
   background: white;
   color: #667eea;
   border: none;
-  padding: 10px 20px;
+  padding: 8px 16px;
   border-radius: 25px;
   font-size: 0.9rem;
   font-weight: 600;
   text-decoration: none;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 .login-btn:hover {
+  background: #f8f9fa;
   transform: translateY(-2px);
   box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-  background: #f8f9fa;
 }
 
 .user-profile {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-right: 15px;
+  gap: 10px;
+  color: white;
 }
 
 .user-avatar {
-  width: 40px;
-  height: 40px;
+  width: 35px;
+  height: 35px;
+  background: rgba(255, 255, 255, 0.2);
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  font-size: 1.2rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  font-size: 0.9rem;
 }
 
 .user-info {
@@ -242,17 +219,13 @@ export default {
 }
 
 .user-email {
-  color: white;
-  font-size: 0.9rem;
-  font-weight: 500;
+  font-size: 0.8rem;
   opacity: 0.9;
 }
 
 .user-name {
-  color: white;
-  font-size: 0.8rem;
-  font-weight: 400;
-  opacity: 0.7;
+  font-size: 0.9rem;
+  font-weight: 600;
 }
 
 .logout-btn {
@@ -270,17 +243,11 @@ export default {
 .logout-btn:hover {
   background: rgba(255, 255, 255, 0.2);
   transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
 
-/* Responsive design */
 @media (max-width: 768px) {
   .navbar-container {
     padding: 0 15px;
-  }
-  
-  .brand-text {
-    font-size: 1.5rem;
   }
   
   .navbar-menu {
@@ -292,45 +259,18 @@ export default {
     padding: 6px 12px;
   }
   
-  .register-btn,
-  .login-btn,
-  .logout-btn {
-    padding: 8px 16px;
-    font-size: 0.8rem;
+  .brand-text {
+    font-size: 1.5rem;
   }
   
-  .user-profile {
-    gap: 8px;
-    margin-right: 10px;
+  .user-info {
+    display: none;
   }
   
   .user-avatar {
-    width: 35px;
-    height: 35px;
-    font-size: 1rem;
-  }
-  
-  .user-email {
+    width: 30px;
+    height: 30px;
     font-size: 0.8rem;
-  }
-  
-  .user-name {
-    font-size: 0.7rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .navbar-menu {
-    gap: 10px;
-  }
-  
-  .nav-link {
-    font-size: 0.8rem;
-    padding: 5px 8px;
-  }
-  
-  .brand-text {
-    font-size: 1.3rem;
   }
 }
 </style> 

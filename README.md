@@ -102,14 +102,8 @@ The application will be available at: http://localhost:8081/
   seoScore: Number,
   metrics: {
     wordCount: Number,
-    characterCount: Number,
-    keywordDensity: Number,
-    readabilityScore: Number
+    characterCount: Number
   },
-  keywords: Array,
-  suggestions: Array,
-  status: 'pending' | 'completed' | 'failed',
-  processingTime: Number,
   timestamps
 }
 ```
@@ -178,7 +172,7 @@ Semantixo/
 
 1. **Install MongoDB** locally or use MongoDB Atlas
 2. **Configure environment variables** in `backend/config.env`
-3. **Create admin user**: `cd backend && node scripts/createAdmin.js`
+3. **Create default users**: `cd backend && node scripts/createDefaultUsers.js`
 4. **Start the backend**: `cd backend && node index.js`
 5. **Start the frontend**: `cd frontend && npm run serve`
 6. **Access the application**: http://localhost:8081/
