@@ -6,12 +6,6 @@
         Analysez votre texte pour optimiser son référencement SEO
       </p>
       
-      <!-- Composant de test d'authentification -->
-      <AuthStatus />
-      
-      <!-- Composant de débogage -->
-      <DebugAuth />
-      
       <div class="analysis-form">
         <div class="form-group">
           <label for="text-input" class="form-label">Texte à analyser :</label>
@@ -49,10 +43,8 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref } from 'vue'
 import { useAuth } from '../composables/useGlobalStores.js'
-import AuthStatus from './AuthStatus.vue'
-import DebugAuth from './DebugAuth.vue'
 
 // État réactif
 const textToAnalyze = ref('')
@@ -61,20 +53,7 @@ const error = ref(null)
 const loading = ref(false)
 
 // Utilisation du composable d'authentification
-const { isAuthenticated, getAuthHeaders, user, token } = useAuth()
-
-// Computed pour vérifier l'authentification
-const isUserAuthenticated = computed(() => isAuthenticated.value)
-const currentUser = computed(() => user.value)
-
-// Watcher pour déboguer les changements d'état
-watch(isUserAuthenticated, (newVal, oldVal) => {
-  console.log('👁️ [VerifyText] État d\'authentification changé:', { old: oldVal, new: newVal })
-}, { immediate: true })
-
-watch(currentUser, (newVal, oldVal) => {
-  console.log('👁️ [VerifyText] Utilisateur changé:', { old: oldVal, new: newVal })
-}, { immediate: true })
+const { isAuthenticated, getAuthHeaders } = useAuth()
 
 // Méthode d'analyse
 const analyzeText = async () => {
@@ -88,20 +67,12 @@ const analyzeText = async () => {
   analysisResult.value = null
   
   try {
-    console.log('🔍 [VerifyText] État auth au moment de l\'analyse:', {
-      isAuthenticated: isUserAuthenticated.value,
-      hasUser: !!currentUser.value,
-      user: currentUser.value,
-      token: token.value ? 'Présent' : 'Absent'
-    })
-    
-    if (!isUserAuthenticated.value) {
+    if (!isAuthenticated.value) {
       error.value = 'Vous devez être connecté pour analyser un texte'
       return
     }
 
     const headers = getAuthHeaders()
-    console.log('📤 [VerifyText] Headers envoyés:', headers)
     
     const response = await fetch('http://localhost:3000/api/analysis', {
       method: 'POST',

@@ -5,29 +5,9 @@ import { computed } from 'vue'
 export function useAuth() {
   const authStore = useAuthStore()
   
-  console.log('🔧 [COMPOSABLE] useAuth appelé, état du store:', {
-    user: authStore.user?.value,
-    token: authStore.token?.value ? 'Présent' : 'Absent',
-    isAuthenticated: authStore.isAuthenticated?.value
-  })
-  
-  const user = computed(() => {
-    const value = authStore.user?.value
-    console.log('👤 [COMPOSABLE] user computed:', value)
-    return value
-  })
-  
-  const token = computed(() => {
-    const value = authStore.token?.value
-    console.log('🔑 [COMPOSABLE] token computed:', value ? 'Présent' : 'Absent')
-    return value
-  })
-  
-  const isAuthenticated = computed(() => {
-    const value = authStore.isAuthenticated?.value
-    console.log('✅ [COMPOSABLE] isAuthenticated computed:', value)
-    return value
-  })
+  const user = computed(() => authStore.user)
+  const token = computed(() => authStore.token)
+  const isAuthenticated = computed(() => authStore.isAuthenticated)
   
   return {
     // État réactif avec computed
@@ -53,10 +33,10 @@ export function useGlobalStores() {
     auth: authStore,
     
     // Méthodes utilitaires
-    isAuthenticated: () => authStore.isAuthenticated?.value,
+    isAuthenticated: () => authStore.isAuthenticated,
     getAuthHeaders: () => authStore.getAuthHeaders(),
-    getCurrentUser: () => authStore.user?.value,
-    getToken: () => authStore.token?.value,
+    getCurrentUser: () => authStore.user,
+    getToken: () => authStore.token,
     
     // Actions rapides
     login: authStore.login,
