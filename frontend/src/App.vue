@@ -6,7 +6,10 @@
     </script>
     
     <Navbar />
-    <router-view />
+    <main class="main-content">
+      <router-view />
+    </main>
+    <MainFooter />
   </div>
 </template>
 
@@ -14,6 +17,7 @@
 import { watch, onMounted } from 'vue'
 import { useAuthStore } from './stores/auth.js'
 import Navbar from './components/Navbar.vue'
+import MainFooter from './components/Footer.vue'
 
 const authStore = useAuthStore()
 
@@ -39,6 +43,12 @@ watch(() => authStore.user, (newVal, oldVal) => {
   color: #2c3e50;
   min-height: 100vh;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
 }
 
 * {
