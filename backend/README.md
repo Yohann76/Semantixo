@@ -15,18 +15,31 @@ Le serveur sera disponible sur : http://localhost:3000
 - **Member** : Utilisateur standard (rôle par défaut)
 - **Admin** : Administrateur avec accès complet
 
-### Création du premier administrateur
+### Création des utilisateurs par défaut
 
 ```bash
 cd backend
-node scripts/createAdmin.js
+node scripts/createDefaultUsers.js
 ```
 
-Cela créera un compte admin avec :
-- Email : admin@semantixo.com
-- Mot de passe : admin123456
+Cela créera trois comptes par défaut :
 
-⚠️ **Important** : Changez le mot de passe après la première connexion !
+**👨‍💼 Administrateurs :**
+1. **Administrateur principal :**
+   - Email : admin@semantixo.com
+   - Mot de passe : admin123456
+
+2. **Yohann Durand :**
+   - Email : yohanndurand76@gmail.com
+   - Mot de passe : devdev
+
+**👤 Membre :**
+3. **Member Semantixo :**
+   - Email : membersemantixo@gmail.com
+   - Mot de passe : devdev
+   - Abonnement : free
+
+⚠️ **Important** : Changez les mots de passe après la première connexion !
 
 ## 📊 API Endpoints
 
