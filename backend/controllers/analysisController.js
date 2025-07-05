@@ -7,7 +7,6 @@ const User = require('../models/User');
 const createAnalysis = async (req, res) => {
   try {
     const { text } = req.body;
-    const startTime = Date.now();
 
     if (!text || text.trim().length === 0) {
       return res.status(400).json({
@@ -25,20 +24,15 @@ const createAnalysis = async (req, res) => {
       });
     }
 
-    // Analyser le texte (logique d'analyse SEO)
+    // Analyser le texte (logique d'analyse SEO simplifiée)
     const analysisResult = await analyzeTextSEO(text);
-    const processingTime = Date.now() - startTime;
 
     // Créer l'analyse dans la base de données
     const analysis = await Analysis.create({
       userId: req.user._id,
       text: text.trim(),
       seoScore: analysisResult.seoScore,
-      metrics: analysisResult.metrics,
-      keywords: analysisResult.keywords,
-      suggestions: analysisResult.suggestions,
-      status: 'completed',
-      processingTime
+      metrics: analysisResult.metrics
     });
 
     // Incrémenter le compteur d'analyses de l'utilisateur
@@ -167,77 +161,24 @@ const deleteAnalysis = async (req, res) => {
   }
 };
 
-// Fonction d'analyse SEO (logique métier)
+// Fonction d'analyse SEO simplifiée
 const analyzeTextSEO = async (text) => {
   const words = text.toLowerCase().split(/\s+/);
   const wordCount = words.length;
   const characterCount = text.length;
 
-  // Analyse des mots-clés (simplifiée)
-  const keywordMap = {};
-  words.forEach(word => {
-    const cleanWord = word.replace(/[^\w]/g, '');
-    if (cleanWord.length > 2) {
-      keywordMap[cleanWord] = (keywordMap[cleanWord] || 0) + 1;
-    }
-  });
-
-  // Calculer la densité des mots-clés
-  const keywords = Object.entries(keywordMap)
-    .map(([word, count]) => ({
-      word,
-      count,
-      density: (count / wordCount) * 100
-    }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 10);
-
-  // Calculer le score de lisibilité (formule simplifiée)
-  const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
-  const avgWordsPerSentence = wordCount / sentences.length;
-  const readabilityScore = Math.max(0, 100 - Math.abs(avgWordsPerSentence - 15) * 2);
-
-  // Générer des suggestions
-  const suggestions = [];
-  if (wordCount < 100) {
-    suggestions.push({
-      type: 'Ajoutez plus de contenu',
-      category: 'content',
-      priority: 'high'
-    });
-  }
-  if (avgWordsPerSentence > 25) {
-    suggestions.push({
-      type: 'Raccourcissez vos phrases',
-      category: 'readability',
-      priority: 'medium'
-    });
-  }
-  if (keywords.length < 3) {
-    suggestions.push({
-      type: 'Ajoutez plus de mots-clés pertinents',
-      category: 'keyword',
-      priority: 'high'
-    });
-  }
-
-  // Calculer le score SEO global
+  // Calculer le score SEO basique
   const seoScore = Math.round(
-    (readabilityScore * 0.3) +
-    (Math.min(wordCount / 10, 10) * 0.3) +
-    (Math.min(keywords.length * 10, 40) * 0.4)
+    Math.min(wordCount / 10, 50) + // Score basé sur la longueur
+    Math.min(characterCount / 100, 50) // Score basé sur les caractères
   );
 
   return {
     seoScore: Math.min(seoScore, 100),
     metrics: {
       wordCount,
-      characterCount,
-      keywordDensity: keywords.reduce((sum, k) => sum + k.density, 0) / keywords.length || 0,
-      readabilityScore
-    },
-    keywords,
-    suggestions
+      characterCount
+    }
   };
 };
 

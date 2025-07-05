@@ -6,9 +6,17 @@ const protect = async (req, res, next) => {
   try {
     let token;
 
+    console.log('🔍 [AUTH] Headers reçus:', {
+      authorization: req.headers.authorization ? 'Bearer ***' : 'none',
+      contentType: req.headers['content-type']
+    });
+
     // Vérifier si le token est dans les headers
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
       token = req.headers.authorization.split(' ')[1];
+      console.log('✅ [AUTH] Token trouvé, longueur:', token.length);
+    } else {
+      console.log('❌ [AUTH] Pas de token Bearer dans les headers');
     }
 
     // Vérifier si le token existe
