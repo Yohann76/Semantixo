@@ -7,6 +7,7 @@ const connectDB = require('./config/database');
 // Import des routes
 const authRoutes = require('./routes/auth');
 const analysisRoutes = require('./routes/analysis');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -22,6 +23,7 @@ app.use(express.urlencoded({ extended: true }));
 // Routes API
 app.use('/api/auth', authRoutes);
 app.use('/api/analysis', analysisRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Routes de test (à supprimer en production)
 app.get('/', (req, res) => {
@@ -32,7 +34,8 @@ app.get('/', (req, res) => {
     timestamp: new Date().toISOString(),
     endpoints: {
       auth: '/api/auth',
-      analysis: '/api/analysis'
+      analysis: '/api/analysis',
+      admin: '/api/admin'
     }
   });
 });

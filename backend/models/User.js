@@ -24,6 +24,11 @@ const userSchema = new mongoose.Schema({
     minlength: [6, 'Le mot de passe doit contenir au moins 6 caractères'],
     select: false // Ne pas inclure le mot de passe dans les requêtes par défaut
   },
+  role: {
+    type: String,
+    enum: ['member', 'admin'],
+    default: 'member'
+  },
   subscription: {
     type: String,
     enum: ['free', 'premium'],
@@ -58,6 +63,16 @@ userSchema.pre('save', async function(next) {
 // Méthode pour comparer les mots de passe
 userSchema.methods.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
+};
+
+// Méthode pour vérifier si l'utilisateur est admin
+userSchema.methods.isAdmin = function() {
+  return this.role === 'admin';
+};
+
+// Méthode pour vérifier si l'utilisateur a un rôle spécifique
+userSchema.methods.hasRole = function(role) {
+  return this.role === role;
 };
 
 // Méthode pour obtenir les informations publiques de l'utilisateur

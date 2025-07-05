@@ -30,6 +30,13 @@ The backend provides a complete REST API with authentication:
 - `GET /:id` - Get specific analysis (protected)
 - `DELETE /:id` - Delete analysis (protected)
 
+#### 👨‍💼 **Admin Routes** (`/api/admin`) - Admin only
+- `GET /users` - Get all users
+- `GET /users/:id` - Get specific user
+- `PUT /users/:id/role` - Update user role
+- `DELETE /users/:id` - Delete user
+- `GET /stats` - Get user statistics
+
 #### 🧪 **Test Routes**
 - `GET /` - API information
 - `GET /api/test` - API test
@@ -79,6 +86,7 @@ The application will be available at: http://localhost:8081/
   name: String,
   email: String (unique),
   password: String (hashed),
+  role: 'member' | 'admin' (default: 'member'),
   subscription: 'free' | 'premium',
   analysesCount: Number,
   lastLogin: Date,
@@ -106,10 +114,11 @@ The application will be available at: http://localhost:8081/
 }
 ```
 
-## 🔐 Authentication
+## 🔐 Authentication & Authorization
 
 - **JWT** (JSON Web Tokens) for authentication
 - **Bcrypt** for password hashing
+- **Role-based access control** (Member/Admin)
 - **Protection middleware** for private routes
 - **Complete error handling**
 
@@ -169,9 +178,10 @@ Semantixo/
 
 1. **Install MongoDB** locally or use MongoDB Atlas
 2. **Configure environment variables** in `backend/config.env`
-3. **Start the backend**: `cd backend && node index.js`
-4. **Start the frontend**: `cd frontend && npm run serve`
-5. **Access the application**: http://localhost:8081/
+3. **Create admin user**: `cd backend && node scripts/createAdmin.js`
+4. **Start the backend**: `cd backend && node index.js`
+5. **Start the frontend**: `cd frontend && npm run serve`
+6. **Access the application**: http://localhost:8081/
 
 ## 🚀 Quick Start with Docker (recommended)
 

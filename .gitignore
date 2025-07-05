@@ -21,3 +21,7 @@ pnpm-debug.log*
 *.njsproj
 *.sln
 *.sw?
+
+# Backup files
+backup/
+database-dump/
