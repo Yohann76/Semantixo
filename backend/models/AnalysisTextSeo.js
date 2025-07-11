@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const analysisSchema = new mongoose.Schema({
+const analysisTextSeoSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -32,10 +32,10 @@ const analysisSchema = new mongoose.Schema({
 });
 
 // Index pour améliorer les performances des requêtes
-analysisSchema.index({ userId: 1, createdAt: -1 });
+analysisTextSeoSchema.index({ userId: 1, createdAt: -1 });
 
 // Méthode pour obtenir un résumé de l'analyse
-analysisSchema.methods.getSummary = function() {
+analysisTextSeoSchema.methods.getSummary = function() {
   return {
     id: this._id,
     seoScore: this.seoScore,
@@ -45,4 +45,4 @@ analysisSchema.methods.getSummary = function() {
   };
 };
 
-module.exports = mongoose.model('Analysis', analysisSchema); 
+module.exports = mongoose.model('AnalysisTextSeo', analysisTextSeoSchema); 

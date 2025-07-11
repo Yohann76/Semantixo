@@ -75,7 +75,7 @@ const loadAnalyses = async () => {
   
   try {
     const headers = getAuthHeaders()
-    const response = await fetch('http://localhost:3000/api/analysis', {
+    const response = await fetch('http://localhost:3000/api/analysis-text-seo', {
       method: 'GET',
       headers: headers
     })
