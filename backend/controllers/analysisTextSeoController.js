@@ -1,5 +1,5 @@
 const AnalysisTextSeo = require('../models/AnalysisTextSeo');
-const { analyzerTextSeo } = require('../utils/seoAnalyzer');
+const AnalyzerTextSeo = require('../utils/AnalyzerTextSeo');
 
 // @desc    Créer une nouvelle analyse de texte SEO
 // @route   POST /api/analysis-text-seo
@@ -23,7 +23,7 @@ const createAnalysisTextSeo = async (req, res) => {
     }
 
     // Analyser le texte SEO
-    const analysisResult = await analyzerTextSeo(text);
+    const analysisResult = await AnalyzerTextSeo.analyze(text);
 
     // Créer l'analyse dans la base de données
     const analysis = await AnalysisTextSeo.create({
