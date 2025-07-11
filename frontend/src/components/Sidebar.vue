@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
   <div class="sidebar">
     <div class="sidebar-header">
@@ -37,9 +38,30 @@
           <span>Contact</span>
         </router-link>
       </div>
+
+      <div v-if="isAuthenticated && currentUser?.role === 'admin'" class="nav-section">
+        <h4 class="nav-section-title">Administration</h4>
+        <router-link to="/admin" class="nav-item" active-class="active">
+          <i class="nav-icon">⚙️</i>
+          <span>Test API</span>
+        </router-link>
+      </div>
+
+
     </nav>
   </div>
 </template>
+
+<script setup>
+import { computed } from 'vue'
+import { useAuthStore } from '../stores/auth.js'
+
+const authStore = useAuthStore()
+
+// Computed properties pour la réactivité
+const isAuthenticated = computed(() => authStore.isAuthenticated)
+const currentUser = computed(() => authStore.user)
+</script>
 
 <script>
 export default {

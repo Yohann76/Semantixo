@@ -19,14 +19,6 @@
         >
           Application
         </router-link>
-        <router-link 
-          v-if="isAuthenticated && currentUser?.role === 'admin'" 
-          to="/admin" 
-          class="nav-link" 
-          active-class="active"
-        >
-          Administration
-        </router-link>
       </div>
       
       <div class="navbar-auth">

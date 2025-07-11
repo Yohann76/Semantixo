@@ -2,6 +2,9 @@
   <div class="analysis-history">
     <div class="history-header">
       <h3 class="history-title">Analyses Récentes</h3>
+      <button @click="goToNewAnalysis" class="new-analysis-btn" title="Nouvelle analyse">
+        <span class="btn-icon">+</span>
+      </button>
     </div>
     
     <div class="history-content">
@@ -133,6 +136,12 @@ const selectAnalysis = (analysis) => {
   console.log('📊 [HISTORY] Analyse sélectionnée:', analysis)
 }
 
+// Aller au formulaire de nouvelle analyse
+const goToNewAnalysis = () => {
+  emit('select-analysis', null) // Indiquer qu'aucune analyse n'est sélectionnée
+  console.log('📊 [HISTORY] Aller au formulaire de nouvelle analyse')
+}
+
 onMounted(() => {
   console.log('📊 [HISTORY] Composant monté')
   loadAnalyses()
@@ -165,6 +174,9 @@ defineExpose({
   position: sticky;
   top: 0;
   z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .history-title {
@@ -172,6 +184,32 @@ defineExpose({
   font-weight: bold;
   color: #2c3e50;
   margin: 0;
+}
+
+.new-analysis-btn {
+  background-color: #667eea;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+}
+
+.new-analysis-btn:hover {
+  background-color: #5a67d8;
+}
+
+.new-analysis-btn .btn-icon {
+  font-size: 1.2rem;
 }
 
 .history-content {
