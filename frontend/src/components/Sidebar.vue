@@ -56,7 +56,7 @@ export default {
   position: fixed;
   left: 0;
   top: 70px;
-  z-index: 999;
+  z-index: 998;
   box-shadow: 2px 0 10px rgba(0,0,0,0.1);
   overflow-y: auto;
 }

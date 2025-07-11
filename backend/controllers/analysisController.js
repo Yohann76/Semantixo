@@ -69,14 +69,21 @@ const getAnalyses = async (req, res) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .select('-text'); // Exclure le texte pour économiser la bande passante
+      .select('text seoScore metrics createdAt'); // Inclure le texte pour l'historique
 
     const total = await Analysis.countDocuments({ userId: req.user._id });
 
     res.json({
       success: true,
       data: {
-        analyses: analyses.map(analysis => analysis.getSummary()),
+        analyses: analyses.map(analysis => ({
+          id: analysis._id,
+          text: analysis.text,
+          seoScore: analysis.seoScore,
+          wordCount: analysis.metrics.wordCount,
+          characterCount: analysis.metrics.characterCount,
+          createdAt: analysis.createdAt
+        })),
         pagination: {
           page,
           limit,
@@ -93,6 +100,8 @@ const getAnalyses = async (req, res) => {
     });
   }
 };
+
+
 
 // @desc    Obtenir une analyse spécifique
 // @route   GET /api/analysis/:id

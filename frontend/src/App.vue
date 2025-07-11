@@ -9,17 +9,24 @@
     <main class="main-content">
       <router-view />
     </main>
-    <MainFooter />
+    <MainFooter v-if="!isApplicationPage" />
   </div>
 </template>
 
 <script setup>
-import { watch, onMounted } from 'vue'
+import { watch, onMounted, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from './stores/auth.js'
 import Navbar from './components/Navbar.vue'
 import MainFooter from './components/Footer.vue'
 
 const authStore = useAuthStore()
+const route = useRoute()
+
+// Déterminer si nous sommes sur la page Application
+const isApplicationPage = computed(() => {
+  return route.path === '/verify-text'
+})
 
 onMounted(() => {
   console.log('🎯 [APP] Application montée')

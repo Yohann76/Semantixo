@@ -1,5 +1,5 @@
 <template>
-  <ApplicationLayout>
+  <ApplicationLayout ref="historyRef">
     <div class="verify-text">
       <div class="container">
         <h1 class="page-title">Analyse SEO de Texte</h1>
@@ -54,6 +54,7 @@ const textToAnalyze = ref('')
 const analysisResult = ref(null)
 const error = ref(null)
 const loading = ref(false)
+const historyRef = ref(null)
 
 // Utilisation du composable d'authentification
 const { isAuthenticated, getAuthHeaders } = useAuth()
@@ -89,6 +90,10 @@ const analyzeText = async () => {
     
     if (response.ok) {
       analysisResult.value = data.data.analysis
+      // Rafraîchir l'historique après une analyse réussie
+      if (historyRef.value) {
+        historyRef.value.refreshAnalyses()
+      }
     } else {
       error.value = data.message || 'Erreur lors de l\'analyse'
     }
