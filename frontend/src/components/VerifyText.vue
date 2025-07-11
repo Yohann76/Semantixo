@@ -1,63 +1,84 @@
 <template>
-  <ApplicationLayout ref="historyRef">
-    <div class="verify-text">
-      <div class="container">
-        <h1 class="page-title">Analyse SEO de Texte</h1>
-        <p class="page-description">
-          Analysez votre texte pour optimiser son référencement SEO
-        </p>
-      
-      <div class="analysis-form">
-        <div class="form-group">
-          <label for="text-input" class="form-label">Texte à analyser :</label>
-          <textarea 
-            id="text-input"
-            v-model="textToAnalyze"
-            class="text-input"
-            placeholder="Collez votre texte ici pour l'analyse SEO..."
-            rows="8"
-          ></textarea>
+  <ApplicationLayout ref="layoutRef">
+    <template #default="{ selectedAnalysis }">
+      <div class="verify-text">
+        <div class="container">
+          <!-- Affichage du formulaire d'analyse -->
+          <div v-if="!selectedAnalysis" class="analysis-form-section">
+            <h1 class="page-title">Analyse SEO de Texte</h1>
+            <p class="page-description">
+              Analysez votre texte pour optimiser son référencement SEO
+            </p>
+          
+            <div class="analysis-form">
+              <div class="form-group">
+                <label for="text-input" class="form-label">Texte à analyser :</label>
+                <textarea 
+                  id="text-input"
+                  v-model="textToAnalyze"
+                  class="text-input"
+                  placeholder="Collez votre texte ici pour l'analyse SEO..."
+                  rows="8"
+                ></textarea>
+              </div>
+              
+              <div class="form-actions">
+                <button 
+                  @click="analyzeText" 
+                  :disabled="!textToAnalyze.trim() || loading"
+                  class="analyze-btn"
+                >
+                  {{ loading ? 'Analyse en cours...' : 'Analyser le texte' }}
+                </button>
+              </div>
+            </div>
+            
+            <div v-if="analysisResult" class="analysis-result">
+              <AnalysisResult :analysis="analysisResult" />
+            </div>
+            
+            <div v-if="error" class="error-message">
+              <h3>Erreur :</h3>
+              <p>{{ error }}</p>
+            </div>
+          </div>
+
+          <!-- Affichage du résultat d'une analyse sélectionnée -->
+          <div v-else class="selected-analysis-section">
+            <div class="back-button-container">
+              <button @click="clearSelection" class="back-btn">
+                ← Retour à l'analyse
+              </button>
+            </div>
+            <AnalysisResult :analysis="selectedAnalysis" />
+          </div>
         </div>
-        
-        <div class="form-actions">
-          <button 
-            @click="analyzeText" 
-            :disabled="!textToAnalyze.trim() || loading"
-            class="analyze-btn"
-          >
-            {{ loading ? 'Analyse en cours...' : 'Analyser le texte' }}
-          </button>
-        </div>
       </div>
-      
-      <div v-if="analysisResult" class="analysis-result">
-        <h3>Résultats de l'analyse :</h3>
-        <pre>{{ JSON.stringify(analysisResult, null, 2) }}</pre>
-      </div>
-      
-      <div v-if="error" class="error-message">
-        <h3>Erreur :</h3>
-        <p>{{ error }}</p>
-      </div>
-    </div>
-    </div>
+    </template>
   </ApplicationLayout>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useAuth } from '../composables/useGlobalStores.js'
 import ApplicationLayout from './ApplicationLayout.vue'
+import AnalysisResult from './AnalysisResult.vue'
 
 // État réactif
 const textToAnalyze = ref('')
 const analysisResult = ref(null)
 const error = ref(null)
 const loading = ref(false)
-const historyRef = ref(null)
+const layoutRef = ref(null)
+const selectedAnalysis = ref(null)
 
 // Utilisation du composable d'authentification
 const { isAuthenticated, getAuthHeaders } = useAuth()
+
+// Surveiller les changements de selectedAnalysis depuis le layout
+watch(() => layoutRef.value?.selectedAnalysis, (newAnalysis) => {
+  selectedAnalysis.value = newAnalysis
+}, { immediate: true })
 
 // Méthode d'analyse
 const analyzeText = async () => {
@@ -91,8 +112,8 @@ const analyzeText = async () => {
     if (response.ok) {
       analysisResult.value = data.data.analysis
       // Rafraîchir l'historique après une analyse réussie
-      if (historyRef.value) {
-        historyRef.value.refreshAnalyses()
+      if (layoutRef.value) {
+        layoutRef.value.refreshAnalyses()
       }
     } else {
       error.value = data.message || 'Erreur lors de l\'analyse'
@@ -102,6 +123,13 @@ const analyzeText = async () => {
     console.error('Erreur analyse:', err)
   } finally {
     loading.value = false
+  }
+}
+
+// Effacer la sélection pour revenir au formulaire
+const clearSelection = () => {
+  if (layoutRef.value) {
+    layoutRef.value.selectedAnalysis = null
   }
 }
 </script>
@@ -241,5 +269,37 @@ const analyzeText = async () => {
 .error-message p {
   margin: 0;
   font-size: 1rem;
+}
+
+.back-button-container {
+  margin-bottom: 20px;
+}
+
+.back-btn {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.back-btn:hover {
+  background: #5a6268;
+  transform: translateY(-1px);
+}
+
+.selected-analysis-section {
+  padding: 20px 0;
+}
+
+.analysis-form-section {
+  padding: 20px 0;
 }
 </style> 

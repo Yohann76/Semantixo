@@ -1,9 +1,9 @@
 <template>
   <div class="application-layout">
     <AppSidebar />
-    <AnalysisHistory ref="historyRef" />
+    <AnalysisHistory ref="historyRef" @select-analysis="handleAnalysisSelect" />
     <div class="app-main-content">
-      <slot />
+      <slot :selected-analysis="selectedAnalysis" />
     </div>
   </div>
 </template>
@@ -14,6 +14,13 @@ import AppSidebar from './Sidebar.vue'
 import AnalysisHistory from './AnalysisHistory.vue'
 
 const historyRef = ref(null)
+const selectedAnalysis = ref(null)
+
+// Gérer la sélection d'une analyse
+const handleAnalysisSelect = (analysis) => {
+  selectedAnalysis.value = analysis
+  console.log('📊 [LAYOUT] Analyse sélectionnée:', analysis)
+}
 
 // Exposer la référence à AnalysisHistory
 defineExpose({
@@ -21,7 +28,8 @@ defineExpose({
     if (historyRef.value) {
       historyRef.value.refreshAnalyses()
     }
-  }
+  },
+  selectedAnalysis: selectedAnalysis
 })
 </script>
 

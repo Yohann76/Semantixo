@@ -51,7 +51,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, defineExpose } from 'vue'
+import { ref, onMounted, defineExpose, defineEmits } from 'vue'
 import { useAuth } from '../composables/useGlobalStores.js'
 
 const { isAuthenticated, getAuthHeaders } = useAuth()
@@ -59,6 +59,9 @@ const { isAuthenticated, getAuthHeaders } = useAuth()
 const analyses = ref([])
 const loading = ref(true)
 const error = ref(null)
+
+// Définir les émetteurs d'événements
+const emit = defineEmits(['select-analysis'])
 
 // Charger l'historique des analyses
 const loadAnalyses = async () => {
@@ -126,8 +129,8 @@ const truncateText = (text, maxLength) => {
 // Sélectionner une analyse
 const selectAnalysis = (analysis) => {
   // Émettre un événement pour informer le composant parent
-  // ou naviguer vers une page de détail
-  console.log('Analyse sélectionnée:', analysis)
+  emit('select-analysis', analysis)
+  console.log('📊 [HISTORY] Analyse sélectionnée:', analysis)
 }
 
 onMounted(() => {
