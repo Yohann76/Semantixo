@@ -76,9 +76,30 @@ const selectedAnalysis = ref(null)
 const { isAuthenticated, getAuthHeaders } = useAuth()
 
 // Surveiller les changements de selectedAnalysis depuis le layout
-watch(() => layoutRef.value?.selectedAnalysis, (newAnalysis) => {
+watch(() => layoutRef.value?.selectedAnalysis?.value, (newAnalysis) => {
   selectedAnalysis.value = newAnalysis
+  
+  // Si aucune analyse n'est sélectionnée, nettoyer le formulaire
+  if (!newAnalysis) {
+    clearForm()
+  }
 }, { immediate: true })
+
+// Surveiller aussi les changements de selectedAnalysis dans le template
+watch(selectedAnalysis, (newAnalysis) => {
+  if (!newAnalysis) {
+    clearForm()
+  }
+})
+
+// Fonction pour nettoyer le formulaire
+const clearForm = () => {
+  textToAnalyze.value = ''
+  analysisResult.value = null
+  error.value = null
+  loading.value = false
+  console.log('🧹 [VERIFY] Formulaire nettoyé')
+}
 
 // Méthode d'analyse
 const analyzeText = async () => {
@@ -131,6 +152,8 @@ const clearSelection = () => {
   if (layoutRef.value) {
     layoutRef.value.selectedAnalysis = null
   }
+  // Nettoyer complètement le formulaire
+  clearForm()
 }
 </script>
 

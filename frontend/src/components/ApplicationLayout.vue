@@ -3,7 +3,7 @@
     <AppSidebar />
     <AnalysisHistory ref="historyRef" @select-analysis="handleAnalysisSelect" />
     <div class="app-main-content">
-      <slot :selected-analysis="selectedAnalysis" />
+      <slot :selected-analysis="selectedAnalysis" @clear-form="clearForm" />
     </div>
   </div>
 </template>
@@ -20,6 +20,12 @@ const selectedAnalysis = ref(null)
 const handleAnalysisSelect = (analysis) => {
   selectedAnalysis.value = analysis
   console.log('📊 [LAYOUT] Analyse sélectionnée:', analysis)
+}
+
+// Méthode pour nettoyer le formulaire
+const clearForm = () => {
+  selectedAnalysis.value = null
+  console.log('📊 [LAYOUT] Formulaire nettoyé')
 }
 
 // Exposer la référence à AnalysisHistory
