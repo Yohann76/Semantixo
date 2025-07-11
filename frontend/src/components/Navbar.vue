@@ -11,7 +11,12 @@
         <router-link to="/" class="nav-link" active-class="active">
           Accueil
         </router-link>
-        <router-link to="/verify-text" class="nav-link" active-class="active">
+        <router-link 
+          v-if="isAuthenticated" 
+          to="/verify-text" 
+          class="nav-link" 
+          active-class="active"
+        >
           Application
         </router-link>
         <router-link 

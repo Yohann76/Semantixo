@@ -10,7 +10,8 @@ const routes = [
   {
     path: '/verify-text',
     name: 'VerifyText',
-    component: () => import('../components/VerifyText.vue')
+    component: () => import('../components/VerifyText.vue'),
+    meta: { requiresAuth: true }
   },
   {
     path: '/register',
@@ -25,13 +26,29 @@ const routes = [
   {
     path: '/admin',
     name: 'AdminPage',
-    component: () => import('../components/AdminPage.vue')
+    component: () => import('../components/AdminPage.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
   }
 ]
 
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
   routes
+})
+
+// Navigation guard pour protéger les routes
+router.beforeEach((to, from, next) => {
+  const isAuthenticated = localStorage.getItem('token') !== null
+  
+  if (to.meta.requiresAuth && !isAuthenticated) {
+    // Rediriger vers la page de connexion si l'utilisateur n'est pas connecté
+    next('/login')
+  } else if (to.meta.requiresAdmin && !isAuthenticated) {
+    // Rediriger vers la page de connexion si l'utilisateur n'est pas connecté
+    next('/login')
+  } else {
+    next()
+  }
 })
 
 export default router 
