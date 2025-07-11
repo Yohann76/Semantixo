@@ -1,10 +1,11 @@
 <template>
-  <div class="verify-text">
-    <div class="container">
-      <h1 class="page-title">Analyse SEO de Texte</h1>
-      <p class="page-description">
-        Analysez votre texte pour optimiser son référencement SEO
-      </p>
+  <ApplicationLayout>
+    <div class="verify-text">
+      <div class="container">
+        <h1 class="page-title">Analyse SEO de Texte</h1>
+        <p class="page-description">
+          Analysez votre texte pour optimiser son référencement SEO
+        </p>
       
       <div class="analysis-form">
         <div class="form-group">
@@ -39,12 +40,14 @@
         <p>{{ error }}</p>
       </div>
     </div>
-  </div>
+    </div>
+  </ApplicationLayout>
 </template>
 
 <script setup>
 import { ref } from 'vue'
 import { useAuth } from '../composables/useGlobalStores.js'
+import ApplicationLayout from './ApplicationLayout.vue'
 
 // État réactif
 const textToAnalyze = ref('')
@@ -100,7 +103,6 @@ const analyzeText = async () => {
 
 <style scoped>
 .verify-text {
-  padding-top: 90px;
   min-height: 100vh;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 }
@@ -108,7 +110,7 @@ const analyzeText = async () => {
 .container {
   max-width: 800px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 30px 20px;
 }
 
 .page-title {
