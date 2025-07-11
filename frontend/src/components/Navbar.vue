@@ -31,18 +31,43 @@
           </router-link>
         </template>
         <template v-else>
-          <div class="user-profile">
-            <div class="user-avatar">
-              {{ getUserInitial(currentUser?.email) }}
+          <div class="user-dropdown" @click="toggleDropdown" ref="dropdownRef">
+            <div class="user-profile">
+              <div class="user-avatar">
+                {{ getUserInitial(currentUser?.email) }}
+              </div>
+              <div class="user-info">
+                <span class="user-email">{{ currentUser?.email }}</span>
+                <span class="user-name">{{ currentUser?.name }}</span>
+              </div>
+              <div class="dropdown-arrow" :class="{ 'rotated': isDropdownOpen }">
+                ▼
+              </div>
             </div>
-            <div class="user-info">
-              <span class="user-email">{{ currentUser?.email }}</span>
-              <span class="user-name">{{ currentUser?.name }}</span>
+            
+            <div class="dropdown-menu" v-if="isDropdownOpen">
+              <div class="dropdown-header">
+                <span class="dropdown-title">Mon Compte</span>
+              </div>
+              <div class="dropdown-item" @click="goToProfile">
+                <i class="dropdown-icon">👤</i>
+                Gérer mon compte
+              </div>
+              <div class="dropdown-item" @click="goToPayment">
+                <i class="dropdown-icon">💳</i>
+                Paiement
+              </div>
+              <div class="dropdown-item" @click="goToPaymentHistory">
+                <i class="dropdown-icon">📊</i>
+                Historique des paiements
+              </div>
+              <div class="dropdown-divider"></div>
+              <div class="dropdown-item logout-item" @click="handleLogout">
+                <i class="dropdown-icon">🚪</i>
+                Se déconnecter
+              </div>
             </div>
           </div>
-          <button @click="handleLogout" class="logout-btn">
-            Déconnexion
-          </button>
         </template>
       </div>
     </div>
@@ -50,7 +75,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../stores/auth.js'
 
 const authStore = useAuthStore()
@@ -59,11 +84,57 @@ const authStore = useAuthStore()
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const currentUser = computed(() => authStore.user)
 
+// Dropdown state
+const isDropdownOpen = ref(false)
+const dropdownRef = ref(null)
+
+const toggleDropdown = () => {
+  isDropdownOpen.value = !isDropdownOpen.value
+}
+
+const closeDropdown = () => {
+  isDropdownOpen.value = false
+}
+
+// Fermer le dropdown quand on clique à l'extérieur
+const handleClickOutside = (event) => {
+  if (dropdownRef.value && !dropdownRef.value.contains(event.target)) {
+    closeDropdown()
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
+
 const handleLogout = () => {
   console.log('🚪 [NAVBAR] Déconnexion demandée')
+  closeDropdown()
   authStore.logout()
   // Redirection après déconnexion
   window.location.href = '/'
+}
+
+const goToProfile = () => {
+  closeDropdown()
+  // TODO: Implémenter la route vers le profil
+  console.log('👤 Navigation vers le profil')
+}
+
+const goToPayment = () => {
+  closeDropdown()
+  // TODO: Implémenter la route vers les paiements
+  console.log('💳 Navigation vers les paiements')
+}
+
+const goToPaymentHistory = () => {
+  closeDropdown()
+  // TODO: Implémenter la route vers l'historique des paiements
+  console.log('📊 Navigation vers l\'historique des paiements')
 }
 
 const getUserInitial = (email) => {
@@ -198,11 +269,27 @@ export default {
   box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
 
+/* Dropdown styles */
+.user-dropdown {
+  position: relative;
+  cursor: pointer;
+}
+
 .user-profile {
   display: flex;
   align-items: center;
   gap: 10px;
   color: white;
+  padding: 8px 12px;
+  border-radius: 25px;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.user-profile:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
 }
 
 .user-avatar {
@@ -233,21 +320,92 @@ export default {
   font-weight: 600;
 }
 
-.logout-btn {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  padding: 8px 16px;
-  border-radius: 25px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
+.dropdown-arrow {
+  font-size: 0.7rem;
+  transition: transform 0.3s ease;
+  margin-left: 5px;
 }
 
-.logout-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-2px);
+.dropdown-arrow.rotated {
+  transform: rotate(180deg);
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  min-width: 220px;
+  overflow: hidden;
+  z-index: 1001;
+  animation: dropdownSlide 0.2s ease-out;
+}
+
+@keyframes dropdownSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-header {
+  padding: 15px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.dropdown-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  color: #333;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.dropdown-item:hover {
+  background: #f8f9fa;
+  color: #667eea;
+}
+
+.dropdown-icon {
+  font-size: 1rem;
+  width: 20px;
+  text-align: center;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: #e0e0e0;
+  margin: 5px 0;
+}
+
+.logout-item {
+  color: #dc3545;
+}
+
+.logout-item:hover {
+  background: #fff5f5;
+  color: #dc3545;
 }
 
 @media (max-width: 768px) {
@@ -276,6 +434,11 @@ export default {
     width: 30px;
     height: 30px;
     font-size: 0.8rem;
+  }
+  
+  .dropdown-menu {
+    min-width: 180px;
+    right: -10px;
   }
 }
 </style> 
