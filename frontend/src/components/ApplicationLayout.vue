@@ -1,8 +1,8 @@
 <template>
   <div class="application-layout">
     <AppSidebar />
-    <AnalysisHistory ref="historyRef" :type="historyType" @select-analysis="handleAnalysisSelect" />
-    <div class="app-main-content">
+    <AnalysisHistory v-if="historyType" ref="historyRef" :type="historyType" @select-analysis="handleAnalysisSelect" />
+    <div class="app-main-content" :class="{ 'with-history': historyType }">
       <slot :selected-analysis="selectedAnalysis" @clear-form="clearForm" />
     </div>
   </div>
@@ -21,6 +21,7 @@ const route = useRoute()
 // Déterminer le type d'analyse selon la route
 const historyType = computed(() => {
   if (route.path.startsWith('/verify-page')) return 'page'
+  if (route.path.startsWith('/app')) return null // Pas d'historique sur la page d'accueil
   return 'text'
 })
 
@@ -55,9 +56,14 @@ defineExpose({
 
 .app-main-content {
   flex: 1;
-  margin-left: 530px;
+  margin-left: 280px;
   padding-top: 80px;
   min-height: calc(100vh - 70px);
   margin-right: 20px;
+  transition: margin-left 0.3s ease;
+}
+
+.app-main-content.with-history {
+  margin-left: 530px;
 }
 </style> 

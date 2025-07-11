@@ -13,9 +13,9 @@
         </router-link>
         <router-link 
           v-if="isAuthenticated" 
-          to="/verify-text" 
+          to="/app" 
           class="nav-link" 
-          active-class="active"
+          :class="{ 'active': isAppRoute }"
         >
           Application
         </router-link>
@@ -76,13 +76,24 @@
 
 <script setup>
 import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth.js'
 
 const authStore = useAuthStore()
+const route = useRoute()
 
 // Computed properties pour la réactivité
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const currentUser = computed(() => authStore.user)
+
+// Détecter si nous sommes sur une route d'application
+const isAppRoute = computed(() => {
+  return route.path.startsWith('/app') || 
+         route.path.startsWith('/verify-text') || 
+         route.path.startsWith('/verify-page') ||
+         route.path.startsWith('/verify-internal-link') ||
+         route.path.startsWith('/verify-domains')
+})
 
 // Dropdown state
 const isDropdownOpen = ref(false)
