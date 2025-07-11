@@ -8,6 +8,7 @@ const mongoose = require('mongoose');
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 const analysisTextSeoRoutes = require('./routes/analysisTextSeo');
+const analysisPageSeoRoutes = require('./routes/analysisPageSeo');
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/analysis-text-seo', analysisTextSeoRoutes);
+app.use('/api/analysis-page-seo', analysisPageSeoRoutes);
 
 // Route de test
 app.get('/api/test', (req, res) => {
@@ -29,6 +31,7 @@ app.get('/api/test', (req, res) => {
       auth: '/api/auth',
       admin: '/api/admin',
       analysisTextSeo: '/api/analysis-text-seo',
+      analysisPageSeo: '/api/analysis-page-seo',
     },
     features: ['SEO Analysis', 'Text Processing', 'User Authentication', 'Database Integration'],
     timestamp: new Date().toISOString()

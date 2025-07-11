@@ -14,6 +14,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/verify-page',
+    name: 'VerifyPage',
+    component: () => import('../components/VerifyPage.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/register',
     name: 'Register',
     component: () => import('../components/Register.vue')

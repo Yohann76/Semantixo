@@ -1,7 +1,9 @@
 <template>
   <div class="analysis-history">
     <div class="history-header">
-      <h3 class="history-title">Analyses Récentes</h3>
+      <h3 class="history-title">
+        {{ historyTitle }}
+      </h3>
       <button @click="goToNewAnalysis" class="new-analysis-btn" title="Nouvelle analyse">
         <span class="btn-icon">+</span>
       </button>
@@ -13,82 +15,125 @@
         <p>Chargement...</p>
       </div>
       
-      <div v-else-if="analyses.length === 0" class="empty-state">
+      <div v-else-if="filteredAnalyses.length === 0" class="empty-state">
         <div class="empty-icon">📊</div>
         <h4>Aucune analyse</h4>
-        <p>Commencez par analyser un texte !</p>
+        <p>Commencez par analyser {{ type === 'page' ? 'une page SEO' : 'un texte SEO' }} !</p>
       </div>
       
-              <div v-else class="analyses-list">
-          <div 
-            v-for="analysis in analyses" 
-            :key="analysis.id" 
-            class="analysis-item"
-            @click="selectAnalysis(analysis)"
-          >
-            <div class="analysis-header">
-              <div class="analysis-date">
-                {{ formatShortDate(analysis.createdAt) }}
-              </div>
-              <div class="analysis-score-badge" :class="getScoreClass(analysis.seoScore)">
-                {{ analysis.seoScore || '0' }}
-              </div>
+      <div v-else class="analyses-list">
+        <div 
+          v-for="analysis in filteredAnalyses" 
+          :key="analysis.id" 
+          class="analysis-item"
+          @click="selectAnalysis(analysis)"
+        >
+          <div class="analysis-header">
+            <div class="analysis-date">
+              {{ formatShortDate(analysis.createdAt) }}
             </div>
-            <div class="analysis-text">
-              {{ truncateText(analysis.text || 'Aucun texte', 35) }}
+            <div class="analysis-score-badge" :class="getScoreClass(analysis.seoScore)">
+              {{ analysis.seoScore || '0' }}
             </div>
-            <div class="analysis-stats">
-              <div class="stat">
-                <span class="stat-label">📝</span>
-                <span class="stat-value">{{ analysis.wordCount }}</span>
-              </div>
-              <div class="stat">
-                <span class="stat-label">🔤</span>
-                <span class="stat-value">{{ analysis.characterCount }}</span>
-              </div>
+          </div>
+          <div class="analysis-text">
+            <div class="analysis-type-badge" :class="analysis.type">
+              {{ analysis.type === 'page' ? '🌐' : '📝' }}
+            </div>
+            {{ truncateText(analysis.displayText || 'Aucun contenu', 35) }}
+          </div>
+          <div class="analysis-stats">
+            <div class="stat">
+              <span class="stat-label">📝</span>
+              <span class="stat-value">{{ analysis.wordCount }}</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">🔤</span>
+              <span class="stat-value">{{ analysis.characterCount }}</span>
             </div>
           </div>
         </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, defineExpose, defineEmits } from 'vue'
+import { ref, onMounted, defineExpose, defineEmits, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useGlobalStores.js'
 
+// eslint-disable-next-line no-undef
+const props = defineProps({
+  type: {
+    type: String,
+    default: 'text',
+    validator: function(value) {
+      return ['text', 'page'].includes(value)
+    }
+  }
+})
+
 const { isAuthenticated, getAuthHeaders } = useAuth()
+const router = useRouter()
 
 const analyses = ref([])
 const loading = ref(true)
 const error = ref(null)
 
-// Définir les émetteurs d'événements
 const emit = defineEmits(['select-analysis'])
 
-// Charger l'historique des analyses
+// Filtrer selon le type demandé
+const filteredAnalyses = computed(() => {
+  return analyses.value.filter(a => a.type === props.type)
+})
+
+const historyTitle = computed(() => {
+  return props.type === 'page'
+    ? 'Analyses récentes de page SEO'
+    : 'Analyses récentes de texte SEO'
+})
+
+// Charger l'historique des analyses (tous types)
 const loadAnalyses = async () => {
   if (!isAuthenticated.value) {
     loading.value = false
     return
   }
-  
   try {
     const headers = getAuthHeaders()
-    const response = await fetch('http://localhost:3000/api/analysis-text-seo', {
+    // Charger les analyses de texte
+    const textResponse = await fetch('http://localhost:3000/api/analysis-text-seo', {
       method: 'GET',
       headers: headers
     })
-    
-    if (response.ok) {
-      const data = await response.json()
-      console.log('📊 [HISTORY] Données reçues:', data)
-      analyses.value = data.data.analyses || []
-      console.log('📊 [HISTORY] Analyses chargées:', analyses.value.length)
-    } else {
-      error.value = 'Erreur lors du chargement de l\'historique'
-      console.error('📊 [HISTORY] Erreur API:', response.status)
+    // Charger les analyses de page
+    const pageResponse = await fetch('http://localhost:3000/api/analysis-page-seo', {
+      method: 'GET',
+      headers: headers
+    })
+    let allAnalyses = []
+    if (textResponse.ok) {
+      const textData = await textResponse.json()
+      const textAnalyses = textData.data.analyses.map(analysis => ({
+        ...analysis,
+        type: 'text',
+        displayText: analysis.text
+      }))
+      allAnalyses = allAnalyses.concat(textAnalyses)
     }
+    if (pageResponse.ok) {
+      const pageData = await pageResponse.json()
+      const pageAnalyses = pageData.data.analyses.map(analysis => ({
+        ...analysis,
+        type: 'page',
+        displayText: analysis.url
+      }))
+      allAnalyses = allAnalyses.concat(pageAnalyses)
+    }
+    // Trier par date de création (plus récent en premier)
+    allAnalyses.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    analyses.value = allAnalyses
   } catch (err) {
     error.value = `Erreur: ${err.message}`
     console.error('Erreur chargement historique:', err)
@@ -97,24 +142,19 @@ const loadAnalyses = async () => {
   }
 }
 
-// Formater la date courte
 const formatShortDate = (dateString) => {
   const date = new Date(dateString)
   const now = new Date()
   const diffTime = Math.abs(now.getTime() - date.getTime())
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-  
   if (diffDays === 1) return 'Aujourd\'hui'
   if (diffDays === 2) return 'Hier'
   if (diffDays <= 7) return `Il y a ${diffDays}j`
-  
   return date.toLocaleDateString('fr-FR', {
     day: '2-digit',
     month: '2-digit'
   })
 }
-
-// Obtenir la classe CSS pour le score
 const getScoreClass = (score) => {
   if (!score || score === 0) return 'score-poor'
   if (score >= 80) return 'score-excellent'
@@ -122,32 +162,24 @@ const getScoreClass = (score) => {
   if (score >= 40) return 'score-average'
   return 'score-poor'
 }
-
-// Tronquer le texte
 const truncateText = (text, maxLength) => {
-  if (!text) return 'Aucun texte'
+  if (!text) return 'Aucun contenu'
   return text.length > maxLength ? text.substring(0, maxLength) + '...' : text
 }
-
-// Sélectionner une analyse
 const selectAnalysis = (analysis) => {
-  // Émettre un événement pour informer le composant parent
   emit('select-analysis', analysis)
-  console.log('📊 [HISTORY] Analyse sélectionnée:', analysis)
 }
-
-// Aller au formulaire de nouvelle analyse
 const goToNewAnalysis = () => {
-  emit('select-analysis', null) // Indiquer qu'aucune analyse n'est sélectionnée
-  console.log('📊 [HISTORY] Aller au formulaire de nouvelle analyse')
+  // Rediriger vers la bonne page selon le type
+  if (props.type === 'page') {
+    router.push('/verify-page')
+  } else {
+    router.push('/verify-text')
+  }
 }
-
 onMounted(() => {
-  console.log('📊 [HISTORY] Composant monté')
   loadAnalyses()
 })
-
-// Exposer la fonction de rechargement pour les composants parents
 defineExpose({
   refreshAnalyses: loadAnalyses
 })
@@ -329,6 +361,27 @@ defineExpose({
   line-height: 1.3;
   margin-bottom: 6px;
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.analysis-type-badge {
+  font-size: 0.8rem;
+  padding: 2px 4px;
+  border-radius: 3px;
+  min-width: 16px;
+  text-align: center;
+}
+
+.analysis-type-badge.text {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.analysis-type-badge.page {
+  background: #f3e5f5;
+  color: #7b1fa2;
 }
 
 .analysis-stats {

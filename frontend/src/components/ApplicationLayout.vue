@@ -1,7 +1,7 @@
 <template>
   <div class="application-layout">
     <AppSidebar />
-    <AnalysisHistory ref="historyRef" @select-analysis="handleAnalysisSelect" />
+    <AnalysisHistory ref="historyRef" :type="historyType" @select-analysis="handleAnalysisSelect" />
     <div class="app-main-content">
       <slot :selected-analysis="selectedAnalysis" @clear-form="clearForm" />
     </div>
@@ -9,12 +9,20 @@
 </template>
 
 <script setup>
-import { ref, defineExpose } from 'vue'
+import { ref, defineExpose, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import AppSidebar from './Sidebar.vue'
 import AnalysisHistory from './AnalysisHistory.vue'
 
 const historyRef = ref(null)
 const selectedAnalysis = ref(null)
+const route = useRoute()
+
+// Déterminer le type d'analyse selon la route
+const historyType = computed(() => {
+  if (route.path.startsWith('/verify-page')) return 'page'
+  return 'text'
+})
 
 // Gérer la sélection d'une analyse
 const handleAnalysisSelect = (analysis) => {

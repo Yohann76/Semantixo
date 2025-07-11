@@ -13,9 +13,9 @@
           <i class="nav-icon">📝</i>
           <span>Analyse de texte SEO</span>
         </router-link>
-        <router-link to="/verify-text" class="nav-item" active-class="active">
+        <router-link to="/verify-page" class="nav-item" active-class="active">
           <i class="nav-icon">🔍</i>
-          <span>[feat] Analyse page SEO</span>
+          <span>Analyse page SEO</span>
         </router-link>
         <router-link to="/verify-text" class="nav-item" active-class="active">
           <i class="nav-icon">📊</i>

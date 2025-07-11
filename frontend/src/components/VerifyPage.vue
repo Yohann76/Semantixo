@@ -1,34 +1,37 @@
 <template>
   <ApplicationLayout ref="layoutRef">
     <template #default="{ selectedAnalysis }">
-      <div class="verify-text">
+      <div class="verify-page">
         <div class="container">
           <!-- Affichage du formulaire d'analyse -->
           <div v-if="!selectedAnalysis" class="analysis-form-section">
-            <h1 class="page-title">Analyse SEO de Texte</h1>
+            <h1 class="page-title">Analyse SEO de Page</h1>
             <p class="page-description">
-              Analysez votre texte pour optimiser son référencement SEO
+              Analysez une page web pour optimiser son référencement SEO
             </p>
           
             <div class="analysis-form">
               <div class="form-group">
-                <label for="text-input" class="form-label">Texte à analyser :</label>
-                <textarea 
-                  id="text-input"
-                  v-model="textToAnalyze"
-                  class="text-input"
-                  placeholder="Collez votre texte ici pour l'analyse SEO..."
-                  rows="8"
-                ></textarea>
+                <label for="url-input" class="form-label">URL de la page à analyser :</label>
+                <input 
+                  id="url-input"
+                  v-model="urlToAnalyze"
+                  type="url"
+                  class="url-input"
+                  placeholder="https://example.com ou example.com"
+                />
+                <small class="form-help">
+                  Entrez l'URL complète de la page que vous souhaitez analyser
+                </small>
               </div>
               
               <div class="form-actions">
                 <button 
-                  @click="analyzeText" 
-                  :disabled="!textToAnalyze.trim() || loading"
+                  @click="analyzePage" 
+                  :disabled="!urlToAnalyze.trim() || loading"
                   class="analyze-btn"
                 >
-                  {{ loading ? 'Analyse en cours...' : 'Analyser le texte' }}
+                  {{ loading ? 'Analyse en cours...' : 'Analyser la page' }}
                 </button>
               </div>
             </div>
@@ -65,7 +68,7 @@ import ApplicationLayout from './ApplicationLayout.vue'
 import AnalysisResult from './AnalysisResult.vue'
 
 // État réactif
-const textToAnalyze = ref('')
+const urlToAnalyze = ref('')
 const analysisResult = ref(null)
 const error = ref(null)
 const loading = ref(false)
@@ -77,11 +80,11 @@ const { isAuthenticated, getAuthHeaders } = useAuth()
 
 // Fonction pour nettoyer le formulaire
 const clearForm = () => {
-  textToAnalyze.value = ''
+  urlToAnalyze.value = ''
   analysisResult.value = null
   error.value = null
   loading.value = false
-  console.log('🧹 [VERIFY] Formulaire nettoyé')
+  console.log('🧹 [VERIFY PAGE] Formulaire nettoyé')
 }
 
 // Surveiller les changements de selectedAnalysis depuis le layout
@@ -102,9 +105,9 @@ watch(selectedAnalysis, (newAnalysis) => {
 })
 
 // Méthode d'analyse
-const analyzeText = async () => {
-  if (!textToAnalyze.value.trim()) {
-    error.value = 'Veuillez entrer un texte à analyser'
+const analyzePage = async () => {
+  if (!urlToAnalyze.value.trim()) {
+    error.value = 'Veuillez entrer une URL à analyser'
     return
   }
   
@@ -114,17 +117,17 @@ const analyzeText = async () => {
   
   try {
     if (!isAuthenticated.value) {
-      error.value = 'Vous devez être connecté pour analyser un texte'
+      error.value = 'Vous devez être connecté pour analyser une page'
       return
     }
 
     const headers = getAuthHeaders()
     
-    const response = await fetch('http://localhost:3000/api/analysis-text-seo', {
+    const response = await fetch('http://localhost:3000/api/analysis-page-seo', {
       method: 'POST',
       headers: headers,
       body: JSON.stringify({
-        text: textToAnalyze.value
+        url: urlToAnalyze.value
       })
     })
     
@@ -141,7 +144,7 @@ const analyzeText = async () => {
     }
   } catch (err) {
     error.value = `Erreur lors de l'analyse: ${err.message}`
-    console.error('Erreur analyse:', err)
+    console.error('Erreur analyse page:', err)
   } finally {
     loading.value = false
   }
@@ -158,7 +161,7 @@ const clearSelection = () => {
 </script>
 
 <style scoped>
-.verify-text {
+.verify-page {
   min-height: 100vh;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 }
@@ -204,21 +207,27 @@ const clearSelection = () => {
   font-size: 1.1rem;
 }
 
-.text-input {
+.url-input {
   width: 100%;
   padding: 15px;
   border: 2px solid #e9ecef;
   border-radius: 8px;
   font-size: 1rem;
   font-family: inherit;
-  resize: vertical;
   transition: border-color 0.3s;
 }
 
-.text-input:focus {
+.url-input:focus {
   outline: none;
   border-color: #667eea;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-help {
+  display: block;
+  margin-top: 5px;
+  color: #6c757d;
+  font-size: 0.9rem;
 }
 
 .form-actions {
