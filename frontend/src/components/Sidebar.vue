@@ -17,11 +17,11 @@
           <i class="nav-icon">🔍</i>
           <span>Analyse page SEO</span>
         </router-link>
-        <router-link to="/verify-text" class="nav-item" active-class="active">
+        <router-link to="/verify-internal-link" class="nav-item" active-class="active">
           <i class="nav-icon">📊</i>
           <span>[feat] Analyse du maillage interne</span>
         </router-link>
-        <router-link to="/verify-text" class="nav-item" active-class="active">
+        <router-link to="/verify-domains" class="nav-item" active-class="active">
           <i class="nav-icon">📊</i>
           <span>[feat] Analyse du nom de domaine</span>
         </router-link>
@@ -29,11 +29,11 @@
       
       <div class="nav-section">
         <h4 class="nav-section-title">Support</h4>
-        <router-link to="/verify-text" class="nav-item" active-class="active">
+        <router-link to="/help" class="nav-item" active-class="active">
           <i class="nav-icon">❓</i>
           <span>Aide</span>
         </router-link>
-        <router-link to="/verify-text" class="nav-item" active-class="active">
+        <router-link to="/contact" class="nav-item" active-class="active">
           <i class="nav-icon">📧</i>
           <span>Contact</span>
         </router-link>
@@ -126,10 +126,10 @@ export default {
   display: flex;
   align-items: center;
   padding: 12px 20px;
-  color: #ecf0f1;
+  color: white;
   text-decoration: none;
   font-size: 0.95rem;
-  font-weight: 500;
+  font-weight: 400;
   transition: all 0.3s ease;
   border-left: 3px solid transparent;
 }
@@ -137,14 +137,14 @@ export default {
 .nav-item:hover {
   background: rgba(255,255,255,0.1);
   color: white;
-  border-left-color: #3498db;
+  border-left-color: rgba(255,255,255,0.3);
 }
 
 .nav-item.active {
-  background: rgba(52, 152, 219, 0.2);
-  color: #3498db;
-  border-left-color: #3498db;
-  font-weight: 600;
+  background: rgba(255,255,255,0.05);
+  color: white;
+  border-left-color: white;
+  font-weight: 700;
 }
 
 .nav-icon {
