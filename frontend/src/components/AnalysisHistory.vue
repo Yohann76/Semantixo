@@ -60,7 +60,6 @@
 
 <script setup>
 import { ref, onMounted, defineExpose, defineEmits, computed } from 'vue'
-import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useGlobalStores.js'
 
 // eslint-disable-next-line no-undef
@@ -75,7 +74,6 @@ const props = defineProps({
 })
 
 const { isAuthenticated, getAuthHeaders } = useAuth()
-const router = useRouter()
 
 const analyses = ref([])
 const loading = ref(true)
@@ -172,9 +170,9 @@ const selectAnalysis = (analysis) => {
 const goToNewAnalysis = () => {
   // Rediriger vers la bonne page selon le type
   if (props.type === 'page') {
-    router.push('/verify-page')
+    window.location.href = '/verify-page'
   } else {
-    router.push('/verify-text')
+    window.location.href = '/verify-text'
   }
 }
 onMounted(() => {
