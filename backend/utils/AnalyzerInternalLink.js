@@ -9,9 +9,16 @@ class AnalyzerInternalLink {
   /**
    * Analyse du maillage interne d'un site web
    * @param {string} url - L'URL de la page à analyser
+   * @param {Object} options - Options d'analyse
    * @returns {Object} - Résultats de l'analyse du maillage interne
    */
-  static async analyze(url) {
+  static async analyze(url, options = {}) {
+    const {
+      checkBrokenLinks = true,
+      maxBrokenLinkChecks = 50, // Limiter le nombre de vérifications
+      skip405Checks = false // Option pour ignorer les erreurs 405
+    } = options;
+
     try {
       // Valider l'URL
       if (!url || !url.trim()) {
@@ -46,6 +53,9 @@ class AnalyzerInternalLink {
       const externalLinks = [];
       const brokenLinks = [];
       const internalPages = new Map();
+
+      // Compteur pour limiter les vérifications de liens cassés
+      let brokenLinkChecks = 0;
 
       // Analyser chaque lien
       for (let i = 0; i < allLinks.length; i++) {
@@ -95,15 +105,50 @@ class AnalyzerInternalLink {
           }
 
           // Vérifier si le lien est cassé (pour les liens internes)
-          if (linkUrl.hostname === domain) {
+          if (linkUrl.hostname === domain && checkBrokenLinks && brokenLinkChecks < maxBrokenLinkChecks) {
+            brokenLinkChecks++;
+            
             try {
-              const linkResponse = await axios.head(fullUrl, {
-                timeout: 5000,
-                headers: {
-                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+              // Essayer d'abord avec HEAD (plus rapide)
+              let linkResponse;
+              try {
+                linkResponse = await axios.head(fullUrl, {
+                  timeout: 5000,
+                  headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                  }
+                });
+              } catch (headError) {
+                // Si HEAD retourne 405 et qu'on ne doit pas ignorer les 405, essayer avec GET
+                if (headError.response?.status === 405 && !skip405Checks) {
+                  try {
+                    linkResponse = await axios.get(fullUrl, {
+                      timeout: 5000,
+                      headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                      }
+                    });
+                  } catch (getError) {
+                    // Si GET échoue aussi, considérer comme cassé
+                    brokenLinks.push({
+                      url: fullUrl,
+                      anchorText,
+                      statusCode: getError.response?.status || 0
+                    });
+                    continue;
+                  }
+                } else {
+                  // Autre erreur avec HEAD ou 405 ignoré, considérer comme cassé
+                  brokenLinks.push({
+                    url: fullUrl,
+                    anchorText,
+                    statusCode: headError.response?.status || 0
+                  });
+                  continue;
                 }
-              });
+              }
 
+              // Vérifier le statut de la réponse
               if (linkResponse.status >= 400) {
                 brokenLinks.push({
                   url: fullUrl,
@@ -112,6 +157,7 @@ class AnalyzerInternalLink {
                 });
               }
             } catch (error) {
+              // Erreur générale
               brokenLinks.push({
                 url: fullUrl,
                 anchorText,

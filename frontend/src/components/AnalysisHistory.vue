@@ -57,7 +57,7 @@
             </div>
             <div v-if="analysis.type === 'internal-link'" class="stat">
               <span class="stat-label">❌</span>
-              <span class="stat-value">{{ analysis.metrics?.brokenLinks || analysis.brokenLinks || 0 }}</span>
+              <span class="stat-value">{{ (analysis.brokenLinks || []).length }}</span>
             </div>
             <div v-if="analysis.type === 'internal-link'" class="stat">
               <span class="stat-label">📄</span>

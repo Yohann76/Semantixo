@@ -18,35 +18,39 @@ const createAnalysisInternalLink = async (req, res) => {
     console.log('🔍 [INTERNAL LINK] Nouvelle analyse demandée pour:', url);
 
     // Analyser le maillage interne
-    const analysisResult = await AnalyzerInternalLink.analyze(url);
-
-    // Créer l'analyse dans la base de données
-    const analysis = await AnalysisInternalLink.create({
-      userId: req.user._id,
-      url: url.trim(),
-      internalLinkScore: analysisResult.internalLinkScore,
-      metrics: analysisResult.metrics,
-      internalLinkElements: analysisResult.internalLinkElements,
-      internalPages: analysisResult.internalPages,
-      brokenLinks: analysisResult.brokenLinks
+    const analysis = await AnalyzerInternalLink.analyze(url, {
+      checkBrokenLinks: true,
+      maxBrokenLinkChecks: 30, // Limiter à 30 vérifications pour la vitesse
+      skip405Checks: false // Vérifier les 405 pour la précision
     });
 
-    console.log('✅ [INTERNAL LINK] Analyse créée:', analysis._id);
+    // Créer l'analyse dans la base de données
+    const analysisDb = await AnalysisInternalLink.create({
+      userId: req.user._id,
+      url: url.trim(),
+      internalLinkScore: analysis.internalLinkScore,
+      metrics: analysis.metrics,
+      internalLinkElements: analysis.internalLinkElements,
+      internalPages: analysis.internalPages,
+      brokenLinks: analysis.brokenLinks
+    });
+
+    console.log('✅ [INTERNAL LINK] Analyse créée:', analysisDb._id);
 
     res.status(201).json({
       success: true,
       message: 'Analyse de maillage interne créée avec succès',
       data: {
         analysis: {
-          id: analysis._id,
-          url: analysis.url,
-          internalLinkScore: analysis.internalLinkScore,
-          metrics: analysis.metrics,
-          internalLinkElements: analysis.internalLinkElements,
-          internalPages: analysis.internalPages,
-          brokenLinks: analysis.brokenLinks,
-          analysis: analysisResult.analysis,
-          createdAt: analysis.createdAt
+          id: analysisDb._id,
+          url: analysisDb.url,
+          internalLinkScore: analysisDb.internalLinkScore,
+          metrics: analysisDb.metrics,
+          internalLinkElements: analysisDb.internalLinkElements,
+          internalPages: analysisDb.internalPages,
+          brokenLinks: analysisDb.brokenLinks,
+          analysis: analysis.analysis,
+          createdAt: analysisDb.createdAt
         }
       }
     });

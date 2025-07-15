@@ -29,7 +29,7 @@
           <div class="metric-card">
             <div class="metric-icon">❌</div>
             <div class="metric-info">
-              <div class="metric-value">{{ analysis.metrics?.brokenLinks || analysis.brokenLinks || 0 }}</div>
+              <div class="metric-value">{{ (analysis.brokenLinks || []).length }}</div>
               <div class="metric-label">Liens cassés</div>
             </div>
           </div>
@@ -97,6 +97,17 @@
         </div>
       </div>
 
+      <!-- Message quand aucun lien cassé -->
+      <div v-else class="no-broken-links-section">
+        <h4 class="section-title">Liens cassés détectés (0)</h4>
+        <div class="no-broken-links-message">
+          <div class="success-icon">✅</div>
+          <div class="success-text">
+            Aucun lien cassé détecté ! Votre site est en excellente santé.
+          </div>
+        </div>
+      </div>
+
       <!-- Recommandations -->
       <div v-if="analysis.analysis && analysis.analysis.recommendations && analysis.analysis.recommendations.length > 0" class="recommendations-section">
         <h4 class="section-title">Recommandations</h4>
@@ -146,7 +157,8 @@ const displayedPages = computed(() => {
 })
 
 const displayedBrokenLinks = computed(() => {
-  return props.analysis.brokenLinks?.slice(0, brokenLinksToShow.value) || []
+  const brokenLinks = props.analysis.brokenLinks || []
+  return brokenLinks.slice(0, brokenLinksToShow.value) || []
 })
 
 const showMorePages = () => {
@@ -387,5 +399,29 @@ const getScoreClass = (score) => {
 
 .show-more-btn:hover {
   transform: translateY(-2px);
+}
+
+.no-broken-links-section {
+  margin-bottom: 30px;
+}
+
+.no-broken-links-message {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 20px;
+  background: #d4edda;
+  border-radius: 8px;
+  border-left: 4px solid #28a745;
+}
+
+.success-icon {
+  font-size: 1.5rem;
+}
+
+.success-text {
+  color: #155724;
+  font-size: 1rem;
+  font-weight: 500;
 }
 </style> 
