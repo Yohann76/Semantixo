@@ -18,7 +18,11 @@
       <div v-else-if="filteredAnalyses.length === 0" class="empty-state">
         <div class="empty-icon">📊</div>
         <h4>Aucune analyse</h4>
-        <p>Commencez par analyser {{ type === 'page' ? 'une page SEO' : 'un texte SEO' }} !</p>
+        <p>Commencez par analyser {{ 
+          type === 'page' ? 'une page SEO' : 
+          type === 'internal-link' ? 'le maillage interne d\'un site' : 
+          'un texte SEO' 
+        }} !</p>
       </div>
       
       <div v-else class="analyses-list">
@@ -32,22 +36,34 @@
             <div class="analysis-date">
               {{ formatShortDate(analysis.createdAt) }}
             </div>
-            <div class="analysis-score-badge" :class="getScoreClass(analysis.seoScore)">
-              {{ analysis.seoScore || '0' }}
+            <div class="analysis-score-badge" :class="getScoreClass(getAnalysisScore(analysis))">
+              {{ getAnalysisScore(analysis) || '0' }}
             </div>
           </div>
           <div class="analysis-text">
             <div class="analysis-type-badge" :class="analysis.type">
-              {{ analysis.type === 'page' ? '🌐' : '📝' }}
+              {{ 
+                analysis.type === 'page' ? '🌐' : 
+                analysis.type === 'internal-link' ? '🔗' : 
+                '📝' 
+              }}
             </div>
             {{ truncateText(analysis.displayText || 'Aucun contenu', 35) }}
           </div>
           <div class="analysis-stats">
-            <div class="stat">
+            <div v-if="analysis.type === 'internal-link'" class="stat">
+              <span class="stat-label">🔗</span>
+              <span class="stat-value">{{ analysis.totalInternalLinks }}</span>
+            </div>
+            <div v-if="analysis.type === 'internal-link'" class="stat">
+              <span class="stat-label">❌</span>
+              <span class="stat-value">{{ analysis.brokenLinks }}</span>
+            </div>
+            <div v-if="analysis.type !== 'internal-link'" class="stat">
               <span class="stat-label">📝</span>
               <span class="stat-value">{{ analysis.wordCount }}</span>
             </div>
-            <div class="stat">
+            <div v-if="analysis.type !== 'internal-link'" class="stat">
               <span class="stat-label">🔤</span>
               <span class="stat-value">{{ analysis.characterCount }}</span>
             </div>
@@ -68,7 +84,7 @@ const props = defineProps({
     type: String,
     default: 'text',
     validator: function(value) {
-      return ['text', 'page'].includes(value)
+      return ['text', 'page', 'internal-link'].includes(value)
     }
   }
 })
@@ -87,9 +103,9 @@ const filteredAnalyses = computed(() => {
 })
 
 const historyTitle = computed(() => {
-  return props.type === 'page'
-    ? 'Analyses récentes de page SEO'
-    : 'Analyses récentes de texte SEO'
+  if (props.type === 'page') return 'Analyses récentes de page SEO'
+  if (props.type === 'internal-link') return 'Analyses récentes de maillage interne'
+  return 'Analyses récentes de texte SEO'
 })
 
 // Charger l'historique des analyses (tous types)
@@ -107,6 +123,11 @@ const loadAnalyses = async () => {
     })
     // Charger les analyses de page
     const pageResponse = await fetch('http://localhost:3000/api/analysis-page-seo', {
+      method: 'GET',
+      headers: headers
+    })
+    // Charger les analyses de maillage interne
+    const internalLinkResponse = await fetch('http://localhost:3000/api/analysis-internal-link', {
       method: 'GET',
       headers: headers
     })
@@ -128,6 +149,15 @@ const loadAnalyses = async () => {
         displayText: analysis.url
       }))
       allAnalyses = allAnalyses.concat(pageAnalyses)
+    }
+    if (internalLinkResponse.ok) {
+      const internalLinkData = await internalLinkResponse.json()
+      const internalLinkAnalyses = internalLinkData.data.analyses.map(analysis => ({
+        ...analysis,
+        type: 'internal-link',
+        displayText: analysis.url
+      }))
+      allAnalyses = allAnalyses.concat(internalLinkAnalyses)
     }
     // Trier par date de création (plus récent en premier)
     allAnalyses.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
@@ -153,6 +183,13 @@ const formatShortDate = (dateString) => {
     month: '2-digit'
   })
 }
+const getAnalysisScore = (analysis) => {
+  if (analysis.type === 'internal-link') {
+    return analysis.internalLinkScore
+  }
+  return analysis.seoScore
+}
+
 const getScoreClass = (score) => {
   if (!score || score === 0) return 'score-poor'
   if (score >= 80) return 'score-excellent'
@@ -171,6 +208,8 @@ const goToNewAnalysis = () => {
   // Rediriger vers la bonne page selon le type
   if (props.type === 'page') {
     window.location.href = '/verify-page'
+  } else if (props.type === 'internal-link') {
+    window.location.href = '/internal-link-analysis'
   } else {
     window.location.href = '/verify-text'
   }

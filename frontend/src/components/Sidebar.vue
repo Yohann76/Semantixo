@@ -17,9 +17,9 @@
           <i class="nav-icon">🔍</i>
           <span>Analyse page SEO</span>
         </router-link>
-        <router-link to="/verify-internal-link" class="nav-item" active-class="active">
-          <i class="nav-icon">📊</i>
-          <span>[feat] Analyse du maillage interne</span>
+        <router-link to="/internal-link-analysis" class="nav-item" active-class="active">
+          <i class="nav-icon">🔗</i>
+          <span>Analyse du maillage interne</span>
         </router-link>
         <router-link to="/verify-domains" class="nav-item" active-class="active">
           <i class="nav-icon">📊</i>

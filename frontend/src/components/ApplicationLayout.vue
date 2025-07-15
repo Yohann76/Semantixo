@@ -21,6 +21,7 @@ const route = useRoute()
 // Déterminer le type d'analyse selon la route
 const historyType = computed(() => {
   if (route.path.startsWith('/verify-page')) return 'page'
+  if (route.path.startsWith('/internal-link-analysis')) return 'internal-link'
   if (route.path.startsWith('/app')) return null // Pas d'historique sur la page d'accueil
   return 'text'
 })

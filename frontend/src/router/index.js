@@ -20,6 +20,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/internal-link-analysis',
+    name: 'InternalLinkAnalysis',
+    component: () => import('../components/InternalLinkAnalysisPage.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/app',
     name: 'AppDashboard',
     component: () => import('../components/AppDashboard.vue'),

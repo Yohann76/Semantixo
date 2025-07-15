@@ -9,6 +9,7 @@ const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 const analysisTextSeoRoutes = require('./routes/analysisTextSeo');
 const analysisPageSeoRoutes = require('./routes/analysisPageSeo');
+const analysisInternalLinkRoutes = require('./routes/analysisInternalLink');
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/analysis-text-seo', analysisTextSeoRoutes);
 app.use('/api/analysis-page-seo', analysisPageSeoRoutes);
+app.use('/api/analysis-internal-link', analysisInternalLinkRoutes);
 
 // Route de test
 app.get('/api/test', (req, res) => {
@@ -32,6 +34,7 @@ app.get('/api/test', (req, res) => {
       admin: '/api/admin',
       analysisTextSeo: '/api/analysis-text-seo',
       analysisPageSeo: '/api/analysis-page-seo',
+      analysisInternalLink: '/api/analysis-internal-link',
     },
     features: ['SEO Analysis', 'Text Processing', 'User Authentication', 'Database Integration'],
     timestamp: new Date().toISOString()
