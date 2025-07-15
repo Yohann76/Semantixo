@@ -1,148 +1,60 @@
 <template>
   <div class="internal-link-analysis">
-    <div class="analysis-header">
-      <h2 class="analysis-title">Analyse du maillage interne</h2>
-      <p class="analysis-description">
-        Analysez la structure de liens internes de votre site web pour optimiser la navigation et le SEO
-      </p>
-    </div>
-
-    <div class="analysis-form">
-      <div class="form-group">
-        <label for="url" class="form-label">URL du site à analyser</label>
-        <div class="input-group">
-          <input
-            id="url"
-            v-model="url"
-            type="url"
-            class="form-input"
-            placeholder="https://exemple.com"
-            :disabled="loading"
-            @keyup.enter="analyzeInternalLinks"
-          />
-          <button
-            @click="analyzeInternalLinks"
-            :disabled="loading || !url.trim()"
-            class="analyze-btn"
-          >
-            <span v-if="loading" class="loading-spinner"></span>
-            <span v-else>Analyser</span>
-          </button>
-        </div>
-        <small class="form-help">
-          Entrez l'URL de la page principale de votre site web
-        </small>
+    <!-- Affichage du formulaire d'analyse -->
+    <div v-if="!selectedAnalysis" class="analysis-form-section">
+      <div class="analysis-header">
+        <h2 class="analysis-title">Analyse du maillage interne</h2>
+        <p class="analysis-description">
+          Analysez la structure de liens internes de votre site web pour optimiser la navigation et le SEO
+        </p>
       </div>
-    </div>
 
-    <div v-if="error" class="error-message">
-      <div class="error-icon">⚠️</div>
-      <div class="error-text">{{ error }}</div>
-    </div>
-
-    <div v-if="analysisResult" class="analysis-result">
-      <div class="result-header">
-        <h3 class="result-title">Résultats de l'analyse</h3>
-        <div class="result-score" :class="getScoreClass(analysisResult.internalLinkScore)">
-          Score: {{ analysisResult.internalLinkScore }}/100
+      <div class="analysis-form">
+        <div class="form-group">
+          <label for="url" class="form-label">URL du site à analyser</label>
+          <div class="input-group">
+            <input
+              id="url"
+              v-model="url"
+              type="url"
+              class="form-input"
+              placeholder="https://exemple.com"
+              :disabled="loading"
+              @keyup.enter="analyzeInternalLinks"
+            />
+            <button
+              @click="analyzeInternalLinks"
+              :disabled="loading || !url.trim()"
+              class="analyze-btn"
+            >
+              <span v-if="loading" class="loading-spinner"></span>
+              <span v-else>Analyser</span>
+            </button>
+          </div>
+          <small class="form-help">
+            Entrez l'URL de la page principale de votre site web
+          </small>
         </div>
       </div>
 
-      <div class="result-content">
-        <!-- Métriques principales -->
-        <div class="metrics-section">
-          <h4 class="section-title">Métriques principales</h4>
-          <div class="metrics-grid">
-            <div class="metric-card">
-              <div class="metric-icon">🔗</div>
-              <div class="metric-info">
-                <div class="metric-value">{{ analysisResult.metrics.totalInternalLinks }}</div>
-                <div class="metric-label">Liens internes</div>
-              </div>
-            </div>
-            <div class="metric-card">
-              <div class="metric-icon">🌐</div>
-              <div class="metric-info">
-                <div class="metric-value">{{ analysisResult.metrics.totalExternalLinks }}</div>
-                <div class="metric-label">Liens externes</div>
-              </div>
-            </div>
-            <div class="metric-card">
-              <div class="metric-icon">❌</div>
-              <div class="metric-info">
-                <div class="metric-value">{{ analysisResult.metrics.brokenLinks }}</div>
-                <div class="metric-label">Liens cassés</div>
-              </div>
-            </div>
-            <div class="metric-card">
-              <div class="metric-icon">📄</div>
-              <div class="metric-info">
-                <div class="metric-value">{{ analysisResult.metrics.uniqueInternalPages }}</div>
-                <div class="metric-label">Pages internes</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Pages internes -->
-        <div v-if="analysisResult.internalPages.length > 0" class="pages-section">
-          <h4 class="section-title">Pages internes détectées</h4>
-          <div class="pages-list">
-            <div 
-              v-for="page in analysisResult.internalPages.slice(0, 10)" 
-              :key="page.url"
-              class="page-item"
-            >
-              <div class="page-info">
-                <div class="page-title">{{ page.title || 'Sans titre' }}</div>
-                <div class="page-url">{{ page.url }}</div>
-              </div>
-              <div class="page-stats">
-                <span class="stat-badge">
-                  {{ page.internalLinksCount }} liens internes
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Liens cassés -->
-        <div v-if="analysisResult.brokenLinks.length > 0" class="broken-links-section">
-          <h4 class="section-title">Liens cassés détectés</h4>
-          <div class="broken-links-list">
-            <div 
-              v-for="link in analysisResult.brokenLinks.slice(0, 10)" 
-              :key="link.url"
-              class="broken-link-item"
-            >
-              <div class="link-info">
-                <div class="link-url">{{ link.url }}</div>
-                <div class="link-anchor">{{ link.anchorText || 'Sans texte' }}</div>
-              </div>
-              <div class="link-status">
-                <span class="status-badge error">
-                  Erreur {{ link.statusCode || 'N/A' }}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Recommandations -->
-        <div v-if="analysisResult.analysis.recommendations.length > 0" class="recommendations-section">
-          <h4 class="section-title">Recommandations</h4>
-          <div class="recommendations-list">
-            <div 
-              v-for="(recommendation, index) in analysisResult.analysis.recommendations" 
-              :key="index"
-              class="recommendation-item"
-            >
-              <div class="recommendation-icon">💡</div>
-              <div class="recommendation-text">{{ recommendation }}</div>
-            </div>
-          </div>
-        </div>
+      <div v-if="error" class="error-message">
+        <div class="error-icon">⚠️</div>
+        <div class="error-text">{{ error }}</div>
       </div>
+
+      <div v-if="analysisResult" class="analysis-result">
+        <AnalysisResultInternalLink :analysis="analysisResult" />
+      </div>
+    </div>
+
+    <!-- Affichage du résultat d'une analyse sélectionnée -->
+    <div v-else class="selected-analysis-section">
+      <div class="back-button-container">
+        <button @click="clearSelection" class="back-btn">
+          ← Retour à l'analyse
+        </button>
+      </div>
+      <AnalysisResultInternalLink :analysis="selectedAnalysis" />
     </div>
   </div>
 </template>
@@ -150,6 +62,7 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { useAuth } from '../composables/useGlobalStores.js'
+import AnalysisResultInternalLink from './AnalysisResultInternalLink.vue'
 
 const { getAuthHeaders } = useAuth()
 
@@ -210,8 +123,17 @@ const analyzeInternalLinks = async () => {
 // Watcher pour détecter quand une analyse est sélectionnée
 watch(() => props.selectedAnalysis, (newAnalysis) => {
   if (newAnalysis) {
-    // Charger les détails complets de l'analyse
-    loadAnalysisDetails(newAnalysis.id)
+    // Si l'analyse a déjà les détails complets, l'utiliser directement
+    if (newAnalysis.metrics && newAnalysis.internalPages) {
+      analysisResult.value = newAnalysis
+      url.value = newAnalysis.url
+    } else {
+      // Sinon, charger les détails complets de l'analyse
+      loadAnalysisDetails(newAnalysis.id)
+    }
+  } else {
+    // Nettoyer le formulaire si aucune analyse n'est sélectionnée
+    clearForm()
   }
 }, { immediate: true })
 
@@ -233,13 +155,21 @@ const loadAnalysisDetails = async (analysisId) => {
   }
 }
 
-const getScoreClass = (score) => {
-  if (!score || score === 0) return 'score-poor'
-  if (score >= 80) return 'score-excellent'
-  if (score >= 60) return 'score-good'
-  if (score >= 40) return 'score-average'
-  return 'score-poor'
+// Fonction pour nettoyer le formulaire
+const clearForm = () => {
+  url.value = ''
+  analysisResult.value = null
+  error.value = ''
+  loading.value = false
 }
+
+// Effacer la sélection pour revenir au formulaire
+const clearSelection = () => {
+  emit('clear-form')
+  clearForm()
+}
+
+// Supprimé car non utilisé dans ce composant
 </script>
 
 <style scoped>
@@ -538,5 +468,31 @@ const getScoreClass = (score) => {
 .recommendation-text {
   color: #856404;
   line-height: 1.5;
+}
+
+.back-button-container {
+  margin-bottom: 20px;
+}
+
+.back-btn {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s;
+}
+
+.back-btn:hover {
+  background: #5a6268;
+}
+
+.analysis-form-section,
+.selected-analysis-section {
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 20px;
 }
 </style> 
