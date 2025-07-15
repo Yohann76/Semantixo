@@ -45,10 +45,10 @@
 
       <!-- Pages internes -->
       <div v-if="analysis.internalPages && analysis.internalPages.length > 0" class="pages-section">
-        <h4 class="section-title">Pages internes détectées</h4>
+        <h4 class="section-title">Pages internes détectées ({{ analysis.internalPages.length }})</h4>
         <div class="pages-list">
           <div 
-            v-for="page in analysis.internalPages.slice(0, 10)" 
+            v-for="page in displayedPages" 
             :key="page.url"
             class="page-item"
           >
@@ -63,14 +63,19 @@
             </div>
           </div>
         </div>
+        <div v-if="analysis.internalPages.length > pagesToShow" class="show-more-container">
+          <button @click="showMorePages" class="show-more-btn">
+            Voir plus de pages ({{ analysis.internalPages.length - pagesToShow }} restantes)
+          </button>
+        </div>
       </div>
 
       <!-- Liens cassés -->
       <div v-if="analysis.brokenLinks && analysis.brokenLinks.length > 0" class="broken-links-section">
-        <h4 class="section-title">Liens cassés détectés</h4>
+        <h4 class="section-title">Liens cassés détectés ({{ analysis.brokenLinks.length }})</h4>
         <div class="broken-links-list">
           <div 
-            v-for="link in analysis.brokenLinks.slice(0, 10)" 
+            v-for="link in displayedBrokenLinks" 
             :key="link.url"
             class="broken-link-item"
           >
@@ -84,6 +89,11 @@
               </span>
             </div>
           </div>
+        </div>
+        <div v-if="analysis.brokenLinks.length > brokenLinksToShow" class="show-more-container">
+          <button @click="showMoreBrokenLinks" class="show-more-btn">
+            Voir plus de liens cassés ({{ analysis.brokenLinks.length - brokenLinksToShow }} restants)
+          </button>
         </div>
       </div>
 
@@ -118,13 +128,34 @@
 </template>
 
 <script setup>
+import { ref, computed } from 'vue'
+
 // eslint-disable-next-line no-undef
-defineProps({
+const props = defineProps({
   analysis: {
     type: Object,
     required: true
   }
 })
+
+const pagesToShow = ref(10)
+const brokenLinksToShow = ref(10)
+
+const displayedPages = computed(() => {
+  return props.analysis.internalPages?.slice(0, pagesToShow.value) || []
+})
+
+const displayedBrokenLinks = computed(() => {
+  return props.analysis.brokenLinks?.slice(0, brokenLinksToShow.value) || []
+})
+
+const showMorePages = () => {
+  pagesToShow.value += 20
+}
+
+const showMoreBrokenLinks = () => {
+  brokenLinksToShow.value += 20
+}
 
 const getScoreClass = (score) => {
   if (!score || score === 0) return 'score-poor'
@@ -335,5 +366,26 @@ const getScoreClass = (score) => {
   color: #856404;
   line-height: 1.5;
   font-size: 1rem;
+}
+
+.show-more-container {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.show-more-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.show-more-btn:hover {
+  transform: translateY(-2px);
 }
 </style> 

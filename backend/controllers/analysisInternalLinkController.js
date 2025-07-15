@@ -96,11 +96,11 @@ const getAnalysisInternalLink = async (req, res) => {
           id: analysis._id,
           url: analysis.url,
           internalLinkScore: analysis.internalLinkScore,
-          totalInternalLinks: analysis.metrics.totalInternalLinks,
-          totalExternalLinks: analysis.metrics.totalExternalLinks,
-          brokenLinks: analysis.metrics.brokenLinks,
-          uniqueInternalPages: analysis.metrics.uniqueInternalPages,
-          averageInternalLinksPerPage: analysis.metrics.averageInternalLinksPerPage,
+          metrics: analysis.metrics,
+          internalPages: analysis.internalPages,
+          brokenLinks: analysis.brokenLinks,
+          internalLinkElements: analysis.internalLinkElements,
+          analysis: analysis.analysis,
           createdAt: analysis.createdAt
         })),
         pagination: {

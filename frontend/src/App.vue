@@ -25,7 +25,9 @@ const route = useRoute()
 
 // Déterminer si nous sommes sur la page Application
 const isApplicationPage = computed(() => {
-  return route.path === '/verify-text'
+  return route.path === '/verify-text' || 
+         route.path === '/verify-page' || 
+         route.path === '/internal-link-analysis'
 })
 
 onMounted(() => {

@@ -53,11 +53,15 @@
           <div class="analysis-stats">
             <div v-if="analysis.type === 'internal-link'" class="stat">
               <span class="stat-label">🔗</span>
-              <span class="stat-value">{{ analysis.totalInternalLinks }}</span>
+              <span class="stat-value">{{ analysis.metrics?.totalInternalLinks || analysis.totalInternalLinks || 0 }}</span>
             </div>
             <div v-if="analysis.type === 'internal-link'" class="stat">
               <span class="stat-label">❌</span>
-              <span class="stat-value">{{ analysis.brokenLinks }}</span>
+              <span class="stat-value">{{ analysis.metrics?.brokenLinks || analysis.brokenLinks || 0 }}</span>
+            </div>
+            <div v-if="analysis.type === 'internal-link'" class="stat">
+              <span class="stat-label">📄</span>
+              <span class="stat-value">{{ analysis.metrics?.uniqueInternalPages || analysis.uniqueInternalPages || 0 }}</span>
             </div>
             <div v-if="analysis.type !== 'internal-link'" class="stat">
               <span class="stat-label">📝</span>

@@ -1,7 +1,7 @@
 <template>
   <div class="internal-link-analysis">
     <!-- Affichage du formulaire d'analyse -->
-    <div v-if="!selectedAnalysis" class="analysis-form-section">
+    <div v-if="!props.selectedAnalysis" class="analysis-form-section">
       <div class="analysis-header">
         <h2 class="analysis-title">Analyse du maillage interne</h2>
         <p class="analysis-description">
@@ -54,7 +54,7 @@
           ← Retour à l'analyse
         </button>
       </div>
-      <AnalysisResultInternalLink :analysis="selectedAnalysis" />
+      <AnalysisResultInternalLink :analysis="props.selectedAnalysis" />
     </div>
   </div>
 </template>
@@ -123,37 +123,16 @@ const analyzeInternalLinks = async () => {
 // Watcher pour détecter quand une analyse est sélectionnée
 watch(() => props.selectedAnalysis, (newAnalysis) => {
   if (newAnalysis) {
-    // Si l'analyse a déjà les détails complets, l'utiliser directement
-    if (newAnalysis.metrics && newAnalysis.internalPages) {
-      analysisResult.value = newAnalysis
-      url.value = newAnalysis.url
-    } else {
-      // Sinon, charger les détails complets de l'analyse
-      loadAnalysisDetails(newAnalysis.id)
-    }
+    // Utiliser directement les données complètes de l'historique
+    analysisResult.value = newAnalysis
+    url.value = newAnalysis.url
   } else {
     // Nettoyer le formulaire si aucune analyse n'est sélectionnée
     clearForm()
   }
 }, { immediate: true })
 
-const loadAnalysisDetails = async (analysisId) => {
-  try {
-    const headers = getAuthHeaders()
-    const response = await fetch(`http://localhost:3000/api/analysis-internal-link/${analysisId}`, {
-      method: 'GET',
-      headers: headers
-    })
-    
-    if (response.ok) {
-      const data = await response.json()
-      analysisResult.value = data.data.analysis
-      url.value = data.data.analysis.url
-    }
-  } catch (error) {
-    console.error('Erreur lors du chargement des détails:', error)
-  }
-}
+// Fonction supprimée car les données complètes sont maintenant dans l'historique
 
 // Fonction pour nettoyer le formulaire
 const clearForm = () => {
