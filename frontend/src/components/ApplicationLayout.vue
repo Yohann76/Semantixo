@@ -3,7 +3,7 @@
     <AppSidebar />
     <AnalysisHistory v-if="historyType" ref="historyRef" :type="historyType" @select-analysis="handleAnalysisSelect" />
     <div class="app-main-content" :class="{ 'with-history': historyType }">
-      <slot :selected-analysis="selectedAnalysis" @clear-form="clearForm" />
+      <slot :selected-analysis="selectedAnalysis" :clear-form="clearForm" />
     </div>
   </div>
 </template>
