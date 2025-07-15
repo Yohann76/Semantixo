@@ -27,7 +27,8 @@ const route = useRoute()
 const isApplicationPage = computed(() => {
   return route.path === '/verify-text' || 
          route.path === '/verify-page' || 
-         route.path === '/internal-link-analysis'
+         route.path === '/internal-link-analysis' ||
+         route.path === '/domain-analysis'
 })
 
 onMounted(() => {

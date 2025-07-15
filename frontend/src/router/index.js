@@ -26,6 +26,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/domain-analysis',
+    name: 'DomainAnalysis',
+    component: () => import('../components/DomainAnalysisPage.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/app',
     name: 'AppDashboard',
     component: () => import('../components/AppDashboard.vue'),

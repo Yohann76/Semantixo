@@ -45,6 +45,7 @@
               {{ 
                 analysis.type === 'page' ? '🌐' : 
                 analysis.type === 'internal-link' ? '🔗' : 
+                analysis.type === 'domain' ? '🌐' :
                 '📝' 
               }}
             </div>
@@ -63,11 +64,23 @@
               <span class="stat-label">📄</span>
               <span class="stat-value">{{ analysis.metrics?.uniqueInternalPages || analysis.uniqueInternalPages || 0 }}</span>
             </div>
-            <div v-if="analysis.type !== 'internal-link'" class="stat">
+            <div v-if="analysis.type === 'domain'" class="stat">
+              <span class="stat-label">📏</span>
+              <span class="stat-value">{{ analysis.metrics?.domainLength || 0 }}</span>
+            </div>
+            <div v-if="analysis.type === 'domain'" class="stat">
+              <span class="stat-label">⭐</span>
+              <span class="stat-value">{{ analysis.metrics?.domainAuthority || 0 }}</span>
+            </div>
+            <div v-if="analysis.type === 'domain'" class="stat">
+              <span class="stat-label">📖</span>
+              <span class="stat-value">{{ analysis.metrics?.domainReadability || 0 }}%</span>
+            </div>
+            <div v-if="analysis.type !== 'internal-link' && analysis.type !== 'domain'" class="stat">
               <span class="stat-label">📝</span>
               <span class="stat-value">{{ analysis.wordCount }}</span>
             </div>
-            <div v-if="analysis.type !== 'internal-link'" class="stat">
+            <div v-if="analysis.type !== 'internal-link' && analysis.type !== 'domain'" class="stat">
               <span class="stat-label">🔤</span>
               <span class="stat-value">{{ analysis.characterCount }}</span>
             </div>
@@ -88,7 +101,7 @@ const props = defineProps({
     type: String,
     default: 'text',
     validator: function(value) {
-      return ['text', 'page', 'internal-link'].includes(value)
+      return ['text', 'page', 'internal-link', 'domain'].includes(value)
     }
   }
 })
@@ -109,6 +122,7 @@ const filteredAnalyses = computed(() => {
 const historyTitle = computed(() => {
   if (props.type === 'page') return 'Analyses récentes de page SEO'
   if (props.type === 'internal-link') return 'Analyses récentes de maillage interne'
+  if (props.type === 'domain') return 'Analyses récentes de noms de domaine'
   return 'Analyses récentes de texte SEO'
 })
 
@@ -132,6 +146,11 @@ const loadAnalyses = async () => {
     })
     // Charger les analyses de maillage interne
     const internalLinkResponse = await fetch('http://localhost:3000/api/analysis-internal-link', {
+      method: 'GET',
+      headers: headers
+    })
+    // Charger les analyses de domaine
+    const domainResponse = await fetch('http://localhost:3000/api/analysis-domain', {
       method: 'GET',
       headers: headers
     })
@@ -163,6 +182,15 @@ const loadAnalyses = async () => {
       }))
       allAnalyses = allAnalyses.concat(internalLinkAnalyses)
     }
+    if (domainResponse.ok) {
+      const domainData = await domainResponse.json()
+      const domainAnalyses = domainData.data.analyses.map(analysis => ({
+        ...analysis,
+        type: 'domain',
+        displayText: analysis.domain
+      }))
+      allAnalyses = allAnalyses.concat(domainAnalyses)
+    }
     // Trier par date de création (plus récent en premier)
     allAnalyses.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     analyses.value = allAnalyses
@@ -191,6 +219,9 @@ const getAnalysisScore = (analysis) => {
   if (analysis.type === 'internal-link') {
     return analysis.internalLinkScore
   }
+  if (analysis.type === 'domain') {
+    return analysis.domainScore
+  }
   return analysis.seoScore
 }
 
@@ -214,6 +245,8 @@ const goToNewAnalysis = () => {
     window.location.href = '/verify-page'
   } else if (props.type === 'internal-link') {
     window.location.href = '/internal-link-analysis'
+  } else if (props.type === 'domain') {
+    window.location.href = '/domain-analysis'
   } else {
     window.location.href = '/verify-text'
   }

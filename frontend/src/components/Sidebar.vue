@@ -21,9 +21,9 @@
           <i class="nav-icon">🔗</i>
           <span>Analyse du maillage interne</span>
         </router-link>
-        <router-link to="/verify-domains" class="nav-item" active-class="active">
-          <i class="nav-icon">📊</i>
-          <span>[feat] Analyse du nom de domaine</span>
+        <router-link to="/domain-analysis" class="nav-item" active-class="active">
+          <i class="nav-icon">🌐</i>
+          <span>Analyse du nom de domaine</span>
         </router-link>
       </div>
       

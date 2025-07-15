@@ -10,6 +10,7 @@ const adminRoutes = require('./routes/admin');
 const analysisTextSeoRoutes = require('./routes/analysisTextSeo');
 const analysisPageSeoRoutes = require('./routes/analysisPageSeo');
 const analysisInternalLinkRoutes = require('./routes/analysisInternalLink');
+const analysisDomainRoutes = require('./routes/analysisDomain');
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/analysis-text-seo', analysisTextSeoRoutes);
 app.use('/api/analysis-page-seo', analysisPageSeoRoutes);
 app.use('/api/analysis-internal-link', analysisInternalLinkRoutes);
+app.use('/api/analysis-domain', analysisDomainRoutes);
 
 // Route de test
 app.get('/api/test', (req, res) => {
