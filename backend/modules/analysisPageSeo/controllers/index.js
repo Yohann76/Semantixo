@@ -1,5 +1,5 @@
-const AnalysisPageSeo = require('../models/AnalysisPageSeo');
-const AnalyzerPageSeo = require('../utils/AnalyzerPageSeo');
+const AnalysisPageSeo = require('../models');
+const AnalyzerPageSeo = require('../utils');
 
 // @desc    Créer une nouvelle analyse de page SEO
 // @route   POST /api/analysis-page-seo

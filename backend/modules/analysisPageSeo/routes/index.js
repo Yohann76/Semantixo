@@ -6,8 +6,8 @@ const {
   getAnalysisPageSeoById,
   deleteAnalysisPageSeo,
   getAnalysisPageSeoStats
-} = require('../controllers/analysisPageSeoController');
-const { protect } = require('../middleware/auth');
+} = require('../controllers');
+const { protect } = require('../../../middleware/auth');
 
 // Toutes les routes nécessitent une authentification
 router.use(protect);

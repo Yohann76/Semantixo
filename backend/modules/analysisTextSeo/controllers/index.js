@@ -1,5 +1,5 @@
-const AnalysisTextSeo = require('../models/AnalysisTextSeo');
-const AnalyzerTextSeo = require('../utils/AnalyzerTextSeo');
+const AnalysisTextSeo = require('../models/index');
+const AnalyzerTextSeo = require('../utils/index');
 
 // @desc    Créer une nouvelle analyse de texte SEO
 // @route   POST /api/analysis-text-seo

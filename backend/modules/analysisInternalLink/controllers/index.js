@@ -1,5 +1,5 @@
-const AnalysisInternalLink = require('../models/AnalysisInternalLink');
-const AnalyzerInternalLink = require('../utils/AnalyzerInternalLink');
+const AnalysisInternalLink = require('../models');
+const AnalyzerInternalLink = require('../utils');
 
 // @desc    Créer une nouvelle analyse de maillage interne
 // @route   POST /api/analysis-internal-link

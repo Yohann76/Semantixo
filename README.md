@@ -11,36 +11,11 @@ This project is a text SEO analysis application with a complete frontend/backend
 - **Text SEO analysis** with database storage
 - **Complete REST API** with JWT
 - **MongoDB database** with Mongoose
+- **Modular architecture** for different analysis types
 
 ## 🛠️ Architecture
 
 ### Backend - Node.js (Express + MongoDB)
-
-The backend provides a complete REST API with authentication:
-
-#### 🔐 **Authentication Routes** (`/api/auth`)
-- `POST /register` - Register a new user
-- `POST /login` - User login
-- `GET /me` - Get user profile (protected)
-- `PUT /me` - Update user profile (protected)
-
-#### 📊 **SEO Analysis Routes** (`/api/analysis`)
-- `POST /` - Create a new SEO analysis (protected)
-- `GET /` - Get user analyses (protected)
-- `GET /:id` - Get specific analysis (protected)
-- `DELETE /:id` - Delete analysis (protected)
-
-#### 👨‍💼 **Admin Routes** (`/api/admin`) - Admin only
-- `GET /users` - Get all users
-- `GET /users/:id` - Get specific user
-- `PUT /users/:id/role` - Update user role
-- `DELETE /users/:id` - Delete user
-- `GET /stats` - Get user statistics
-
-#### 🧪 **Test Routes**
-- `GET /` - API information
-- `GET /api/test` - API test
-- `GET /api/hello/:name` - Test with parameter
 
 #### Installation and startup
 
@@ -75,7 +50,7 @@ The application will be available at: http://localhost:8081/
 
 ### Configuration
 - **Local database**: `mongodb://localhost:27017/semantixo`
-- **Models**: User, Analysis
+- **Models**: User, AnalysisTextSeo, AnalysisPageSeo, AnalysisInternalLink, AnalysisDomain
 - **ODM**: Mongoose
 
 ### Data Models
@@ -94,7 +69,7 @@ The application will be available at: http://localhost:8081/
 }
 ```
 
-#### Analysis
+#### AnalysisTextSeo
 ```javascript
 {
   userId: ObjectId,
@@ -104,6 +79,52 @@ The application will be available at: http://localhost:8081/
     wordCount: Number,
     characterCount: Number
   },
+  timestamps
+}
+```
+
+#### AnalysisPageSeo
+```javascript
+{
+  userId: ObjectId,
+  url: String,
+  pageTitle: String,
+  metaDescription: String,
+  seoScore: Number,
+  metrics: {
+    wordCount: Number,
+    characterCount: Number,
+    headingCount: Number,
+    imageCount: Number,
+    linkCount: Number
+  },
+  seoElements: Object,
+  timestamps
+}
+```
+
+#### AnalysisInternalLink
+```javascript
+{
+  userId: ObjectId,
+  url: String,
+  internalLinks: Array,
+  linkStructure: Object,
+  seoScore: Number,
+  metrics: Object,
+  timestamps
+}
+```
+
+#### AnalysisDomain
+```javascript
+{
+  userId: ObjectId,
+  domain: String,
+  domainAuthority: Number,
+  backlinks: Array,
+  seoScore: Number,
+  metrics: Object,
   timestamps
 }
 ```
@@ -121,32 +142,65 @@ The application will be available at: http://localhost:8081/
 ```
 Semantixo/
 ├── backend/
+│   ├── modules/                    # Structure modulaire
+│   │   ├── analysisTextSeo/
+│   │   │   ├── controllers/
+│   │   │   │   └── index.js       # Contrôleurs texte SEO
+│   │   │   ├── models/
+│   │   │   │   └── index.js       # Modèle texte SEO
+│   │   │   ├── routes/
+│   │   │   │   └── index.js       # Routes texte SEO
+│   │   │   ├── utils/
+│   │   │   │   └── index.js       # Utilitaires texte SEO
+│   │   │   └── index.js           # Export module
+│   │   ├── analysisPageSeo/
+│   │   │   ├── controllers/
+│   │   │   ├── models/
+│   │   │   ├── routes/
+│   │   │   ├── utils/
+│   │   │   └── index.js           # Export module
+│   │   ├── analysisInternalLink/
+│   │   │   ├── controllers/
+│   │   │   ├── models/
+│   │   │   ├── routes/
+│   │   │   ├── utils/
+│   │   │   └── index.js           # Export module
+│   │   ├── analysisDomain/
+│   │   │   ├── controllers/
+│   │   │   ├── models/
+│   │   │   ├── routes/
+│   │   │   ├── utils/
+│   │   │   └── index.js           # Export module
+│   │   └── index.js               # Export tous modules
 │   ├── config/
-│   │   └── database.js          # MongoDB configuration
+│   │   └── database.js            # MongoDB configuration
 │   ├── controllers/
-│   │   ├── authController.js    # Authentication controller
-│   │   └── analysisController.js # Analysis controller
+│   │   ├── adminController.js     # Admin controller
+│   │   └── authController.js      # Auth controller
 │   ├── middleware/
-│   │   └── auth.js              # JWT middleware
+│   │   ├── auth.js                # JWT middleware
+│   │   └── roleAuth.js            # Role middleware
 │   ├── models/
-│   │   ├── User.js              # User model
-│   │   └── Analysis.js          # Analysis model
+│   │   └── User.js                # User model
 │   ├── routes/
-│   │   ├── auth.js              # Authentication routes
-│   │   └── analysis.js          # Analysis routes
-│   ├── config.env               # Environment variables
-│   ├── index.js                 # Main server
+│   │   ├── admin.js               # Admin routes
+│   │   ├── auth.js                # Auth routes
+│   │   └── modules.js             # Routes modulaires
+│   ├── scripts/
+│   │   └── createDefaultUsers.js  # Script utilisateurs
+│   ├── config.env                 # Environment variables
+│   ├── index.js                   # Main server
 │   └── package.json
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── Home.vue         # Homepage
-│   │   │   ├── Navbar.vue       # Navigation
-│   │   │   └── VerifyText.vue   # Analysis page
+│   │   │   ├── Home.vue           # Homepage
+│   │   │   ├── Navbar.vue         # Navigation
+│   │   │   └── VerifyText.vue     # Analysis page
 │   │   ├── router/
-│   │   │   └── index.js         # Vue Router configuration
-│   │   ├── App.vue              # Main component
-│   │   └── main.js              # Entry point
+│   │   │   └── index.js           # Vue Router configuration
+│   │   ├── App.vue                # Main component
+│   │   └── main.js                # Entry point
 │   └── package.json
 └── README.md
 ```

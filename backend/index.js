@@ -7,10 +7,7 @@ const mongoose = require('mongoose');
 // Import des routes
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
-const analysisTextSeoRoutes = require('./routes/analysisTextSeo');
-const analysisPageSeoRoutes = require('./routes/analysisPageSeo');
-const analysisInternalLinkRoutes = require('./routes/analysisInternalLink');
-const analysisDomainRoutes = require('./routes/analysisDomain');
+const modulesRoutes = require('./routes/modules');
 
 const app = express();
 
@@ -21,22 +18,20 @@ app.use(express.json());
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/analysis-text-seo', analysisTextSeoRoutes);
-app.use('/api/analysis-page-seo', analysisPageSeoRoutes);
-app.use('/api/analysis-internal-link', analysisInternalLinkRoutes);
-app.use('/api/analysis-domain', analysisDomainRoutes);
+app.use('/api', modulesRoutes);
 
 // Route de test
 app.get('/api/test', (req, res) => {
   res.json({
     message: 'API Semantixo fonctionnelle',
     version: '1.0.0',
-    endpoints: {
+    modules: {
       auth: '/api/auth',
       admin: '/api/admin',
       analysisTextSeo: '/api/analysis-text-seo',
       analysisPageSeo: '/api/analysis-page-seo',
       analysisInternalLink: '/api/analysis-internal-link',
+      analysisDomain: '/api/analysis-domain',
     },
     features: ['SEO Analysis', 'Text Processing', 'User Authentication', 'Database Integration'],
     timestamp: new Date().toISOString()

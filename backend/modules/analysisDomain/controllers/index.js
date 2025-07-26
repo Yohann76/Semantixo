@@ -1,5 +1,5 @@
-const AnalysisDomain = require('../models/AnalysisDomain');
-const AnalyzerDomain = require('../utils/AnalyzerDomain');
+const AnalysisDomain = require('../models');
+const AnalyzerDomain = require('../utils');
 
 // @desc    Créer une nouvelle analyse de nom de domaine
 // @route   POST /api/analysis-domain

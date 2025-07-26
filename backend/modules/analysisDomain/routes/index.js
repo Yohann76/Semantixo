@@ -6,13 +6,13 @@ const {
   getAnalysisDomainById,
   deleteAnalysisDomain,
   getAnalysisDomainStats
-} = require('../controllers/analysisDomainController');
-const { protect } = require('../middleware/auth');
+} = require('../controllers');
+const { protect } = require('../../../middleware/auth');
 
-// Routes protégées
+// Toutes les routes nécessitent une authentification
 router.use(protect);
 
-// Routes pour l'analyse de nom de domaine
+// Routes pour les analyses de domaine
 router.route('/')
   .post(createAnalysisDomain)
   .get(getAnalysisDomain);
