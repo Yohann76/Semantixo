@@ -7,10 +7,47 @@
           <div v-if="!selectedAnalysis" class="analysis-form-section">
             <h1 class="page-title">Analyse SEO de Texte</h1>
             <p class="page-description">
-              Analysez votre texte pour optimiser son référencement SEO
+              Analysez votre texte pour optimiser son référencement SEO avec notre système de barème avancé
             </p>
           
             <div class="analysis-form">
+              <!-- Mots-clés -->
+              <div class="form-group">
+                <label for="keywords-input" class="form-label">
+                  Mots-clés ciblés (optionnel) :
+                </label>
+                <input 
+                  id="keywords-input"
+                  v-model="keywordsInput"
+                  class="keywords-input"
+                  placeholder="Entrez vos mots-clés séparés par des virgules..."
+                  type="text"
+                />
+                <small class="form-help">
+                  Exemple : SEO, référencement, optimisation
+                </small>
+              </div>
+
+              <!-- Intention de recherche -->
+              <div class="form-group">
+                <label for="search-intent" class="form-label">
+                  Intention de recherche :
+                </label>
+                <select 
+                  id="search-intent"
+                  v-model="searchIntent"
+                  class="search-intent-select"
+                >
+                  <option value="informationnelle">Informationnelle</option>
+                  <option value="transactionnelle">Transactionnelle</option>
+                  <option value="navigationnelle">Navigationnelle</option>
+                </select>
+                <small class="form-help">
+                  Définissez l'intention principale de votre contenu
+                </small>
+              </div>
+
+              <!-- Texte à analyser -->
               <div class="form-group">
                 <label for="text-input" class="form-label">Texte à analyser :</label>
                 <textarea 
@@ -20,6 +57,9 @@
                   placeholder="Collez votre texte ici pour l'analyse SEO..."
                   rows="8"
                 ></textarea>
+                <small class="form-help">
+                  Minimum recommandé : 600 mots pour un contenu optimal
+                </small>
               </div>
               
               <div class="form-actions">
@@ -28,6 +68,7 @@
                   :disabled="!textToAnalyze.trim() || loading"
                   class="analyze-btn"
                 >
+                  <span v-if="loading" class="loading-spinner">⏳</span>
                   {{ loading ? 'Analyse en cours...' : 'Analyser le texte' }}
                 </button>
               </div>
@@ -59,13 +100,15 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useAuth } from '../composables/useGlobalStores.js'
-import ApplicationLayout from './ApplicationLayout.vue'
+import ApplicationLayout from './common/ApplicationLayout.vue'
 import AnalysisResult from './AnalysisResult.vue'
 
 // État réactif
 const textToAnalyze = ref('')
+const keywordsInput = ref('')
+const searchIntent = ref('informationnelle')
 const analysisResult = ref(null)
 const error = ref(null)
 const loading = ref(false)
@@ -75,9 +118,20 @@ const selectedAnalysis = ref(null)
 // Utilisation du composable d'authentification
 const { isAuthenticated, getAuthHeaders } = useAuth()
 
+// Computed pour parser les mots-clés
+const keywords = computed(() => {
+  if (!keywordsInput.value.trim()) return []
+  return keywordsInput.value
+    .split(',')
+    .map(keyword => keyword.trim())
+    .filter(keyword => keyword.length > 0)
+})
+
 // Fonction pour nettoyer le formulaire
 const clearForm = () => {
   textToAnalyze.value = ''
+  keywordsInput.value = ''
+  searchIntent.value = 'informationnelle'
   analysisResult.value = null
   error.value = null
   loading.value = false
@@ -120,28 +174,56 @@ const analyzeText = async () => {
 
     const headers = getAuthHeaders()
     
+    const requestBody = {
+      text: textToAnalyze.value,
+      keywords: keywords.value,
+      searchIntent: searchIntent.value
+    }
+
+    console.log('📊 [VERIFY] Envoi analyse:', {
+      textLength: textToAnalyze.value.length,
+      keywordsCount: keywords.value.length,
+      searchIntent: searchIntent.value
+    })
+    
     const response = await fetch('http://localhost:3000/api/analysis-text-seo', {
       method: 'POST',
-      headers: headers,
-      body: JSON.stringify({
-        text: textToAnalyze.value
-      })
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(requestBody)
     })
     
     const data = await response.json()
     
     if (response.ok) {
-      analysisResult.value = data.data.analysis
+      analysisResult.value = data.data
+      console.log('✅ [VERIFY] Analyse réussie:', {
+        seoScore: data.data.seoScore,
+        notation: data.data.notation
+      })
+      
       // Rafraîchir l'historique après une analyse réussie
       if (layoutRef.value) {
         layoutRef.value.refreshAnalyses()
       }
     } else {
-      error.value = data.message || 'Erreur lors de l\'analyse'
+      // Gestion des erreurs spécifiques
+      if (response.status === 400) {
+        error.value = data.message || 'Données invalides'
+      } else if (response.status === 401) {
+        error.value = 'Session expirée. Veuillez vous reconnecter.'
+      } else if (response.status === 500) {
+        error.value = data.message || 'Erreur serveur lors de l\'analyse'
+      } else {
+        error.value = data.message || `Erreur ${response.status}: ${response.statusText}`
+      }
+      console.error('❌ [VERIFY] Erreur analyse:', data)
     }
   } catch (err) {
-    error.value = `Erreur lors de l'analyse: ${err.message}`
-    console.error('Erreur analyse:', err)
+    error.value = `Erreur de connexion: ${err.message}`
+    console.error('❌ [VERIFY] Erreur réseau:', err)
   } finally {
     loading.value = false
   }
@@ -200,8 +282,47 @@ const clearSelection = () => {
   display: block;
   font-weight: 600;
   color: #333;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   font-size: 1.1rem;
+}
+
+.form-help {
+  display: block;
+  font-size: 0.85rem;
+  color: #6c757d;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+.keywords-input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.3s;
+}
+
+.keywords-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.search-intent-select {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 1rem;
+  background: white;
+  transition: border-color 0.3s;
+}
+
+.search-intent-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 .text-input {
@@ -223,6 +344,7 @@ const clearSelection = () => {
 
 .form-actions {
   text-align: center;
+  margin-top: 30px;
 }
 
 .analyze-btn {
@@ -236,6 +358,12 @@ const clearSelection = () => {
   cursor: pointer;
   transition: all 0.3s;
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 200px;
+  margin: 0 auto;
 }
 
 .analyze-btn:hover:not(:disabled) {
@@ -248,6 +376,15 @@ const clearSelection = () => {
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+}
+
+.loading-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .analysis-result {

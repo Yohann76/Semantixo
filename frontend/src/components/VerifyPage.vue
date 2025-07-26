@@ -64,7 +64,7 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { useAuth } from '../composables/useGlobalStores.js'
-import ApplicationLayout from './ApplicationLayout.vue'
+import ApplicationLayout from './common/ApplicationLayout.vue'
 import AnalysisResult from './AnalysisResult.vue'
 
 // État réactif

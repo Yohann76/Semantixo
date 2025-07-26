@@ -1,117 +1,122 @@
 const AnalysisTextSeo = require('../models/index');
-const AnalyzerTextSeo = require('../utils/index');
+const { analyzeTextSeo, getBaremeConfiguration, validateBaremeConfiguration } = require('../utils/index');
 
-// @desc    Créer une nouvelle analyse de texte SEO
-// @route   POST /api/analysis-text-seo
-// @access  Private
-const createAnalysisTextSeo = async (req, res) => {
+// Créer une nouvelle analyse de texte SEO
+const createAnalysis = async (req, res) => {
   try {
-    const { text } = req.body;
+    const { text, keywords = [], searchIntent = 'informationnelle' } = req.body;
+    const userId = req.user.id;
 
-    if (!text || text.trim().length === 0) {
+    if (!text || typeof text !== 'string') {
       return res.status(400).json({
         success: false,
-        message: 'Le texte à analyser est requis'
+        message: 'Le texte à analyser est requis et doit être une chaîne de caractères'
       });
     }
 
-    if (text.length > 10000) {
-      return res.status(400).json({
-        success: false,
-        message: 'Le texte ne peut pas dépasser 10000 caractères'
-      });
-    }
-
-    // Analyser le texte SEO
-    const analysisResult = await AnalyzerTextSeo.analyze(text);
-
-    // Créer l'analyse dans la base de données
-    const analysis = await AnalysisTextSeo.create({
-      userId: req.user._id,
-      text: text,
-      seoScore: analysisResult.seoScore,
-      metrics: analysisResult.metrics
+    console.log('📊 [CONTROLLER] Début analyse SEO texte:', {
+      userId,
+      textLength: text.length,
+      keywordsCount: keywords.length,
+      searchIntent
     });
 
-    console.log('✅ [ANALYSIS] Analyse créée:', analysis._id);
+    // Analyse SEO avec le nouveau système de barème
+    const analysisResults = analyzeTextSeo(text, keywords, searchIntent);
+
+    if (!analysisResults.success) {
+      return res.status(500).json({
+        success: false,
+        message: 'Erreur lors de l\'analyse SEO',
+        error: analysisResults.error
+      });
+    }
+
+    // Créer l'analyse dans la base de données
+    const analysis = new AnalysisTextSeo({
+      userId,
+      text,
+      seoScore: analysisResults.seoScore,
+      metrics: analysisResults.basicMetrics,
+      baremeResults: analysisResults.baremeResults,
+      keywords,
+      searchIntent,
+      timestamp: new Date()
+    });
+
+    await analysis.save();
+
+    console.log('✅ [CONTROLLER] Analyse SEO créée avec succès:', {
+      analysisId: analysis._id,
+      seoScore: analysisResults.seoScore,
+      notation: analysisResults.baremeResults.notation
+    });
 
     res.status(201).json({
       success: true,
-      message: 'Analyse créée avec succès',
+      message: 'Analyse SEO créée avec succès',
       data: {
-        analysis: analysis.toObject()
+        id: analysis._id,
+        seoScore: analysisResults.seoScore,
+        notation: analysisResults.baremeResults.notation,
+        baremeResults: analysisResults.baremeResults,
+        basicMetrics: analysisResults.basicMetrics,
+        timestamp: analysis.timestamp
       }
     });
 
   } catch (error) {
-    console.error('Erreur createAnalysisTextSeo:', error);
+    console.error('❌ [CONTROLLER] Erreur création analyse:', error);
     res.status(500).json({
       success: false,
-      message: 'Erreur lors de la création de l\'analyse'
+      message: 'Erreur lors de la création de l\'analyse',
+      error: error.message
     });
   }
 };
 
-// @desc    Récupérer toutes les analyses de l'utilisateur
-// @route   GET /api/analysis-text-seo
-// @access  Private
-const getAnalysisTextSeo = async (req, res) => {
+// Récupérer toutes les analyses de l'utilisateur
+const getAnalyses = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
+    const userId = req.user.id;
+    const analyses = await AnalysisTextSeo.find({ userId }).sort({ createdAt: -1 });
 
-    // Récupérer les analyses avec pagination
-    const analyses = await AnalysisTextSeo.find({ userId: req.user._id })
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
-
-    // Compter le total d'analyses
-    const total = await AnalysisTextSeo.countDocuments({ userId: req.user._id });
-
-    console.log('✅ [ANALYSIS] Analyses récupérées:', analyses.length);
+    console.log('📊 [CONTROLLER] Récupération analyses utilisateur:', {
+      userId,
+      count: analyses.length
+    });
 
     res.json({
       success: true,
-      data: {
-        analyses: analyses.map(analysis => ({
-          id: analysis._id,
-          text: analysis.text,
-          seoScore: analysis.seoScore,
-          wordCount: analysis.metrics.wordCount,
-          characterCount: analysis.metrics.characterCount,
-          createdAt: analysis.createdAt
-        })),
-        pagination: {
-          page,
-          limit,
-          total,
-          pages: Math.ceil(total / limit)
-        }
-      }
+      data: analyses.map(analysis => ({
+        id: analysis._id,
+        text: analysis.text.substring(0, 100) + '...',
+        seoScore: analysis.seoScore,
+        notation: analysis.baremeResults?.notation || 'Non évalué',
+        keywords: analysis.keywords,
+        searchIntent: analysis.searchIntent,
+        metrics: analysis.metrics,
+        timestamp: analysis.createdAt
+      }))
     });
 
   } catch (error) {
-    console.error('Erreur getAnalysisTextSeo:', error);
+    console.error('❌ [CONTROLLER] Erreur récupération analyses:', error);
     res.status(500).json({
       success: false,
-      message: 'Erreur lors de la récupération des analyses'
+      message: 'Erreur lors de la récupération des analyses',
+      error: error.message
     });
   }
 };
 
-// @desc    Récupérer une analyse spécifique
-// @route   GET /api/analysis-text-seo/:id
-// @access  Private
-const getAnalysisTextSeoById = async (req, res) => {
+// Récupérer une analyse spécifique
+const getAnalysis = async (req, res) => {
   try {
     const { id } = req.params;
+    const userId = req.user.id;
 
-    const analysis = await AnalysisTextSeo.findOne({
-      _id: id,
-      userId: req.user._id
-    });
+    const analysis = await AnalysisTextSeo.findOne({ _id: id, userId });
 
     if (!analysis) {
       return res.status(404).json({
@@ -120,35 +125,43 @@ const getAnalysisTextSeoById = async (req, res) => {
       });
     }
 
-    console.log('✅ [ANALYSIS] Analyse récupérée:', analysis._id);
+    console.log('📊 [CONTROLLER] Récupération analyse spécifique:', {
+      analysisId: id,
+      userId
+    });
 
     res.json({
       success: true,
       data: {
-        analysis: analysis.toObject()
+        id: analysis._id,
+        text: analysis.text,
+        seoScore: analysis.seoScore,
+        notation: analysis.baremeResults?.notation || 'Non évalué',
+        keywords: analysis.keywords,
+        searchIntent: analysis.searchIntent,
+        metrics: analysis.metrics,
+        baremeResults: analysis.baremeResults,
+        timestamp: analysis.createdAt
       }
     });
 
   } catch (error) {
-    console.error('Erreur getAnalysisTextSeoById:', error);
+    console.error('❌ [CONTROLLER] Erreur récupération analyse:', error);
     res.status(500).json({
       success: false,
-      message: 'Erreur lors de la récupération de l\'analyse'
+      message: 'Erreur lors de la récupération de l\'analyse',
+      error: error.message
     });
   }
 };
 
-// @desc    Supprimer une analyse
-// @route   DELETE /api/analysis-text-seo/:id
-// @access  Private
-const deleteAnalysisTextSeo = async (req, res) => {
+// Supprimer une analyse
+const deleteAnalysis = async (req, res) => {
   try {
     const { id } = req.params;
+    const userId = req.user.id;
 
-    const analysis = await AnalysisTextSeo.findOneAndDelete({
-      _id: id,
-      userId: req.user._id
-    });
+    const analysis = await AnalysisTextSeo.findOneAndDelete({ _id: id, userId });
 
     if (!analysis) {
       return res.status(404).json({
@@ -157,7 +170,10 @@ const deleteAnalysisTextSeo = async (req, res) => {
       });
     }
 
-    console.log('✅ [ANALYSIS] Analyse supprimée:', analysis._id);
+    console.log('🗑️ [CONTROLLER] Analyse supprimée:', {
+      analysisId: id,
+      userId
+    });
 
     res.json({
       success: true,
@@ -165,70 +181,140 @@ const deleteAnalysisTextSeo = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Erreur deleteAnalysisTextSeo:', error);
+    console.error('❌ [CONTROLLER] Erreur suppression analyse:', error);
     res.status(500).json({
       success: false,
-      message: 'Erreur lors de la suppression de l\'analyse'
+      message: 'Erreur lors de la suppression de l\'analyse',
+      error: error.message
     });
   }
 };
 
-// @desc    Obtenir les statistiques des analyses
-// @route   GET /api/analysis-text-seo/stats
-// @access  Private
-const getAnalysisTextSeoStats = async (req, res) => {
+// Obtenir les statistiques des analyses
+const getStats = async (req, res) => {
   try {
-    const totalAnalyses = await AnalysisTextSeo.countDocuments({ userId: req.user._id });
+    const userId = req.user.id;
+
+    const analyses = await AnalysisTextSeo.find({ userId });
     
-    const avgScore = await AnalysisTextSeo.aggregate([
-      { $match: { userId: req.user._id } },
-      { $group: { _id: null, avgScore: { $avg: '$seoScore' } } }
-    ]);
-
-    const scoreDistribution = await AnalysisTextSeo.aggregate([
-      { $match: { userId: req.user._id } },
-      {
-        $group: {
-          _id: {
-            $switch: {
-              branches: [
-                { case: { $lt: ['$seoScore', 40] }, then: 'Faible' },
-                { case: { $lt: ['$seoScore', 60] }, then: 'Moyen' },
-                { case: { $lt: ['$seoScore', 80] }, then: 'Bon' },
-                { case: { $gte: ['$seoScore', 80] }, then: 'Excellent' }
-              ],
-              default: 'Non classé'
-            }
-          },
-          count: { $sum: 1 }
+    if (analyses.length === 0) {
+      return res.json({
+        success: true,
+        data: {
+          totalAnalyses: 0,
+          averageScore: 0,
+          scoreDistribution: {},
+          notationDistribution: {},
+          topKeywords: [],
+          recentActivity: []
         }
-      }
-    ]);
+      });
+    }
 
-    console.log('✅ [ANALYSIS] Statistiques récupérées');
+    // Calculs statistiques
+    const totalAnalyses = analyses.length;
+    const averageScore = Math.round(analyses.reduce((sum, a) => sum + a.seoScore, 0) / totalAnalyses);
+    
+    // Distribution des scores
+    const scoreDistribution = {
+      '0-20': analyses.filter(a => a.seoScore >= 0 && a.seoScore <= 20).length,
+      '21-40': analyses.filter(a => a.seoScore >= 21 && a.seoScore <= 40).length,
+      '41-60': analyses.filter(a => a.seoScore >= 41 && a.seoScore <= 60).length,
+      '61-80': analyses.filter(a => a.seoScore >= 61 && a.seoScore <= 80).length,
+      '81-100': analyses.filter(a => a.seoScore >= 81 && a.seoScore <= 100).length
+    };
+
+    // Distribution des notations
+    const notationDistribution = {};
+    analyses.forEach(analysis => {
+      const notation = analysis.baremeResults?.notation || 'Non évalué';
+      notationDistribution[notation] = (notationDistribution[notation] || 0) + 1;
+    });
+
+    // Mots-clés les plus utilisés
+    const keywordCount = {};
+    analyses.forEach(analysis => {
+      if (analysis.keywords) {
+        analysis.keywords.forEach(keyword => {
+          keywordCount[keyword] = (keywordCount[keyword] || 0) + 1;
+        });
+      }
+    });
+    const topKeywords = Object.entries(keywordCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([keyword, count]) => ({ keyword, count }));
+
+    // Activité récente
+    const recentActivity = analyses
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .slice(0, 5)
+      .map(analysis => ({
+        id: analysis._id,
+        seoScore: analysis.seoScore,
+        notation: analysis.baremeResults?.notation || 'Non évalué',
+        timestamp: analysis.createdAt
+      }));
+
+    console.log('📊 [CONTROLLER] Statistiques calculées:', {
+      userId,
+      totalAnalyses,
+      averageScore
+    });
 
     res.json({
       success: true,
       data: {
         totalAnalyses,
-        averageScore: avgScore.length > 0 ? Math.round(avgScore[0].avgScore) : 0,
-        scoreDistribution
+        averageScore,
+        scoreDistribution,
+        notationDistribution,
+        topKeywords,
+        recentActivity
       }
     });
 
   } catch (error) {
-    console.error('Erreur getAnalysisTextSeoStats:', error);
+    console.error('❌ [CONTROLLER] Erreur calcul statistiques:', error);
     res.status(500).json({
       success: false,
-      message: 'Erreur lors de la récupération des statistiques'
+      message: 'Erreur lors du calcul des statistiques',
+      error: error.message
+    });
+  }
+};
+
+// Obtenir la configuration du barème
+const getBaremeConfig = async (req, res) => {
+  try {
+    const config = getBaremeConfiguration();
+    const validation = validateBaremeConfiguration();
+
+    console.log('⚙️ [CONTROLLER] Configuration barème récupérée');
+
+    res.json({
+      success: true,
+      data: {
+        configuration: config,
+        validation
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ [CONTROLLER] Erreur récupération configuration barème:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la récupération de la configuration',
+      error: error.message
     });
   }
 };
 
 module.exports = {
-  createAnalysisTextSeo,
-  getAnalysisTextSeo,
-  getAnalysisTextSeoById,
-  deleteAnalysisTextSeo,
-  getAnalysisTextSeoStats
+  createAnalysis,
+  getAnalyses,
+  getAnalysis,
+  deleteAnalysis,
+  getStats,
+  getBaremeConfig
 }; 

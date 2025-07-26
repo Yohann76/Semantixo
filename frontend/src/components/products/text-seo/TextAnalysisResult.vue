@@ -1,5 +1,5 @@
 <template>
-  <div class="analysis-result-container">
+  <div class="text-analysis-result-container">
     <div class="result-header">
       <h2 class="result-title">Résultats de l'analyse SEO</h2>
       <div class="result-meta">
@@ -318,7 +318,7 @@ const getProgressClass = (score, maxScore) => {
 </script>
 
 <style scoped>
-.analysis-result-container {
+.text-analysis-result-container {
   background: white;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.1);

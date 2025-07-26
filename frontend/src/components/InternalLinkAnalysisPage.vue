@@ -10,6 +10,6 @@
 </template>
 
 <script setup>
-import ApplicationLayout from './ApplicationLayout.vue'
+import ApplicationLayout from './common/ApplicationLayout.vue'
 import InternalLinkAnalysis from './InternalLinkAnalysis.vue'
 </script> 

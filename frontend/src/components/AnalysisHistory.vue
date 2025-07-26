@@ -21,6 +21,7 @@
         <p>Commencez par analyser {{ 
           type === 'page' ? 'une page SEO' : 
           type === 'internal-link' ? 'le maillage interne d\'un site' : 
+          type === 'domain' ? 'un nom de domaine' :
           'un texte SEO' 
         }} !</p>
       </div>
@@ -34,10 +35,15 @@
         >
           <div class="analysis-header">
             <div class="analysis-date">
-              {{ formatShortDate(analysis.createdAt) }}
+              {{ formatShortDate(analysis.createdAt || analysis.timestamp) }}
             </div>
-            <div class="analysis-score-badge" :class="getScoreClass(getAnalysisScore(analysis))">
-              {{ getAnalysisScore(analysis) || '0' }}
+            <div class="analysis-score-section">
+              <div class="analysis-score-badge" :class="getScoreClass(getAnalysisScore(analysis))">
+                {{ getAnalysisScore(analysis) || '0' }}
+              </div>
+              <div v-if="analysis.notation" class="analysis-notation-badge" :class="getNotationClass(analysis.notation)">
+                {{ analysis.notation }}
+              </div>
             </div>
           </div>
           <div class="analysis-text">
@@ -51,6 +57,13 @@
             </div>
             {{ truncateText(analysis.displayText || 'Aucun contenu', 35) }}
           </div>
+          
+          <!-- Informations supplémentaires pour les analyses de texte -->
+          <div v-if="analysis.type === 'text' && analysis.keywords && analysis.keywords.length > 0" class="analysis-keywords">
+            <span class="keywords-label">Mots-clés :</span>
+            <span class="keywords-value">{{ analysis.keywords.join(', ') }}</span>
+          </div>
+          
           <div class="analysis-stats">
             <div v-if="analysis.type === 'internal-link'" class="stat">
               <span class="stat-label">🔗</span>
@@ -76,13 +89,25 @@
               <span class="stat-label">📖</span>
               <span class="stat-value">{{ analysis.metrics?.domainReadability || 0 }}%</span>
             </div>
-            <div v-if="analysis.type !== 'internal-link' && analysis.type !== 'domain'" class="stat">
+            <div v-if="analysis.type === 'text'" class="stat">
               <span class="stat-label">📝</span>
-              <span class="stat-value">{{ analysis.wordCount }}</span>
+              <span class="stat-value">{{ analysis.metrics?.wordCount || analysis.wordCount || 0 }}</span>
             </div>
-            <div v-if="analysis.type !== 'internal-link' && analysis.type !== 'domain'" class="stat">
+            <div v-if="analysis.type === 'text'" class="stat">
               <span class="stat-label">🔤</span>
-              <span class="stat-value">{{ analysis.characterCount }}</span>
+              <span class="stat-value">{{ analysis.metrics?.characterCount || analysis.characterCount || 0 }}</span>
+            </div>
+            <div v-if="analysis.type === 'text'" class="stat">
+              <span class="stat-label">📄</span>
+              <span class="stat-value">{{ analysis.metrics?.paragraphCount || 0 }}</span>
+            </div>
+            <div v-if="analysis.type === 'page'" class="stat">
+              <span class="stat-label">📝</span>
+              <span class="stat-value">{{ analysis.wordCount || 0 }}</span>
+            </div>
+            <div v-if="analysis.type === 'page'" class="stat">
+              <span class="stat-label">🔤</span>
+              <span class="stat-value">{{ analysis.characterCount || 0 }}</span>
             </div>
           </div>
         </div>
@@ -134,69 +159,213 @@ const loadAnalyses = async () => {
   }
   try {
     const headers = getAuthHeaders()
-    // Charger les analyses de texte
-    const textResponse = await fetch('http://localhost:3000/api/analysis-text-seo', {
-      method: 'GET',
-      headers: headers
-    })
-    // Charger les analyses de page
-    const pageResponse = await fetch('http://localhost:3000/api/analysis-page-seo', {
-      method: 'GET',
-      headers: headers
-    })
-    // Charger les analyses de maillage interne
-    const internalLinkResponse = await fetch('http://localhost:3000/api/analysis-internal-link', {
-      method: 'GET',
-      headers: headers
-    })
-    // Charger les analyses de domaine
-    const domainResponse = await fetch('http://localhost:3000/api/analysis-domain', {
-      method: 'GET',
-      headers: headers
-    })
     let allAnalyses = []
-    if (textResponse.ok) {
-      const textData = await textResponse.json()
-      const textAnalyses = textData.data.analyses.map(analysis => ({
-        ...analysis,
-        type: 'text',
-        displayText: analysis.text
-      }))
-      allAnalyses = allAnalyses.concat(textAnalyses)
+    
+    // Charger les analyses de texte
+    try {
+      const textResponse = await fetch('http://localhost:3000/api/analysis-text-seo', {
+        method: 'GET',
+        headers: headers
+      })
+      
+      if (textResponse.ok) {
+        const textData = await textResponse.json()
+        console.log('📊 [HISTORY] Text data received:', textData)
+        
+        // Vérification robuste de la structure
+        if (textData && typeof textData === 'object') {
+          let textArray = []
+          
+          // Cas 1: textData.data est un tableau
+          if (textData.data && Array.isArray(textData.data)) {
+            textArray = textData.data
+          }
+          // Cas 2: textData est directement un tableau
+          else if (Array.isArray(textData)) {
+            textArray = textData
+          }
+          // Cas 3: textData.data existe mais n'est pas un tableau
+          else if (textData.data && typeof textData.data === 'object') {
+            textArray = [textData.data]
+          }
+          
+          if (textArray.length > 0) {
+            const textAnalyses = textArray.map(analysis => ({
+              ...analysis,
+              type: 'text',
+              displayText: analysis.text || '',
+              notation: analysis.notation || 'Non évalué'
+            }))
+            allAnalyses = allAnalyses.concat(textAnalyses)
+          } else {
+            console.warn('⚠️ [HISTORY] No text analyses found in response:', textData)
+          }
+        } else {
+          console.warn('⚠️ [HISTORY] Text data structure unexpected:', textData)
+        }
+      } else {
+        console.warn('⚠️ [HISTORY] Text response not ok:', textResponse.status, textResponse.statusText)
+      }
+    } catch (err) {
+      console.error('❌ [HISTORY] Erreur chargement analyses texte:', err)
     }
-    if (pageResponse.ok) {
-      const pageData = await pageResponse.json()
-      const pageAnalyses = pageData.data.analyses.map(analysis => ({
-        ...analysis,
-        type: 'page',
-        displayText: analysis.url
-      }))
-      allAnalyses = allAnalyses.concat(pageAnalyses)
+    
+    // Charger les analyses de page
+    try {
+      const pageResponse = await fetch('http://localhost:3000/api/analysis-page-seo', {
+        method: 'GET',
+        headers: headers
+      })
+      
+      if (pageResponse.ok) {
+        const pageData = await pageResponse.json()
+        console.log('📊 [HISTORY] Page data received:', pageData)
+        
+        // Vérification robuste de la structure
+        if (pageData && typeof pageData === 'object') {
+          let pageArray = []
+          
+          // Cas 1: pageData.data est un tableau
+          if (pageData.data && Array.isArray(pageData.data)) {
+            pageArray = pageData.data
+          }
+          // Cas 2: pageData est directement un tableau
+          else if (Array.isArray(pageData)) {
+            pageArray = pageData
+          }
+          // Cas 3: pageData.data existe mais n'est pas un tableau
+          else if (pageData.data && typeof pageData.data === 'object') {
+            pageArray = [pageData.data]
+          }
+          
+          if (pageArray.length > 0) {
+            const pageAnalyses = pageArray.map(analysis => ({
+              ...analysis,
+              type: 'page',
+              displayText: analysis.url || analysis.pageTitle || ''
+            }))
+            allAnalyses = allAnalyses.concat(pageAnalyses)
+          } else {
+            console.warn('⚠️ [HISTORY] No page analyses found in response:', pageData)
+          }
+        } else {
+          console.warn('⚠️ [HISTORY] Page data structure unexpected:', pageData)
+        }
+      } else {
+        console.warn('⚠️ [HISTORY] Page response not ok:', pageResponse.status, pageResponse.statusText)
+      }
+    } catch (err) {
+      console.error('❌ [HISTORY] Erreur chargement analyses page:', err)
     }
-    if (internalLinkResponse.ok) {
-      const internalLinkData = await internalLinkResponse.json()
-      const internalLinkAnalyses = internalLinkData.data.analyses.map(analysis => ({
-        ...analysis,
-        type: 'internal-link',
-        displayText: analysis.url
-      }))
-      allAnalyses = allAnalyses.concat(internalLinkAnalyses)
+    
+    // Charger les analyses de maillage interne
+    try {
+      const internalLinkResponse = await fetch('http://localhost:3000/api/analysis-internal-link', {
+        method: 'GET',
+        headers: headers
+      })
+      
+      if (internalLinkResponse.ok) {
+        const internalLinkData = await internalLinkResponse.json()
+        console.log('📊 [HISTORY] Internal link data received:', internalLinkData)
+        
+        // Vérification robuste de la structure
+        if (internalLinkData && typeof internalLinkData === 'object') {
+          let internalLinkArray = []
+          
+          // Cas 1: internalLinkData.data est un tableau
+          if (internalLinkData.data && Array.isArray(internalLinkData.data)) {
+            internalLinkArray = internalLinkData.data
+          }
+          // Cas 2: internalLinkData est directement un tableau
+          else if (Array.isArray(internalLinkData)) {
+            internalLinkArray = internalLinkData
+          }
+          // Cas 3: internalLinkData.data existe mais n'est pas un tableau
+          else if (internalLinkData.data && typeof internalLinkData.data === 'object') {
+            internalLinkArray = [internalLinkData.data]
+          }
+          
+          if (internalLinkArray.length > 0) {
+            const internalLinkAnalyses = internalLinkArray.map(analysis => ({
+              ...analysis,
+              type: 'internal-link',
+              displayText: analysis.url || analysis.domain || ''
+            }))
+            allAnalyses = allAnalyses.concat(internalLinkAnalyses)
+          } else {
+            console.warn('⚠️ [HISTORY] No internal link analyses found in response:', internalLinkData)
+          }
+        } else {
+          console.warn('⚠️ [HISTORY] Internal link data structure unexpected:', internalLinkData)
+        }
+      } else {
+        console.warn('⚠️ [HISTORY] Internal link response not ok:', internalLinkResponse.status, internalLinkResponse.statusText)
+      }
+    } catch (err) {
+      console.error('❌ [HISTORY] Erreur chargement analyses maillage interne:', err)
     }
-    if (domainResponse.ok) {
-      const domainData = await domainResponse.json()
-      const domainAnalyses = domainData.data.analyses.map(analysis => ({
-        ...analysis,
-        type: 'domain',
-        displayText: analysis.domain
-      }))
-      allAnalyses = allAnalyses.concat(domainAnalyses)
+    
+    // Charger les analyses de domaine
+    try {
+      const domainResponse = await fetch('http://localhost:3000/api/analysis-domain', {
+        method: 'GET',
+        headers: headers
+      })
+      
+      if (domainResponse.ok) {
+        const domainData = await domainResponse.json()
+        console.log('📊 [HISTORY] Domain data received:', domainData)
+        
+        // Vérification robuste de la structure
+        if (domainData && typeof domainData === 'object') {
+          let domainArray = []
+          
+          // Cas 1: domainData.data est un tableau
+          if (domainData.data && Array.isArray(domainData.data)) {
+            domainArray = domainData.data
+          }
+          // Cas 2: domainData est directement un tableau
+          else if (Array.isArray(domainData)) {
+            domainArray = domainData
+          }
+          // Cas 3: domainData.data existe mais n'est pas un tableau
+          else if (domainData.data && typeof domainData.data === 'object') {
+            domainArray = [domainData.data]
+          }
+          
+          if (domainArray.length > 0) {
+            const domainAnalyses = domainArray.map(analysis => ({
+              ...analysis,
+              type: 'domain',
+              displayText: analysis.domain || analysis.url || ''
+            }))
+            allAnalyses = allAnalyses.concat(domainAnalyses)
+          } else {
+            console.warn('⚠️ [HISTORY] No domain analyses found in response:', domainData)
+          }
+        } else {
+          console.warn('⚠️ [HISTORY] Domain data structure unexpected:', domainData)
+        }
+      } else {
+        console.warn('⚠️ [HISTORY] Domain response not ok:', domainResponse.status, domainResponse.statusText)
+      }
+    } catch (err) {
+      console.error('❌ [HISTORY] Erreur chargement analyses domaine:', err)
     }
+    
     // Trier par date de création (plus récent en premier)
-    allAnalyses.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    allAnalyses.sort((a, b) => {
+      const dateA = new Date(a.createdAt || a.timestamp || 0)
+      const dateB = new Date(b.createdAt || b.timestamp || 0)
+      return dateB.getTime() - dateA.getTime()
+    })
+    
     analyses.value = allAnalyses
+    console.log('📊 [HISTORY] Analyses chargées:', allAnalyses.length)
   } catch (err) {
     error.value = `Erreur: ${err.message}`
-    console.error('Erreur chargement historique:', err)
+    console.error('❌ [HISTORY] Erreur chargement historique:', err)
   } finally {
     loading.value = false
   }
@@ -215,6 +384,7 @@ const formatShortDate = (dateString) => {
     month: '2-digit'
   })
 }
+
 const getAnalysisScore = (analysis) => {
   if (analysis.type === 'internal-link') {
     return analysis.internalLinkScore
@@ -227,18 +397,32 @@ const getAnalysisScore = (analysis) => {
 
 const getScoreClass = (score) => {
   if (!score || score === 0) return 'score-poor'
-  if (score >= 80) return 'score-excellent'
-  if (score >= 60) return 'score-good'
-  if (score >= 40) return 'score-average'
+  if (score >= 85) return 'score-excellent'
+  if (score >= 70) return 'score-good'
+  if (score >= 55) return 'score-average'
   return 'score-poor'
 }
+
+const getNotationClass = (notation) => {
+  switch (notation) {
+    case 'Excellent': return 'notation-excellent'
+    case 'Très bon': return 'notation-good'
+    case 'Bon': return 'notation-average'
+    case 'Moyen': return 'notation-poor'
+    case 'Insuffisant': return 'notation-poor'
+    default: return 'notation-unknown'
+  }
+}
+
 const truncateText = (text, maxLength) => {
-  if (!text) return 'Aucun contenu'
+  if (!text || typeof text !== 'string') return 'Aucun contenu'
   return text.length > maxLength ? text.substring(0, maxLength) + '...' : text
 }
+
 const selectAnalysis = (analysis) => {
   emit('select-analysis', analysis)
 }
+
 const goToNewAnalysis = () => {
   // Rediriger vers la bonne page selon le type
   if (props.type === 'page') {
@@ -251,9 +435,11 @@ const goToNewAnalysis = () => {
     window.location.href = '/verify-text'
   }
 }
+
 onMounted(() => {
   loadAnalyses()
 })
+
 defineExpose({
   refreshAnalyses: loadAnalyses
 })
@@ -390,7 +576,7 @@ defineExpose({
 .analysis-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 6px;
 }
 
@@ -398,6 +584,13 @@ defineExpose({
   font-size: 0.75rem;
   color: #6c757d;
   font-weight: 500;
+}
+
+.analysis-score-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-end;
 }
 
 .analysis-score-badge {
@@ -409,24 +602,39 @@ defineExpose({
   text-align: center;
 }
 
-.score-excellent {
+.analysis-notation-badge {
+  font-size: 0.6rem;
+  font-weight: bold;
+  padding: 1px 4px;
+  border-radius: 3px;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.score-excellent, .notation-excellent {
   background: #d4edda;
   color: #155724;
 }
 
-.score-good {
+.score-good, .notation-good {
   background: #d1ecf1;
   color: #0c5460;
 }
 
-.score-average {
+.score-average, .notation-average {
   background: #fff3cd;
   color: #856404;
 }
 
-.score-poor {
+.score-poor, .notation-poor {
   background: #f8d7da;
   color: #721c24;
+}
+
+.notation-unknown {
+  background: #e2e3e5;
+  color: #383d41;
 }
 
 .analysis-text {
@@ -458,10 +666,41 @@ defineExpose({
   color: #7b1fa2;
 }
 
+.analysis-type-badge.internal-link {
+  background: #e8f5e8;
+  color: #2e7d32;
+}
+
+.analysis-type-badge.domain {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.analysis-keywords {
+  font-size: 0.7rem;
+  color: #6c757d;
+  margin-bottom: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.keywords-label {
+  font-weight: 500;
+  color: #495057;
+}
+
+.keywords-value {
+  font-style: italic;
+  color: #6c757d;
+  word-break: break-word;
+}
+
 .analysis-stats {
   display: flex;
   gap: 8px;
   margin-top: 6px;
+  flex-wrap: wrap;
 }
 
 .stat {

@@ -50,7 +50,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useAuth } from '../composables/useGlobalStores.js'
-import ApplicationLayout from './ApplicationLayout.vue'
+import ApplicationLayout from './common/ApplicationLayout.vue'
 
 const { user } = useAuth()
 
