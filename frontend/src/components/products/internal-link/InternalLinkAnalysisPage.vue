@@ -1,16 +1,16 @@
 <template>
   <ApplicationLayout ref="layoutRef">
     <template #default="{ selectedAnalysis }">
-      <div class="text-analysis-page">
+      <div class="internal-link-analysis-page">
         <div class="container">
           <!-- Formulaire d'analyse (toujours visible) -->
           <div class="analysis-form-section">
-            <h1 class="page-title">Analyse SEO de Texte</h1>
+            <h1 class="page-title">Analyse du Maillage Interne</h1>
             <p class="page-description">
-              Analysez votre texte pour optimiser son référencement SEO avec notre système de barème avancé
+              Analysez la structure des liens internes d'un site web pour optimiser son SEO
             </p>
           
-            <TextAnalysisForm 
+            <InternalLinkAnalysisForm 
               @analysis-complete="handleAnalysisComplete"
               @error="handleError"
             />
@@ -29,7 +29,7 @@
             <div class="result-separator">
               <h2 class="result-title">📊 Résultats de l'analyse</h2>
             </div>
-            <TextAnalysisResult :analysis="currentAnalysis" />
+            <InternalLinkAnalysisResult :analysis="currentAnalysis" />
           </div>
 
           <!-- Résultat d'une analyse sélectionnée depuis l'historique -->
@@ -39,7 +39,7 @@
                 ← Retour à l'analyse
               </button>
             </div>
-            <TextAnalysisResult :analysis="selectedAnalysis" />
+            <InternalLinkAnalysisResult :analysis="selectedAnalysis" />
           </div>
         </div>
       </div>
@@ -50,8 +50,8 @@
 <script setup>
 import { ref, watch } from 'vue'
 import ApplicationLayout from '../../common/ApplicationLayout.vue'
-import TextAnalysisForm from './TextAnalysisForm.vue'
-import TextAnalysisResult from './TextAnalysisResult.vue'
+import InternalLinkAnalysisForm from './InternalLinkAnalysisForm.vue'
+import InternalLinkAnalysisResult from './InternalLinkAnalysisResult.vue'
 import ErrorMessage from '../../common/ErrorMessage.vue'
 
 // État réactif
@@ -101,7 +101,7 @@ const clearSelection = () => {
 </script>
 
 <style scoped>
-.text-analysis-page {
+.internal-link-analysis-page {
   min-height: 100vh;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 }

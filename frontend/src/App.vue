@@ -17,8 +17,8 @@
 import { watch, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from './stores/auth.js'
-import Navbar from './components/Navbar.vue'
-import MainFooter from './components/Footer.vue'
+import Navbar from './components/layout/Navbar.vue'
+import MainFooter from './components/layout/Footer.vue'
 
 const authStore = useAuthStore()
 const route = useRoute()

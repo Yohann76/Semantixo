@@ -10,25 +10,25 @@ const routes = [
   {
     path: '/verify-text',
     name: 'VerifyText',
-    component: () => import('../components/VerifyText.vue'),
+    component: () => import('../components/products/text-seo/TextAnalysisPage.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/verify-page',
     name: 'VerifyPage',
-    component: () => import('../components/VerifyPage.vue'),
+    component: () => import('../components/products/page-seo/PageAnalysisPage.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/internal-link-analysis',
     name: 'InternalLinkAnalysis',
-    component: () => import('../components/InternalLinkAnalysisPage.vue'),
+    component: () => import('../components/products/internal-link/InternalLinkAnalysisPage.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/domain-analysis',
     name: 'DomainAnalysis',
-    component: () => import('../components/DomainAnalysisPage.vue'),
+    component: () => import('../components/products/domain/DomainAnalysisPage.vue'),
     meta: { requiresAuth: true }
   },
   {

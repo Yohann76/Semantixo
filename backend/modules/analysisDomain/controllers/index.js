@@ -36,15 +36,14 @@ const createAnalysisDomain = async (req, res) => {
       success: true,
       message: 'Analyse de nom de domaine créée avec succès',
       data: {
-        analysis: {
-          id: analysisDb._id,
-          domain: analysisDb.domain,
-          domainScore: analysisDb.domainScore,
-          metrics: analysisDb.metrics,
-          domainElements: analysisDb.domainElements,
-          analysis: analysisDb.analysis,
-          createdAt: analysisDb.createdAt
-        }
+        id: analysisDb._id,
+        domain: analysisDb.domain,
+        seoScore: analysisDb.domainScore, // Renommé pour cohérence
+        metrics: analysisDb.metrics,
+        domainElements: analysisDb.domainElements,
+        analysis: analysisDb.analysis,
+        createdAt: analysisDb.createdAt,
+        type: 'domain' // Ajouté pour l'historique
       }
     });
 
@@ -88,23 +87,16 @@ const getAnalysisDomain = async (req, res) => {
 
     res.json({
       success: true,
-      data: {
-        analyses: analyses.map(analysis => ({
-          id: analysis._id,
-          domain: analysis.domain,
-          domainScore: analysis.domainScore,
-          metrics: analysis.metrics,
-          domainElements: analysis.domainElements,
-          analysis: analysis.analysis,
-          createdAt: analysis.createdAt
-        })),
-        pagination: {
-          page,
-          limit,
-          total,
-          pages: Math.ceil(total / limit)
-        }
-      }
+      data: analyses.map(analysis => ({
+        id: analysis._id,
+        domain: analysis.domain,
+        seoScore: analysis.domainScore, // Renommé pour cohérence
+        metrics: analysis.metrics,
+        domainElements: analysis.domainElements,
+        analysis: analysis.analysis,
+        createdAt: analysis.createdAt,
+        type: 'domain' // Ajouté pour l'historique
+      }))
     });
 
   } catch (error) {
@@ -140,7 +132,14 @@ const getAnalysisDomainById = async (req, res) => {
     res.json({
       success: true,
       data: {
-        analysis: analysis.toObject()
+        id: analysis._id,
+        domain: analysis.domain,
+        seoScore: analysis.domainScore, // Renommé pour cohérence
+        metrics: analysis.metrics,
+        domainElements: analysis.domainElements,
+        analysis: analysis.analysis,
+        createdAt: analysis.createdAt,
+        type: 'domain' // Ajouté pour l'historique
       }
     });
 
@@ -194,7 +193,8 @@ const deleteAnalysisDomain = async (req, res) => {
 const getAnalysisDomainStats = async (req, res) => {
   try {
     const totalAnalyses = await AnalysisDomain.countDocuments({ userId: req.user._id });
-    const averageScore = await AnalysisDomain.aggregate([
+    
+    const avgScore = await AnalysisDomain.aggregate([
       { $match: { userId: req.user._id } },
       { $group: { _id: null, avgScore: { $avg: '$domainScore' } } }
     ]);
@@ -206,11 +206,12 @@ const getAnalysisDomainStats = async (req, res) => {
           _id: {
             $switch: {
               branches: [
-                { case: { $gte: ['$domainScore', 80] }, then: 'Excellent' },
-                { case: { $gte: ['$domainScore', 60] }, then: 'Bon' },
-                { case: { $gte: ['$domainScore', 40] }, then: 'Moyen' }
+                { case: { $lt: ['$domainScore', 40] }, then: 'Faible' },
+                { case: { $lt: ['$domainScore', 60] }, then: 'Moyen' },
+                { case: { $lt: ['$domainScore', 80] }, then: 'Bon' },
+                { case: { $gte: ['$domainScore', 80] }, then: 'Excellent' }
               ],
-              default: 'Faible'
+              default: 'Non classé'
             }
           },
           count: { $sum: 1 }
@@ -218,11 +219,13 @@ const getAnalysisDomainStats = async (req, res) => {
       }
     ]);
 
+    console.log('✅ [DOMAIN] Statistiques récupérées');
+
     res.json({
       success: true,
       data: {
         totalAnalyses,
-        averageScore: averageScore.length > 0 ? Math.round(averageScore[0].avgScore) : 0,
+        averageScore: avgScore.length > 0 ? Math.round(avgScore[0].avgScore) : 0,
         scoreDistribution
       }
     });

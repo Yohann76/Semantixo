@@ -77,7 +77,7 @@
 <script setup>
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { useAuthStore } from '../stores/auth.js'
+import { useAuthStore } from '../../stores/auth.js'
 
 const authStore = useAuthStore()
 const route = useRoute()

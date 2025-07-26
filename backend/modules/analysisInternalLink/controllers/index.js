@@ -41,17 +41,16 @@ const createAnalysisInternalLink = async (req, res) => {
       success: true,
       message: 'Analyse de maillage interne créée avec succès',
       data: {
-        analysis: {
-          id: analysisDb._id,
-          url: analysisDb.url,
-          internalLinkScore: analysisDb.internalLinkScore,
-          metrics: analysisDb.metrics,
-          internalLinkElements: analysisDb.internalLinkElements,
-          internalPages: analysisDb.internalPages,
-          brokenLinks: analysisDb.brokenLinks,
-          analysis: analysis.analysis,
-          createdAt: analysisDb.createdAt
-        }
+        id: analysisDb._id,
+        url: analysisDb.url,
+        seoScore: analysisDb.internalLinkScore, // Renommé pour cohérence
+        metrics: analysisDb.metrics,
+        internalLinkElements: analysisDb.internalLinkElements,
+        internalPages: analysisDb.internalPages,
+        brokenLinks: analysisDb.brokenLinks,
+        analysis: analysis.analysis,
+        createdAt: analysisDb.createdAt,
+        type: 'internal-link' // Ajouté pour l'historique
       }
     });
 
@@ -95,25 +94,18 @@ const getAnalysisInternalLink = async (req, res) => {
 
     res.json({
       success: true,
-      data: {
-        analyses: analyses.map(analysis => ({
-          id: analysis._id,
-          url: analysis.url,
-          internalLinkScore: analysis.internalLinkScore,
-          metrics: analysis.metrics,
-          internalPages: analysis.internalPages,
-          brokenLinks: analysis.brokenLinks,
-          internalLinkElements: analysis.internalLinkElements,
-          analysis: analysis.analysis,
-          createdAt: analysis.createdAt
-        })),
-        pagination: {
-          page,
-          limit,
-          total,
-          pages: Math.ceil(total / limit)
-        }
-      }
+      data: analyses.map(analysis => ({
+        id: analysis._id,
+        url: analysis.url,
+        seoScore: analysis.internalLinkScore, // Renommé pour cohérence
+        metrics: analysis.metrics,
+        internalPages: analysis.internalPages,
+        brokenLinks: analysis.brokenLinks,
+        internalLinkElements: analysis.internalLinkElements,
+        analysis: analysis.analysis,
+        createdAt: analysis.createdAt,
+        type: 'internal-link' // Ajouté pour l'historique
+      }))
     });
 
   } catch (error) {
@@ -149,7 +141,16 @@ const getAnalysisInternalLinkById = async (req, res) => {
     res.json({
       success: true,
       data: {
-        analysis: analysis.toObject()
+        id: analysis._id,
+        url: analysis.url,
+        seoScore: analysis.internalLinkScore, // Renommé pour cohérence
+        metrics: analysis.metrics,
+        internalPages: analysis.internalPages,
+        brokenLinks: analysis.brokenLinks,
+        internalLinkElements: analysis.internalLinkElements,
+        analysis: analysis.analysis,
+        createdAt: analysis.createdAt,
+        type: 'internal-link' // Ajouté pour l'historique
       }
     });
 
