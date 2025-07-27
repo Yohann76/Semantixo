@@ -394,13 +394,7 @@ const formatShortDate = (dateString) => {
 }
 
 const getAnalysisScore = (analysis) => {
-  if (analysis.type === 'internal-link') {
-    return analysis.internalLinkScore
-  }
-  if (analysis.type === 'domain') {
-    return analysis.domainScore
-  }
-  return analysis.seoScore
+  return analysis.seoScore || 0
 }
 
 const getScoreClass = (score) => {
