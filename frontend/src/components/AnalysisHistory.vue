@@ -41,9 +41,6 @@
               <div class="analysis-score-badge" :class="getScoreClass(getAnalysisScore(analysis))">
                 {{ getAnalysisScore(analysis) || '0' }}
               </div>
-              <div v-if="analysis.notation" class="analysis-notation-badge" :class="getNotationClass(analysis.notation)">
-                {{ analysis.notation }}
-              </div>
             </div>
           </div>
           <div class="analysis-text">
@@ -109,6 +106,17 @@
               <span class="stat-label">🔤</span>
               <span class="stat-value">{{ analysis.characterCount || 0 }}</span>
             </div>
+          </div>
+          
+          <!-- Barre de progression SEO -->
+          <div class="progress-container">
+            <div class="progress-bar" :class="getScoreClass(getAnalysisScore(analysis))">
+              <div 
+                class="progress-fill" 
+                :style="{ width: getProgressPercentage(getAnalysisScore(analysis)) + '%' }"
+              ></div>
+            </div>
+            <span class="progress-text">{{ getProgressPercentage(getAnalysisScore(analysis)) }}%</span>
           </div>
         </div>
       </div>
@@ -403,16 +411,12 @@ const getScoreClass = (score) => {
   return 'score-poor'
 }
 
-const getNotationClass = (notation) => {
-  switch (notation) {
-    case 'Excellent': return 'notation-excellent'
-    case 'Très bon': return 'notation-good'
-    case 'Bon': return 'notation-average'
-    case 'Moyen': return 'notation-poor'
-    case 'Insuffisant': return 'notation-poor'
-    default: return 'notation-unknown'
-  }
+const getProgressPercentage = (score) => {
+  const numScore = Number(score) || 0
+  return Math.min(Math.max(numScore, 0), 100)
 }
+
+
 
 const truncateText = (text, maxLength) => {
   if (!text || typeof text !== 'string') return 'Aucun contenu'
@@ -717,6 +721,53 @@ defineExpose({
   font-size: 0.7rem;
   font-weight: 600;
   color: #495057;
+}
+
+/* Barre de progression */
+.progress-container {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 6px;
+  background: #e9ecef;
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+  border-radius: 3px;
+}
+
+.progress-bar.score-excellent .progress-fill {
+  background: #28a745;
+}
+
+.progress-bar.score-good .progress-fill {
+  background: #17a2b8;
+}
+
+.progress-bar.score-average .progress-fill {
+  background: #ffc107;
+}
+
+.progress-bar.score-poor .progress-fill {
+  background: #dc3545;
+}
+
+.progress-text {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #495057;
+  min-width: 30px;
+  text-align: right;
 }
 
 /* Scrollbar personnalisée */
