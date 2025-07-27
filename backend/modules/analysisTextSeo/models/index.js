@@ -40,11 +40,6 @@ const analysisTextSeoSchema = new mongoose.Schema({
     type: [String],
     default: []
   },
-  searchIntent: {
-    type: String,
-    enum: ['informationnelle', 'transactionnelle', 'navigationnelle'],
-    default: 'informationnelle'
-  },
   baremeResults: {
     score_total: {
       type: Number,
@@ -60,10 +55,6 @@ const analysisTextSeoSchema = new mongoose.Schema({
       default: 'Non évalué'
     },
     criteres: {
-      pertinence_intention: {
-        score: Number,
-        sous_criteres: Object
-      },
       qualite_contenu: {
         score: Number,
         sous_criteres: Object

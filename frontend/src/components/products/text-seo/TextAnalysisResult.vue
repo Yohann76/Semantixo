@@ -30,10 +30,6 @@
             </div>
           </div>
           <div class="info-item">
-            <div class="info-label">Intention de recherche</div>
-            <div class="info-value">{{ formatSearchIntent(analysis.searchIntent) }}</div>
-          </div>
-          <div class="info-item">
             <div class="info-label">Version du barème</div>
             <div class="info-value">{{ analysis.baremeResults?.bareme_version || '1.0.0' }}</div>
           </div>
@@ -242,20 +238,9 @@ const getNotationClass = (notation) => {
   }
 }
 
-// Formater l'intention de recherche
-const formatSearchIntent = (intent) => {
-  const intents = {
-    'informationnelle': 'Informationnelle',
-    'transactionnelle': 'Transactionnelle',
-    'navigationnelle': 'Navigationnelle'
-  }
-  return intents[intent] || intent
-}
-
 // Obtenir le titre d'un critère
 const getCritereTitle = (key) => {
   const titres = {
-    'pertinence_intention': 'Pertinence et intention de recherche',
     'qualite_contenu': 'Qualité du contenu',
     'structure_lisibilite': 'Structure et lisibilité',
     'utilisation_mots_cles': 'Utilisation des mots-clés',
@@ -269,10 +254,9 @@ const getCritereTitle = (key) => {
 // Obtenir le score maximum d'un critère
 const getCritereMaxScore = (key) => {
   const scores = {
-    'pertinence_intention': 20,
-    'qualite_contenu': 20,
-    'structure_lisibilite': 15,
-    'utilisation_mots_cles': 15,
+    'qualite_contenu': 30,
+    'structure_lisibilite': 20,
+    'utilisation_mots_cles': 20,
     'originalite_valeur': 10,
     'engagement_ux': 10,
     'techniques_seo_base': 10

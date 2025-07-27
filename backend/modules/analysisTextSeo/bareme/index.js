@@ -15,11 +15,10 @@ const scorer = new TextSeoScorer()
  * Fonction principale d'évaluation de texte SEO
  * @param {string} texte - Le texte à analyser
  * @param {Array} motsCles - Les mots-clés ciblés
- * @param {string} intentionRecherche - L'intention de recherche
  * @returns {Object} Résultats complets de l'évaluation
  */
-const evaluerTexteSeo = (texte, motsCles = [], intentionRecherche = 'informationnelle') => {
-  return scorer.evaluerTexte(texte, motsCles, intentionRecherche)
+const evaluerTexteSeo = (texte, motsCles = []) => {
+  return scorer.evaluerTexte(texte, motsCles)
 }
 
 /**

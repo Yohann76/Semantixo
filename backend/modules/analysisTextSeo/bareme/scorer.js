@@ -5,7 +5,6 @@
 
 const { BAREME_CONFIG, CRITERES, SEUILS_NOTATION, MESSAGES_AIDE } = require('./constants')
 const {
-  evaluerPertinenceIntention,
   evaluerQualiteContenu,
   evaluerStructureLisibilite,
   evaluerUtilisationMotsCles,
@@ -28,10 +27,9 @@ class TextSeoScorer {
    * Évalue un texte selon le barème SEO complet
    * @param {string} texte - Le texte à analyser
    * @param {Array} motsCles - Les mots-clés ciblés
-   * @param {string} intentionRecherche - L'intention de recherche (optionnel)
    * @returns {Object} Résultats complets de l'évaluation
    */
-  evaluerTexte(texte, motsCles = [], intentionRecherche = 'informationnelle') {
+  evaluerTexte(texte, motsCles = []) {
     if (!this.enabled) {
       throw new Error('Le barème SEO est désactivé')
     }
@@ -43,7 +41,6 @@ class TextSeoScorer {
     const resultats = {
       texte_analyse: texte.substring(0, 100) + '...',
       mots_cles_cibles: motsCles,
-      intention_recherche: intentionRecherche,
       bareme_version: this.version,
       score_total: 0,
       score_maximum: this.totalPoints,
@@ -56,49 +53,42 @@ class TextSeoScorer {
     // Évaluation de chaque critère principal
     const evaluations = []
 
-    // 1. Pertinence et intention de recherche
-    if (CRITERES.PERTINENCE_INTENTION.enabled) {
-      const pertinence = evaluerPertinenceIntention(texte, motsCles, intentionRecherche)
-      evaluations.push(pertinence)
-      resultats.criteres.pertinence_intention = pertinence
-    }
-
-    // 2. Qualité du contenu
+    // 1. Qualité du contenu
     if (CRITERES.QUALITE_CONTENU.enabled) {
       const qualite = evaluerQualiteContenu(texte)
       evaluations.push(qualite)
       resultats.criteres.qualite_contenu = qualite
     }
 
-    // 3. Structure et lisibilité
+    // 2. Structure et lisibilité
     if (CRITERES.STRUCTURE_LISIBILITE.enabled) {
       const structure = evaluerStructureLisibilite(texte)
       evaluations.push(structure)
       resultats.criteres.structure_lisibilite = structure
     }
 
-    // 4. Utilisation des mots-clés
+    // 3. Utilisation des mots-clés
     if (CRITERES.UTILISATION_MOTS_CLES.enabled) {
       const motsClesEval = evaluerUtilisationMotsCles(texte, motsCles)
       evaluations.push(motsClesEval)
       resultats.criteres.utilisation_mots_cles = motsClesEval
     }
 
-    // 5. Originalité et valeur ajoutée
+    // 4. Originalité et valeur ajoutée
     if (CRITERES.ORIGINALITE_VALEUR.enabled) {
       const originalite = evaluerOriginaliteValeur(texte)
       evaluations.push(originalite)
       resultats.criteres.originalite_valeur = originalite
     }
 
-    // 6. Engagement et expérience utilisateur
+    // 5. Engagement et expérience utilisateur
     if (CRITERES.ENGAGEMENT_UX.enabled) {
       const engagement = evaluerEngagementUX(texte)
       evaluations.push(engagement)
       resultats.criteres.engagement_ux = engagement
     }
 
-    // 7. Techniques SEO de base
+    // 6. Techniques SEO de base
     if (CRITERES.TECHNIQUES_SEO_BASE.enabled) {
       const techniques = evaluerTechniquesSeoBase(texte, motsCles)
       evaluations.push(techniques)

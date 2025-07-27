@@ -4,7 +4,7 @@ const { analyzeTextSeo, getBaremeConfiguration, validateBaremeConfiguration } = 
 // Créer une nouvelle analyse de texte SEO
 const createAnalysis = async (req, res) => {
   try {
-    const { text, keywords = [], searchIntent = 'informationnelle' } = req.body;
+    const { text, keywords = [] } = req.body;
     const userId = req.user.id;
 
     if (!text || typeof text !== 'string') {
@@ -17,12 +17,11 @@ const createAnalysis = async (req, res) => {
     console.log('📊 [CONTROLLER] Début analyse SEO texte:', {
       userId,
       textLength: text.length,
-      keywordsCount: keywords.length,
-      searchIntent
+      keywordsCount: keywords.length
     });
 
     // Analyse SEO avec le nouveau système de barème
-    const analysisResults = analyzeTextSeo(text, keywords, searchIntent);
+    const analysisResults = analyzeTextSeo(text, keywords);
 
     if (!analysisResults.success) {
       return res.status(500).json({
@@ -40,7 +39,6 @@ const createAnalysis = async (req, res) => {
       metrics: analysisResults.basicMetrics,
       baremeResults: analysisResults.baremeResults,
       keywords,
-      searchIntent,
       timestamp: new Date()
     });
 
@@ -94,7 +92,6 @@ const getAnalyses = async (req, res) => {
         seoScore: analysis.seoScore,
         notation: analysis.baremeResults?.notation || 'Non évalué',
         keywords: analysis.keywords,
-        searchIntent: analysis.searchIntent,
         metrics: analysis.metrics,
         timestamp: analysis.createdAt
       }))

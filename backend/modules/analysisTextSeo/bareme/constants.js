@@ -12,33 +12,10 @@ const BAREME_CONFIG = {
 
 // Critères principaux avec leurs poids et sous-critères
 const CRITERES = {
-  PERTINENCE_INTENTION: {
-    id: 'pertinence_intention',
-    nom: 'Pertinence et intention de recherche',
-    poids: 20,
-    enabled: true,
-    sous_criteres: {
-      REPONSE_INTENTION: {
-        id: 'reponse_intention',
-        nom: 'Réponse claire à l\'intention de recherche cible',
-        points: 10,
-        enabled: true,
-        description: 'Le contenu répond-il clairement à l\'intention de recherche (informationnelle, transactionnelle, etc.) ?'
-      },
-      COHERENCE_CONTENU: {
-        id: 'coherence_contenu',
-        nom: 'Cohérence du contenu avec le sujet et mots-clés visés',
-        points: 10,
-        enabled: true,
-        description: 'Le contenu est-il cohérent avec le sujet et les mots-clés ciblés ?'
-      }
-    }
-  },
-
   QUALITE_CONTENU: {
     id: 'qualite_contenu',
     nom: 'Qualité du contenu',
-    poids: 20,
+    poids: 30,
     enabled: true,
     sous_criteres: {
       LONGUEUR_SUFFISANTE: {
@@ -65,7 +42,7 @@ const CRITERES = {
   STRUCTURE_LISIBILITE: {
     id: 'structure_lisibilite',
     nom: 'Structure et lisibilité',
-    poids: 15,
+    poids: 20,
     enabled: true,
     sous_criteres: {
       PARAGRAPHES_CLAIRS: {
@@ -95,7 +72,7 @@ const CRITERES = {
   UTILISATION_MOTS_CLES: {
     id: 'utilisation_mots_cles',
     nom: 'Utilisation des mots-clés',
-    poids: 15,
+    poids: 20,
     enabled: true,
     sous_criteres: {
       DENSITE_NATURELLE: {

@@ -18,25 +18,6 @@
         </small>
       </div>
 
-      <!-- Intention de recherche -->
-      <div class="form-group">
-        <label for="search-intent" class="form-label">
-          Intention de recherche :
-        </label>
-        <select 
-          id="search-intent"
-          v-model="searchIntent"
-          class="search-intent-select"
-        >
-          <option value="informationnelle">Informationnelle</option>
-          <option value="transactionnelle">Transactionnelle</option>
-          <option value="navigationnelle">Navigationnelle</option>
-        </select>
-        <small class="form-help">
-          Définissez l'intention principale de votre contenu
-        </small>
-      </div>
-
       <!-- Texte à analyser -->
       <div class="form-group">
         <label for="text-input" class="form-label">Texte à analyser :</label>
@@ -73,7 +54,6 @@ import { useAuth } from '../../../composables/useGlobalStores.js'
 // État réactif
 const textToAnalyze = ref('')
 const keywordsInput = ref('')
-const searchIntent = ref('informationnelle')
 const loading = ref(false)
 
 // Utilisation du composable d'authentification
@@ -110,14 +90,12 @@ const analyzeText = async () => {
     
     const requestBody = {
       text: textToAnalyze.value,
-      keywords: keywords.value,
-      searchIntent: searchIntent.value
+      keywords: keywords.value
     }
 
     console.log('📊 [TEXT FORM] Envoi analyse:', {
       textLength: textToAnalyze.value.length,
-      keywordsCount: keywords.value.length,
-      searchIntent: searchIntent.value
+      keywordsCount: keywords.value.length
     })
     
     const response = await fetch('http://localhost:3000/api/analysis-text-seo', {

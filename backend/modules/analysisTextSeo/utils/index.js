@@ -9,10 +9,9 @@ const bareme = require('../bareme')
  * Analyse SEO complète d'un texte
  * @param {string} text - Le texte à analyser
  * @param {Array} keywords - Les mots-clés ciblés
- * @param {string} searchIntent - L'intention de recherche
  * @returns {Object} Résultats d'analyse avec barème
  */
-const analyzeTextSeo = (text, keywords = [], searchIntent = 'informationnelle') => {
+const analyzeTextSeo = (text, keywords = []) => {
   try {
     // Analyse de base (métriques simples)
     const basicMetrics = {
@@ -23,7 +22,7 @@ const analyzeTextSeo = (text, keywords = [], searchIntent = 'informationnelle') 
     }
 
     // Analyse avec le barème SEO
-    const baremeResults = bareme.evaluerTexteSeo(text, keywords, searchIntent)
+    const baremeResults = bareme.evaluerTexteSeo(text, keywords)
 
     // Calcul du score SEO global
     const seoScore = Math.round((baremeResults.score_total / baremeResults.score_maximum) * 100)

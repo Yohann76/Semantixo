@@ -5,33 +5,7 @@
 
 const { CRITERES, SEUILS_NOTATION } = require('./constants')
 
-/**
- * Évalue la pertinence et l'intention de recherche
- */
-const evaluerPertinenceIntention = (texte, motsCles, intentionRecherche) => {
-  const resultats = {
-    critere: CRITERES.PERTINENCE_INTENTION,
-    score: 0,
-    details: {},
-    sous_criteres: {}
-  }
 
-  // Évaluation de la réponse à l'intention de recherche
-  if (CRITERES.PERTINENCE_INTENTION.sous_criteres.REPONSE_INTENTION.enabled) {
-    const reponseIntention = evaluerReponseIntention(texte, intentionRecherche)
-    resultats.sous_criteres.reponse_intention = reponseIntention
-    resultats.score += reponseIntention.points
-  }
-
-  // Évaluation de la cohérence du contenu
-  if (CRITERES.PERTINENCE_INTENTION.sous_criteres.COHERENCE_CONTENU.enabled) {
-    const coherenceContenu = evaluerCohérenceContenu(texte, motsCles)
-    resultats.sous_criteres.coherence_contenu = coherenceContenu
-    resultats.score += coherenceContenu.points
-  }
-
-  return resultats
-}
 
 /**
  * Évalue la qualité du contenu
@@ -203,31 +177,7 @@ const evaluerTechniquesSeoBase = (texte, motsCles) => {
 
 // Fonctions d'évaluation spécifiques pour chaque sous-critère
 
-const evaluerReponseIntention = (texte, intentionRecherche) => {
-  // Logique d'évaluation de la réponse à l'intention
-  const points = Math.floor(Math.random() * 11) // 0-10 points pour l'exemple
-  return {
-    points,
-    max_points: 10,
-    details: {
-      intention_detectee: intentionRecherche,
-      pertinence: points / 10
-    }
-  }
-}
 
-const evaluerCohérenceContenu = (texte, motsCles) => {
-  // Logique d'évaluation de la cohérence
-  const points = Math.floor(Math.random() * 11) // 0-10 points pour l'exemple
-  return {
-    points,
-    max_points: 10,
-    details: {
-      mots_cles_trouves: motsCles.filter(mc => texte.toLowerCase().includes(mc.toLowerCase())),
-      coherence_score: points / 10
-    }
-  }
-}
 
 const evaluerLongueurTexte = (texte) => {
   const mots = texte.split(/\s+/).length
@@ -478,7 +428,6 @@ const evaluerMotsClesPremiersParagraphes = (texte, motsCles) => {
 }
 
 module.exports = {
-  evaluerPertinenceIntention,
   evaluerQualiteContenu,
   evaluerStructureLisibilite,
   evaluerUtilisationMotsCles,
