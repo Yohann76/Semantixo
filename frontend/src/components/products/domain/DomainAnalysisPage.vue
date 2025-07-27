@@ -3,8 +3,8 @@
     <template #default="{ selectedAnalysis }">
       <div class="domain-analysis-page">
         <div class="container">
-          <!-- Formulaire d'analyse (toujours visible) -->
-          <div class="analysis-form-section">
+          <!-- Formulaire d'analyse (visible seulement si pas d'analyse sélectionnée) -->
+          <div v-if="!selectedAnalysis" class="analysis-form-section">
             <h1 class="page-title">Analyse du Nom de Domaine</h1>
             <p class="page-description">
               Analysez l'autorité et la réputation d'un nom de domaine pour optimiser votre stratégie SEO

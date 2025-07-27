@@ -3,8 +3,8 @@
     <template #default="{ selectedAnalysis }">
       <div class="page-analysis-page">
         <div class="container">
-          <!-- Formulaire d'analyse (toujours visible) -->
-          <div class="analysis-form-section">
+          <!-- Formulaire d'analyse (visible seulement si pas d'analyse sélectionnée) -->
+          <div v-if="!selectedAnalysis" class="analysis-form-section">
             <h1 class="page-title">Analyse SEO de Page</h1>
             <p class="page-description">
               Analysez une page web pour optimiser son référencement SEO

@@ -3,8 +3,8 @@
     <template #default="{ selectedAnalysis }">
       <div class="text-analysis-page">
         <div class="container">
-          <!-- Formulaire d'analyse (toujours visible) -->
-          <div class="analysis-form-section">
+          <!-- Formulaire d'analyse (visible seulement si pas d'analyse sélectionnée) -->
+          <div v-if="!selectedAnalysis" class="analysis-form-section">
             <h1 class="page-title">Analyse SEO de Texte</h1>
             <p class="page-description">
               Analysez votre texte pour optimiser son référencement SEO avec notre système de barème avancé

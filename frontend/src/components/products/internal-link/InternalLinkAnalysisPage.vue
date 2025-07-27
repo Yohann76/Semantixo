@@ -3,8 +3,8 @@
     <template #default="{ selectedAnalysis }">
       <div class="internal-link-analysis-page">
         <div class="container">
-          <!-- Formulaire d'analyse (toujours visible) -->
-          <div class="analysis-form-section">
+          <!-- Formulaire d'analyse (visible seulement si pas d'analyse sélectionnée) -->
+          <div v-if="!selectedAnalysis" class="analysis-form-section">
             <h1 class="page-title">Analyse du Maillage Interne</h1>
             <p class="page-description">
               Analysez la structure des liens internes d'un site web pour optimiser son SEO
