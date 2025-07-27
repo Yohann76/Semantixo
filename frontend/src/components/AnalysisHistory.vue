@@ -233,16 +233,24 @@ const loadAnalyses = async () => {
         if (pageData && typeof pageData === 'object') {
           let pageArray = []
           
-          // Cas 1: pageData.data est un tableau
-          if (pageData.data && Array.isArray(pageData.data)) {
+          // Cas 1: pageData.data.analyses est un tableau (Page SEO)
+          if (pageData.data && pageData.data.analyses && Array.isArray(pageData.data.analyses)) {
+            pageArray = pageData.data.analyses
+          }
+          // Cas 2: pageData.data est un tableau
+          else if (pageData.data && Array.isArray(pageData.data)) {
             pageArray = pageData.data
           }
-          // Cas 2: pageData est directement un tableau
+          // Cas 3: pageData est directement un tableau
           else if (Array.isArray(pageData)) {
             pageArray = pageData
           }
-          // Cas 3: pageData.data existe mais n'est pas un tableau
+          // Cas 4: pageData.data existe mais n'est pas un tableau
           else if (pageData.data && typeof pageData.data === 'object') {
+            pageArray = [pageData.data]
+          }
+          // Cas 5: pageData.data est un objet avec des propriétés d'analyse
+          else if (pageData.data && pageData.data.url) {
             pageArray = [pageData.data]
           }
           
@@ -250,7 +258,16 @@ const loadAnalyses = async () => {
             const pageAnalyses = pageArray.map(analysis => ({
               ...analysis,
               type: 'page',
-              displayText: analysis.url || analysis.pageTitle || ''
+              displayText: analysis.url || analysis.pageTitle || 'URL non définie',
+              seoScore: analysis.seoScore || 0,
+              createdAt: analysis.createdAt || new Date().toISOString(),
+              metrics: analysis.metrics || {
+                wordCount: analysis.wordCount || 0,
+                characterCount: analysis.characterCount || 0,
+                headingCount: analysis.headingCount || 0,
+                imageCount: analysis.imageCount || 0,
+                linkCount: analysis.linkCount || 0
+              }
             }))
             allAnalyses = allAnalyses.concat(pageAnalyses)
           } else {
