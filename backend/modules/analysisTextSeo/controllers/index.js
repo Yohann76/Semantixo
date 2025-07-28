@@ -88,11 +88,12 @@ const getAnalyses = async (req, res) => {
       success: true,
       data: analyses.map(analysis => ({
         id: analysis._id,
-        text: analysis.text.substring(0, 100) + '...',
+        text: analysis.text, // Texte complet au lieu de tronqué
         seoScore: analysis.seoScore,
         notation: analysis.baremeResults?.notation || 'Non évalué',
         keywords: analysis.keywords,
         metrics: analysis.metrics,
+        baremeResults: analysis.baremeResults,
         timestamp: analysis.createdAt
       }))
     });
