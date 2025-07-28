@@ -115,6 +115,67 @@
         </div>
       </div>
 
+      <!-- Analyse des mots-clés thématiques -->
+      <div v-if="analysis.baremeResults?.criteres?.utilisation_champ_lexical?.details" class="result-section">
+        <h3 class="section-title">🔍 Analyse des mots-clés thématiques</h3>
+        <div class="keywords-analysis">
+          <div class="thematic-info">
+            <h4>Thématique détectée : <span class="thematic-name">{{ analysis.baremeResults.criteres.utilisation_champ_lexical.details.thematique_detectee }}</span></h4>
+          </div>
+          
+          <!-- Mots-clés thématiques -->
+          <div class="keywords-section">
+            <h4>📝 Mots-clés thématiques détectés (5-6 mots)</h4>
+            <div class="keywords-grid">
+              <div 
+                v-for="motCle in analysis.baremeResults.criteres.utilisation_champ_lexical.details.mots_cles_thematiques" 
+                :key="motCle.mot"
+                class="keyword-item"
+                :class="{ 'present': motCle.present, 'absent': !motCle.present }"
+              >
+                <span class="keyword-text">{{ motCle.mot }}</span>
+                <span class="keyword-occurrences">{{ motCle.occurrences }} occurrence(s)</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Synonymes importants -->
+          <div class="synonyms-section">
+            <h4>🔄 Synonymes importants (5-6 mots)</h4>
+            <div class="keywords-grid">
+              <div 
+                v-for="synonyme in analysis.baremeResults.criteres.utilisation_champ_lexical.details.synonymes_importants" 
+                :key="synonyme.mot"
+                class="keyword-item"
+                :class="{ 'present': synonyme.present, 'absent': !synonyme.present }"
+              >
+                <span class="keyword-text">{{ synonyme.mot }}</span>
+                <span class="keyword-occurrences">{{ synonyme.occurrences }} occurrence(s)</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Score de qualité -->
+          <div class="quality-score">
+            <h4>📊 Score d'utilisation du champ lexical</h4>
+            <div class="score-breakdown">
+              <div class="score-item">
+                <span class="score-label">Déclinaison des mots-clés :</span>
+                <span class="score-value">{{ analysis.baremeResults.criteres.utilisation_champ_lexical.sous_criteres?.declinaison_mots_cles?.points || 0 }}/30</span>
+              </div>
+              <div class="score-item">
+                <span class="score-label">Correspondance parfaite :</span>
+                <span class="score-value">{{ analysis.baremeResults.criteres.utilisation_champ_lexical.sous_criteres?.correspondance_parfaite?.points || 0 }}/30</span>
+              </div>
+              <div class="score-item total">
+                <span class="score-label">Total champ lexical :</span>
+                <span class="score-value">{{ analysis.baremeResults.criteres.utilisation_champ_lexical.score || 0 }}/60</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Recommandations -->
       <div v-if="analysis.baremeResults?.recommandations && analysis.baremeResults.recommandations.length > 0" class="result-section">
         <h3 class="section-title">💡 Recommandations d'amélioration</h3>
@@ -241,12 +302,11 @@ const getNotationClass = (notation) => {
 // Obtenir le titre d'un critère
 const getCritereTitle = (key) => {
   const titres = {
-    'qualite_contenu': 'Qualité du contenu',
-    'structure_lisibilite': 'Structure et lisibilité',
-    'utilisation_mots_cles': 'Utilisation des mots-clés',
-    'originalite_valeur': 'Originalité et valeur ajoutée',
-    'engagement_ux': 'Engagement et expérience utilisateur',
-    'techniques_seo_base': 'Techniques SEO de base'
+    'utilisation_champ_lexical': '1. Utilisation des mots clé et de leurs champ lexical',
+    'position_implementation': '2. Position et Implémentation des mots clefs',
+    'longueur_suffisante': '3. Longueur suffisante',
+    'structure_lisibilite': '4. Structure et lisibilité',
+    'contenu_duplique': '5. Contenu dupliqué'
   }
   return titres[key] || key
 }
@@ -254,12 +314,11 @@ const getCritereTitle = (key) => {
 // Obtenir le score maximum d'un critère
 const getCritereMaxScore = (key) => {
   const scores = {
-    'qualite_contenu': 30,
-    'structure_lisibilite': 20,
-    'utilisation_mots_cles': 20,
-    'originalite_valeur': 10,
-    'engagement_ux': 10,
-    'techniques_seo_base': 10
+    'utilisation_champ_lexical': 60,
+    'position_implementation': 10,
+    'longueur_suffisante': 5,
+    'structure_lisibilite': 10,
+    'contenu_duplique': 15
   }
   return scores[key] || 0
 }
@@ -267,20 +326,14 @@ const getCritereMaxScore = (key) => {
 // Obtenir le titre d'un sous-critère
 const getSousCritereTitle = (key) => {
   const titres = {
-    'reponse_intention': 'Réponse à l\'intention de recherche',
-    'coherence_contenu': 'Cohérence du contenu',
-    'longueur_suffisante': 'Longueur suffisante',
-    'contenu_riche': 'Contenu riche',
-    'paragraphes_clairs': 'Paragraphes clairs',
-    'listes_presence': 'Présence de listes',
-    'hierarchie_titres': 'Hiérarchie des titres',
-    'densite_naturelle': 'Densité naturelle',
-    'variations_synonymes': 'Variations et synonymes',
-    'contenu_unique': 'Contenu unique',
-    'informations_nouvelles': 'Informations nouvelles',
-    'fluidite_lecture': 'Fluidité de lecture',
-    'absence_erreurs': 'Absence d\'erreurs',
-    'mots_cles_premiers_paragraphes': 'Mots-clés premiers paragraphes'
+    'declinaison_mots_cles': 'Décliner les mots clés en plusieurs champ lexical',
+    'correspondance_parfaite': 'Correspondance parfaite au mots clé et à l\'intention de recherche',
+    'mots_cles_premier_paragraphe': 'Mots clé dans le premier paragraphe',
+    'mots_cles_debut_paragraphes': 'Mots clé dans les début de paragraphe',
+    'echelle_longueur': 'Échelle de longueur (0 pts si <50 mots, 1 pt si +50, jusqu\'à 2000)',
+    'densite_mots': 'Vérifier densité des mots',
+    'decoupe_paragraphes': 'Vérifier la découpe en plusieurs paragraphe (avec une moyenne de mots par paragraphe)',
+    'pourcentage_duplication': 'Pourcentage de duplication du contenu'
   }
   return titres[key] || key
 }
@@ -708,6 +761,131 @@ const getProgressClass = (score, maxScore) => {
   background: #a8a8a8;
 }
 
+/* Analyse des mots-clés thématiques */
+.keywords-analysis {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #e9ecef;
+}
+
+.thematic-info {
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.thematic-info h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #2c3e50;
+}
+
+.thematic-name {
+  color: #667eea;
+  font-weight: bold;
+  text-transform: capitalize;
+}
+
+.keywords-section, .synonyms-section {
+  margin-bottom: 25px;
+}
+
+.keywords-section h4, .synonyms-section h4 {
+  margin: 0 0 15px 0;
+  font-size: 1rem;
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+.keywords-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.keyword-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  border-radius: 6px;
+  border: 2px solid;
+  transition: all 0.3s ease;
+}
+
+.keyword-item.present {
+  background: rgba(40, 167, 69, 0.1);
+  border-color: #28a745;
+  color: #155724;
+}
+
+.keyword-item.absent {
+  background: rgba(220, 53, 69, 0.1);
+  border-color: #dc3545;
+  color: #721c24;
+}
+
+.keyword-text {
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.keyword-occurrences {
+  font-size: 0.8rem;
+  opacity: 0.8;
+  font-weight: 500;
+}
+
+.quality-score {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 2px solid #e9ecef;
+}
+
+.quality-score h4 {
+  margin: 0 0 15px 0;
+  font-size: 1rem;
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+.score-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.score-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.score-item:last-child {
+  border-bottom: none;
+}
+
+.score-item.total {
+  font-weight: bold;
+  color: #2c3e50;
+  font-size: 1.1rem;
+  padding-top: 10px;
+  border-top: 2px solid #667eea;
+}
+
+.score-label {
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.score-value {
+  font-weight: bold;
+  color: #667eea;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .result-meta {
@@ -730,6 +908,14 @@ const getProgressClass = (score, maxScore) => {
   
   .metrics-grid {
     grid-template-columns: 1fr;
+  }
+  
+  .keywords-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .score-breakdown {
+    gap: 8px;
   }
 }
 </style> 

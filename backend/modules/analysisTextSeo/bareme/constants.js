@@ -6,35 +6,83 @@
 // Configuration générale du barème
 const BAREME_CONFIG = {
   TOTAL_POINTS: 100,
-  VERSION: '1.0.0',
+  VERSION: '2.2.0',
   ENABLED: true
 }
 
 // Critères principaux avec leurs poids et sous-critères
 const CRITERES = {
-  QUALITE_CONTENU: {
-    id: 'qualite_contenu',
-    nom: 'Qualité du contenu',
-    poids: 30,
+  UTILISATION_CHAMP_LEXICAL: {
+    id: 'utilisation_champ_lexical',
+    nom: 'Utilisation des mots clé et de leurs champ lexical',
+    poids: 60,
+    enabled: true,
+    description: 'Analyse du champ lexical des mots clé présent dans le texte avec détection automatique des mots-clés thématiques',
+    sous_criteres: {
+      DECLINATION_MOTS_CLES: {
+        id: 'declination_mots_cles',
+        nom: 'Décliner les mots clés en plusieurs champ lexical',
+        points: 30,
+        enabled: true,
+        description: 'Décliner les mots clés en plusieurs champ lexical, et verification de l\'utilisation dans le texte'
+      },
+      CORRESPONDANCE_PARFAITE: {
+        id: 'correspondance_parfaite',
+        nom: 'Correspondance parfaite au mots clé et à l\'intention de recherche',
+        points: 30,
+        enabled: true,
+        description: 'Doit correspondre parfaitement au mots clé et à l\'intention de recherche'
+      }
+    }
+  },
+
+  POSITION_IMPLEMENTATION: {
+    id: 'position_implementation',
+    nom: 'Position et Implémentation des mots clefs',
+    poids: 10,
     enabled: true,
     sous_criteres: {
-      LONGUEUR_SUFFISANTE: {
-        id: 'longueur_suffisante',
-        nom: 'Longueur suffisante (minimum 600 mots, idéal >1000)',
-        points: 10,
+      MOTS_CLES_PREMIER_PARAGRAPHE: {
+        id: 'mots_cles_premier_paragraphe',
+        nom: 'Mots clé dans le premier paragraphe',
+        points: 5,
         enabled: true,
-        description: 'Le texte fait-il au moins 600 mots ? Idéalement plus de 1000 mots ?',
-        seuils: {
-          minimum: 600,
-          ideal: 1000
-        }
+        description: 'Les mots-clés sont-ils présents dans le premier paragraphe ?'
       },
-      CONTENU_RICHE: {
-        id: 'contenu_riche',
-        nom: 'Contenu riche, sans digressions inutiles',
-        points: 10,
+      MOTS_CLES_DEBUT_PARAGRAPHES: {
+        id: 'mots_cles_debut_paragraphes',
+        nom: 'Mots clé dans les début de paragraphe',
+        points: 5,
         enabled: true,
-        description: 'Le contenu est-il riche et pertinent, sans digressions inutiles ?'
+        description: 'Les mots-clés sont-ils présents au début des paragraphes ?'
+      }
+    }
+  },
+
+  LONGUEUR_SUFFISANTE: {
+    id: 'longueur_suffisante',
+    nom: 'Longueur suffisante',
+    poids: 5,
+    enabled: true,
+    description: 'Longueur du texte avec échelle progressive jusqu\'à 2000 mots',
+    sous_criteres: {
+      ECHELLE_LONGUEUR: {
+        id: 'echelle_longueur',
+        nom: 'Échelle de longueur (0 pts si <50 mots, 1 pt si +50, jusqu\'à 2000)',
+        points: 5,
+        enabled: true,
+        description: 'Échelle progressive de notation selon la longueur du texte',
+        seuils: {
+          minimum: 50,
+          maximum: 2000,
+          echelle: [
+            { mots: 50, points: 1 },
+            { mots: 100, points: 2 },
+            { mots: 200, points: 3 },
+            { mots: 500, points: 4 },
+            { mots: 2000, points: 5 }
+          ]
+        }
       }
     }
   },
@@ -42,118 +90,52 @@ const CRITERES = {
   STRUCTURE_LISIBILITE: {
     id: 'structure_lisibilite',
     nom: 'Structure et lisibilité',
-    poids: 20,
+    poids: 10,
     enabled: true,
     sous_criteres: {
-      PARAGRAPHES_CLAIRS: {
-        id: 'paragraphes_clairs',
-        nom: 'Textes bien segmentés en paragraphes clairs',
+      DENSITE_MOTS: {
+        id: 'densite_mots',
+        nom: 'Vérifier densité des mots',
         points: 5,
         enabled: true,
-        description: 'Le texte est-il bien segmenté en paragraphes clairs et lisibles ?'
+        description: 'La densité des mots est-elle appropriée ?'
       },
-      LISTES_PRESENCE: {
-        id: 'listes_presence',
-        nom: 'Présence de listes à puces ou numérotées',
+      DECOUPE_PARAGRAPHES: {
+        id: 'decoupe_paragraphes',
+        nom: 'Vérifier la découpe en plusieurs paragraphe (avec une moyenne de mots par paragraphe)',
         points: 5,
         enabled: true,
-        description: 'Le texte contient-il des listes à puces ou numérotées pour améliorer la lisibilité ?'
-      },
-      HIERARCHIE_TITRES: {
-        id: 'hierarchie_titres',
-        nom: 'Hiérarchie logique des titres (H2, H3, pyramide inversée)',
-        points: 5,
-        enabled: true,
-        description: 'Y a-t-il une hiérarchie logique des titres avec une structure en pyramide inversée ?'
+        description: 'Le texte est-il bien découpé en paragraphes avec une moyenne appropriée ?'
       }
     }
   },
 
-  UTILISATION_MOTS_CLES: {
-    id: 'utilisation_mots_cles',
-    nom: 'Utilisation des mots-clés',
-    poids: 20,
+  CONTENU_DUPLIQUE: {
+    id: 'contenu_duplique',
+    nom: 'Contenu dupliqué',
+    poids: 15,
     enabled: true,
+    description: 'Évaluation du contenu dupliqué avec échelle spécifique',
     sous_criteres: {
-      DENSITE_NATURELLE: {
-        id: 'densite_naturelle',
-        nom: 'Densité naturelle et équilibrée des mots-clés principaux',
-        points: 10,
+      POURCENTAGE_DUPLICATION: {
+        id: 'pourcentage_duplication',
+        nom: 'Pourcentage de duplication du contenu',
+        points: 15,
         enabled: true,
-        description: 'Les mots-clés principaux sont-ils utilisés de manière naturelle et équilibrée ?',
+        description: 'Évaluation du pourcentage de contenu dupliqué',
         seuils: {
-          densite_min: 0.5,
-          densite_max: 2.5
+          '100%': 0,
+          '75%': 1,
+          '50%': 3,
+          '40%': 4,
+          '30%': 5,
+          '20%': 7,
+          '10%': 9,
+          '5%': 12,
+          '3%': 13,
+          '2%': 14,
+          '0%': 15
         }
-      },
-      VARIATIONS_SYNONYMES: {
-        id: 'variations_synonymes',
-        nom: 'Variations et synonymes utilisés',
-        points: 5,
-        enabled: true,
-        description: 'Y a-t-il des variations et synonymes des mots-clés principaux ?'
-      }
-    }
-  },
-
-  ORIGINALITE_VALEUR: {
-    id: 'originalite_valeur',
-    nom: 'Originalité et valeur ajoutée',
-    poids: 10,
-    enabled: true,
-    sous_criteres: {
-      CONTENU_UNIQUE: {
-        id: 'contenu_unique',
-        nom: 'Contenu unique, sans duplication',
-        points: 5,
-        enabled: true,
-        description: 'Le contenu est-il unique et original, sans duplication ?'
-      },
-      INFORMATIONS_NOUVELLES: {
-        id: 'informations_nouvelles',
-        nom: 'Apport d\'informations ou perspectives nouvelles',
-        points: 5,
-        enabled: true,
-        description: 'Le contenu apporte-t-il des informations ou perspectives nouvelles ?'
-      }
-    }
-  },
-
-  ENGAGEMENT_UX: {
-    id: 'engagement_ux',
-    nom: 'Engagement et expérience utilisateur (UX)',
-    poids: 10,
-    enabled: true,
-    sous_criteres: {
-      FLUIDITE_LECTURE: {
-        id: 'fluidite_lecture',
-        nom: 'Fluidité de lecture et ton adapté au public cible',
-        points: 5,
-        enabled: true,
-        description: 'La lecture est-elle fluide avec un ton adapté au public cible ?'
-      },
-      ABSENCE_ERREURS: {
-        id: 'absence_erreurs',
-        nom: 'Absence d\'erreurs grammaticales et orthographiques',
-        points: 5,
-        enabled: true,
-        description: 'Y a-t-il une absence d\'erreurs grammaticales et orthographiques ?'
-      }
-    }
-  },
-
-  TECHNIQUES_SEO_BASE: {
-    id: 'techniques_seo_base',
-    nom: 'Techniques SEO de base',
-    poids: 10,
-    enabled: true,
-    sous_criteres: {
-      MOTS_CLES_PREMIERS_PARAGRAPHES: {
-        id: 'mots_cles_premiers_paragraphes',
-        nom: 'Utilisation correcte et pertinente des mots-clés dans les premiers paragraphes',
-        points: 10,
-        enabled: true,
-        description: 'Les mots-clés sont-ils utilisés de manière pertinente dans les premiers paragraphes ?'
       }
     }
   }
@@ -170,13 +152,11 @@ const SEUILS_NOTATION = {
 
 // Messages d'aide pour chaque critère
 const MESSAGES_AIDE = {
-  PERTINENCE_INTENTION: 'Assurez-vous que votre contenu répond clairement à l\'intention de recherche de l\'utilisateur.',
-  QUALITE_CONTENU: 'Privilégiez un contenu long et riche (minimum 600 mots, idéalement plus de 1000 mots).',
-  STRUCTURE_LISIBILITE: 'Structurez votre contenu avec des paragraphes clairs, des listes et une hiérarchie logique.',
-  UTILISATION_MOTS_CLES: 'Utilisez vos mots-clés de manière naturelle et équilibrée, avec des variations.',
-  ORIGINALITE_VALEUR: 'Apportez une valeur unique et des informations nouvelles à votre audience.',
-  ENGAGEMENT_UX: 'Rédigez de manière fluide et sans erreurs pour une meilleure expérience utilisateur.',
-  TECHNIQUES_SEO_BASE: 'Placez vos mots-clés principaux dans les premiers paragraphes de manière pertinente.'
+  UTILISATION_CHAMP_LEXICAL: 'Développez le champ lexical de vos mots-clés en utilisant des synonymes, variations et termes associés. Enrichissez votre contenu avec les mots-clés thématiques et leurs synonymes détectés automatiquement.',
+  POSITION_IMPLEMENTATION: 'Placez vos mots-clés dans le premier paragraphe et au début des paragraphes suivants.',
+  LONGUEUR_SUFFISANTE: 'Rédigez un contenu suffisamment long (minimum 50 mots, idéalement plus de 500 mots).',
+  STRUCTURE_LISIBILITE: 'Structurez votre contenu avec une densité appropriée et une découpe en paragraphes claire.',
+  CONTENU_DUPLIQUE: 'Évitez la duplication de contenu pour maintenir l\'originalité de votre texte.'
 }
 
 module.exports = {

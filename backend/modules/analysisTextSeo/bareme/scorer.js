@@ -5,12 +5,11 @@
 
 const { BAREME_CONFIG, CRITERES, SEUILS_NOTATION, MESSAGES_AIDE } = require('./constants')
 const {
-  evaluerQualiteContenu,
+  evaluerUtilisationChampLexical,
+  evaluerPositionImplementation,
+  evaluerLongueurSuffisante,
   evaluerStructureLisibilite,
-  evaluerUtilisationMotsCles,
-  evaluerOriginaliteValeur,
-  evaluerEngagementUX,
-  evaluerTechniquesSeoBase
+  evaluerContenuDuplique
 } = require('./evaluators')
 
 /**
@@ -53,46 +52,39 @@ class TextSeoScorer {
     // Évaluation de chaque critère principal
     const evaluations = []
 
-    // 1. Qualité du contenu
-    if (CRITERES.QUALITE_CONTENU.enabled) {
-      const qualite = evaluerQualiteContenu(texte)
-      evaluations.push(qualite)
-      resultats.criteres.qualite_contenu = qualite
+    // 1. Utilisation des mots clé et de leurs champ lexical
+    if (CRITERES.UTILISATION_CHAMP_LEXICAL.enabled) {
+      const champLexical = evaluerUtilisationChampLexical(texte, motsCles)
+      evaluations.push(champLexical)
+      resultats.criteres.utilisation_champ_lexical = champLexical
     }
 
-    // 2. Structure et lisibilité
+    // 2. Position et Implémentation des mots clefs
+    if (CRITERES.POSITION_IMPLEMENTATION.enabled) {
+      const position = evaluerPositionImplementation(texte, motsCles)
+      evaluations.push(position)
+      resultats.criteres.position_implementation = position
+    }
+
+    // 4. Longueur suffisante
+    if (CRITERES.LONGUEUR_SUFFISANTE.enabled) {
+      const longueur = evaluerLongueurSuffisante(texte)
+      evaluations.push(longueur)
+      resultats.criteres.longueur_suffisante = longueur
+    }
+
+    // 5. Structure et lisibilité
     if (CRITERES.STRUCTURE_LISIBILITE.enabled) {
       const structure = evaluerStructureLisibilite(texte)
       evaluations.push(structure)
       resultats.criteres.structure_lisibilite = structure
     }
 
-    // 3. Utilisation des mots-clés
-    if (CRITERES.UTILISATION_MOTS_CLES.enabled) {
-      const motsClesEval = evaluerUtilisationMotsCles(texte, motsCles)
-      evaluations.push(motsClesEval)
-      resultats.criteres.utilisation_mots_cles = motsClesEval
-    }
-
-    // 4. Originalité et valeur ajoutée
-    if (CRITERES.ORIGINALITE_VALEUR.enabled) {
-      const originalite = evaluerOriginaliteValeur(texte)
-      evaluations.push(originalite)
-      resultats.criteres.originalite_valeur = originalite
-    }
-
-    // 5. Engagement et expérience utilisateur
-    if (CRITERES.ENGAGEMENT_UX.enabled) {
-      const engagement = evaluerEngagementUX(texte)
-      evaluations.push(engagement)
-      resultats.criteres.engagement_ux = engagement
-    }
-
-    // 6. Techniques SEO de base
-    if (CRITERES.TECHNIQUES_SEO_BASE.enabled) {
-      const techniques = evaluerTechniquesSeoBase(texte, motsCles)
-      evaluations.push(techniques)
-      resultats.criteres.techniques_seo_base = techniques
+    // 6. Contenu dupliqué
+    if (CRITERES.CONTENU_DUPLIQUE.enabled) {
+      const duplication = evaluerContenuDuplique(texte)
+      evaluations.push(duplication)
+      resultats.criteres.contenu_duplique = duplication
     }
 
     // Calcul du score total
