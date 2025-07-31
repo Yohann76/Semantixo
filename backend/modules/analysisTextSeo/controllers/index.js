@@ -21,7 +21,7 @@ const createAnalysis = async (req, res) => {
     });
 
     // Analyse SEO avec le nouveau système de barème
-    const analysisResults = analyzeTextSeo(text, keywords);
+    const analysisResults = await analyzeTextSeo(text, keywords);
 
     if (!analysisResults.success) {
       return res.status(500).json({
@@ -57,6 +57,9 @@ const createAnalysis = async (req, res) => {
         id: analysis._id,
         seoScore: analysisResults.seoScore,
         grade: analysisResults.baremeResults.grade,
+        topic: analysisResults.baremeResults?.criteria?.keyword_usage?.details?.topicAnalysis?.success ? 
+               analysisResults.baremeResults?.criteria?.keyword_usage?.details?.topicAnalysis?.topic : 
+               'Non détecté',
         baremeResults: analysisResults.baremeResults,
         basicMetrics: analysisResults.basicMetrics,
         timestamp: analysis.timestamp
@@ -91,6 +94,9 @@ const getAnalyses = async (req, res) => {
         text: analysis.text, // Texte complet au lieu de tronqué
         seoScore: analysis.seoScore,
         grade: analysis.baremeResults?.grade || 'Non évalué',
+        topic: analysis.baremeResults?.criteria?.keyword_usage?.details?.topicAnalysis?.success ? 
+               analysis.baremeResults?.criteria?.keyword_usage?.details?.topicAnalysis?.topic : 
+               'Non détecté',
         keywords: analysis.keywords,
         metrics: analysis.metrics,
         baremeResults: analysis.baremeResults,
@@ -135,6 +141,9 @@ const getAnalysis = async (req, res) => {
         text: analysis.text,
         seoScore: analysis.seoScore,
         grade: analysis.baremeResults?.grade || 'Non évalué',
+        topic: analysis.baremeResults?.criteria?.keyword_usage?.details?.topicAnalysis?.success ? 
+               analysis.baremeResults?.criteria?.keyword_usage?.details?.topicAnalysis?.topic : 
+               'Non détecté',
         keywords: analysis.keywords,
         searchIntent: analysis.searchIntent,
         metrics: analysis.metrics,

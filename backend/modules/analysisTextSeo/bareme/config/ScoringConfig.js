@@ -6,52 +6,52 @@
 class ScoringConfig {
   constructor() {
     this.version = '2.3.0'
-    this.totalPoints = 100
+    this.totalPoints = 60  // Changé de 100 à 60
     this.enabled = true
     
     this.criteria = {
       keywordUsage: {
         id: 'keyword_usage',
         name: 'Utilisation des mots-clés',
-        weight: 60,
+        weight: 60,  // 60 points sur 60
         enabled: true,
         description: 'Analyse de l\'utilisation des mots-clés et de leur champ lexical'
       },
       keywordPosition: {
         id: 'keyword_position',
         name: 'Position des mots-clés',
-        weight: 10,
-        enabled: true,
+        weight: 0,  // Désactivé
+        enabled: false,  // Désactivé
         description: 'Analyse de la position des mots-clés dans le texte'
       },
       contentLength: {
         id: 'content_length',
         name: 'Longueur du contenu',
-        weight: 5,
-        enabled: true,
+        weight: 0,  // Désactivé
+        enabled: false,  // Désactivé
         description: 'Évaluation de la longueur du contenu'
       },
       readability: {
         id: 'readability',
         name: 'Lisibilité',
-        weight: 10,
-        enabled: true,
+        weight: 0,  // Désactivé
+        enabled: false,  // Désactivé
         description: 'Analyse de la structure et de la lisibilité'
       },
       uniqueness: {
         id: 'uniqueness',
         name: 'Originalité',
-        weight: 15,
-        enabled: true,
+        weight: 0,  // Désactivé
+        enabled: false,  // Désactivé
         description: 'Évaluation de l\'originalité du contenu'
       }
     }
 
     this.grading = {
-      excellent: { min: 85, label: 'Excellent' },
-      veryGood: { min: 70, label: 'Très bon' },
-      good: { min: 55, label: 'Bon' },
-      average: { min: 40, label: 'Moyen' },
+      excellent: { min: 51, label: 'Excellent' },  // 85% de 60 = 51
+      veryGood: { min: 42, label: 'Très bon' },   // 70% de 60 = 42
+      good: { min: 33, label: 'Bon' },            // 55% de 60 = 33
+      average: { min: 24, label: 'Moyen' },       // 40% de 60 = 24
       poor: { min: 0, label: 'Insuffisant' }
     }
 
@@ -97,7 +97,7 @@ class ScoringConfig {
     const errors = []
     const warnings = []
 
-    // Vérifier la somme des poids
+    // Vérifier que la somme des poids est égale au total
     const totalWeight = Object.values(this.criteria)
       .filter(c => c.enabled)
       .reduce((sum, c) => sum + c.weight, 0)

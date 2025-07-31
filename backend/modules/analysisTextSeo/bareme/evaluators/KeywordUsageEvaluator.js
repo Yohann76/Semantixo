@@ -4,7 +4,7 @@
  */
 
 const IEvaluator = require('../interfaces/IEvaluator')
-const { analyserMotsClesThematiques } = require('../keywordDetector')
+const { detectTopicWithGPT } = require('../../utils/findTopicFromText')
 
 class KeywordUsageEvaluator extends IEvaluator {
   constructor(config) {
@@ -21,7 +21,7 @@ class KeywordUsageEvaluator extends IEvaluator {
     return this.criteria
   }
 
-  evaluate(context) {
+  async evaluate(context) {
     const { text, keywords = [] } = context
     
     if (!this.isEnabled()) {
@@ -32,14 +32,14 @@ class KeywordUsageEvaluator extends IEvaluator {
       }
     }
 
-    // Analyse automatique des mots-clés thématiques
-    const thematicAnalysis = analyserMotsClesThematiques(text)
+    // Détection de la thématique du texte avec GPT
+    const topicAnalysis = await detectTopicWithGPT(text)
     
     // Évaluation de la déclinaison des mots-clés
-    const declinationScore = this.evaluateKeywordDeclination(text, keywords, thematicAnalysis)
+    const declinationScore = this.evaluateKeywordDeclination(text, keywords)
     
     // Évaluation de la correspondance parfaite
-    const correspondenceScore = this.evaluatePerfectCorrespondence(text, keywords, thematicAnalysis)
+    const correspondenceScore = this.evaluatePerfectCorrespondence(text, keywords)
     
     const totalScore = declinationScore + correspondenceScore
 
@@ -49,12 +49,12 @@ class KeywordUsageEvaluator extends IEvaluator {
       details: {
         declination: declinationScore,
         correspondence: correspondenceScore,
-        thematicAnalysis: thematicAnalysis
+        topicAnalysis: topicAnalysis
       }
     }
   }
 
-  evaluateKeywordDeclination(text, keywords, thematicAnalysis) {
+  evaluateKeywordDeclination(text, keywords) {
     const textLower = text.toLowerCase()
     let totalVariations = 0
     let detectedVariations = 0
@@ -71,23 +71,11 @@ class KeywordUsageEvaluator extends IEvaluator {
       })
     })
 
-    // Analyser les mots-clés thématiques détectés
-    thematicAnalysis.motsClesThematiques.forEach(keyword => {
-      const variations = this.generateLexicalVariations(keyword.mot.toLowerCase())
-      totalVariations += variations.length
-      
-      variations.forEach(variation => {
-        if (textLower.includes(variation)) {
-          detectedVariations++
-        }
-      })
-    })
-
     const usageRate = totalVariations > 0 ? detectedVariations / totalVariations : 0
     return this.calculateScore(usageRate, 30)
   }
 
-  evaluatePerfectCorrespondence(text, keywords, thematicAnalysis) {
+  evaluatePerfectCorrespondence(text, keywords) {
     const textLower = text.toLowerCase()
     let foundKeywords = 0
     let perfectMatches = 0
@@ -98,17 +86,6 @@ class KeywordUsageEvaluator extends IEvaluator {
       if (occurrences > 0) {
         foundKeywords++
         if (this.isAppropriateContext(text, keyword)) {
-          perfectMatches++
-        }
-      }
-    })
-
-    // Analyser les mots-clés thématiques
-    thematicAnalysis.motsClesThematiques.forEach(keyword => {
-      const occurrences = (textLower.match(new RegExp(keyword.mot.toLowerCase(), 'g')) || []).length
-      if (occurrences > 0) {
-        foundKeywords++
-        if (this.isAppropriateContext(text, keyword.mot)) {
           perfectMatches++
         }
       }

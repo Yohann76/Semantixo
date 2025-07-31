@@ -33,6 +33,15 @@
             <div class="info-label">Version du barème</div>
             <div class="info-value">{{ analysis.baremeResults?.bareme_version || '1.0.0' }}</div>
           </div>
+          <div class="info-item">
+            <div class="info-label">Thématique détectée</div>
+            <div class="info-value topic-value">
+              <span v-if="analysis.topic && analysis.topic !== 'Non détecté'" class="topic-badge">
+                {{ analysis.topic }}
+              </span>
+              <span v-else class="no-data">Non détecté</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -884,6 +893,29 @@ const getProgressClass = (score, maxScore) => {
 .score-value {
   font-weight: bold;
   color: #667eea;
+}
+
+/* Styles pour la thématique */
+.topic-value {
+  display: flex;
+  align-items: center;
+}
+
+.topic-badge {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+  transition: all 0.3s ease;
+}
+
+.topic-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
 }
 
 /* Responsive */

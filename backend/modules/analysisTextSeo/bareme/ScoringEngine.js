@@ -40,7 +40,7 @@ class ScoringEngine extends IScoringEngine {
   /**
    * Évalue un texte selon tous les critères
    */
-  evaluateText(text, keywords = []) {
+  async evaluateText(text, keywords = []) {
     if (!this.config.enabled) {
       throw new Error('Le système de scoring est désactivé')
     }
@@ -65,9 +65,9 @@ class ScoringEngine extends IScoringEngine {
     // Évaluer chaque critère
     const evaluations = []
     
-    this.evaluators.forEach(evaluator => {
+    for (const evaluator of this.evaluators) {
       if (evaluator.isEnabled()) {
-        const evaluation = evaluator.evaluate({ text, keywords })
+        const evaluation = await evaluator.evaluate({ text, keywords })
         const criteriaInfo = evaluator.getCriteriaInfo()
         
         // Ajouter les informations du critère à l'évaluation
@@ -83,7 +83,7 @@ class ScoringEngine extends IScoringEngine {
           details: evaluation.details
         }
       }
-    })
+    }
 
     // Calculer le score total
     results.totalScore = evaluations.reduce((total, evaluation) => total + evaluation.score, 0)

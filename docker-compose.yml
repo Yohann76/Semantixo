@@ -25,12 +25,15 @@ services:
       dockerfile: Dockerfile
     container_name: semantixo-backend
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       MONGODB_URI: mongodb://admin:password123@mongodb:27017/semantixo?authSource=admin
       JWT_SECRET: votre_secret_jwt_tres_securise_ici_changez_le_en_production
       JWT_EXPIRES_IN: 7d
       PORT: 3000
       NODE_ENV: development
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
     ports:
       - "3000:3000"
     depends_on:

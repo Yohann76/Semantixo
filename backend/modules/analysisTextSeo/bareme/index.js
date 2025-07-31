@@ -15,8 +15,8 @@ const scoringEngine = new ScoringEngine()
  * @param {Array} keywords - Les mots-clés ciblés
  * @returns {Object} Résultats complets de l'évaluation
  */
-const evaluateTextSEO = (text, keywords = []) => {
-  return scoringEngine.evaluateText(text, keywords)
+const evaluateTextSEO = async (text, keywords = []) => {
+  return await scoringEngine.evaluateText(text, keywords)
 }
 
 /**

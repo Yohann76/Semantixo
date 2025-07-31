@@ -11,7 +11,7 @@ const bareme = require('../bareme')
  * @param {Array} keywords - Les mots-clés ciblés
  * @returns {Object} Résultats d'analyse avec barème
  */
-const analyzeTextSeo = (text, keywords = []) => {
+const analyzeTextSeo = async (text, keywords = []) => {
   try {
     // Analyse de base (métriques simples)
     const basicMetrics = {
@@ -22,7 +22,7 @@ const analyzeTextSeo = (text, keywords = []) => {
     }
 
     // Analyse avec le barème SEO
-    const baremeResults = bareme.evaluateTextSEO(text, keywords)
+    const baremeResults = await bareme.evaluateTextSEO(text, keywords)
 
     // Calcul du score SEO global
     const seoScore = Math.round((baremeResults.totalScore / baremeResults.maxScore) * 100)
