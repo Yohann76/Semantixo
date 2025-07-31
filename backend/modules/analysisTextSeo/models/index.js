@@ -40,6 +40,10 @@ const analysisTextSeoSchema = new mongoose.Schema({
     type: [String],
     default: []
   },
+  topic: {
+    type: String,
+    default: 'Non détecté'
+  },
   baremeResults: {
     totalScore: {
       type: Number,

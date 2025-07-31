@@ -31,6 +31,11 @@ const createAnalysis = async (req, res) => {
       });
     }
 
+    // Extraire la thématique
+    const topic = analysisResults.baremeResults?.criteria?.keyword_usage?.details?.topicAnalysis?.success ? 
+                  analysisResults.baremeResults?.criteria?.keyword_usage?.details?.topicAnalysis?.topic : 
+                  'Non détecté';
+
     // Créer l'analyse dans la base de données
     const analysis = new AnalysisTextSeo({
       userId,
@@ -39,6 +44,7 @@ const createAnalysis = async (req, res) => {
       metrics: analysisResults.basicMetrics,
       baremeResults: analysisResults.baremeResults,
       keywords,
+      topic,
       timestamp: new Date()
     });
 
@@ -57,9 +63,7 @@ const createAnalysis = async (req, res) => {
         id: analysis._id,
         seoScore: analysisResults.seoScore,
         grade: analysisResults.baremeResults.grade,
-        topic: analysisResults.baremeResults?.criteria?.keyword_usage?.details?.topicAnalysis?.success ? 
-               analysisResults.baremeResults?.criteria?.keyword_usage?.details?.topicAnalysis?.topic : 
-               'Non détecté',
+        topic: topic,
         baremeResults: analysisResults.baremeResults,
         basicMetrics: analysisResults.basicMetrics,
         timestamp: analysis.timestamp
@@ -94,9 +98,7 @@ const getAnalyses = async (req, res) => {
         text: analysis.text, // Texte complet au lieu de tronqué
         seoScore: analysis.seoScore,
         grade: analysis.baremeResults?.grade || 'Non évalué',
-        topic: analysis.baremeResults?.criteria?.keyword_usage?.details?.topicAnalysis?.success ? 
-               analysis.baremeResults?.criteria?.keyword_usage?.details?.topicAnalysis?.topic : 
-               'Non détecté',
+        topic: analysis.topic,
         keywords: analysis.keywords,
         metrics: analysis.metrics,
         baremeResults: analysis.baremeResults,
@@ -141,9 +143,7 @@ const getAnalysis = async (req, res) => {
         text: analysis.text,
         seoScore: analysis.seoScore,
         grade: analysis.baremeResults?.grade || 'Non évalué',
-        topic: analysis.baremeResults?.criteria?.keyword_usage?.details?.topicAnalysis?.success ? 
-               analysis.baremeResults?.criteria?.keyword_usage?.details?.topicAnalysis?.topic : 
-               'Non détecté',
+        topic: analysis.topic,
         keywords: analysis.keywords,
         searchIntent: analysis.searchIntent,
         metrics: analysis.metrics,
