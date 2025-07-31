@@ -1,0 +1,72 @@
+Résultats: {
+  analyzedText: 'SEO important pour le r├®f├®rencement....',
+  targetKeywords: [ 'SEO' ],
+  scoringVersion: '2.3.0',
+  totalScore: 62,
+  maxScore: 100,
+  grade: 'Bon',
+  criteria: {
+    keyword_usage: {
+      name: 'Utilisation des mots-cl├®s',
+      weight: 60,
+      score: 45,
+      maxScore: 60,
+      details: [Object]
+    },
+    keyword_position: {
+      name: 'Position des mots-cl├®s',
+      weight: 10,
+      score: 10,
+      maxScore: 10,
+      details: [Object]
+    },
+    content_length: {
+      name: 'Longueur du contenu',
+      weight: 5,
+      score: 0,
+      maxScore: 5,
+      details: [Object]
+    },
+    readability: {
+      name: 'Lisibilit├®',
+      weight: 10,
+      score: 7,
+      maxScore: 10,
+      details: [Object]
+    },
+    uniqueness: {
+      name: 'Originalit├®',
+      weight: 15,
+      score: 0,
+      maxScore: 15,
+      details: [Object]
+    }
+  },
+  recommendations: [
+    {
+      criteria: 'Longueur du contenu',
+      currentScore: 0,
+      maxScore: 5,
+      percentage: 0,
+      recommendation: 'R├®digez un contenu suffisamment long (minimum 50 mots, id├®alement plus de 500 mots).'
+    },
+    {
+      criteria: 'Originalit├®',
+      currentScore: 0,
+      maxScore: 15,
+      percentage: 0,
+      recommendation: "├ëvitez la duplication de contenu pour maintenir l'originalit├® de votre texte."
+    }
+  ],
+  metrics: {
+    textStatistics: {
+      wordCount: 5,
+      characterCount: 36,
+      paragraphCount: 1,
+      averageWordsPerParagraph: 5
+    },
+    scoreDistribution: [ [Object], [Object], [Object], [Object], [Object] ],
+    globalPerformance: { averageScore: 49, excellentCriteria: 1, needsImprovement: 2 }
+  },
+  timestamp: '2025-07-31T15:59:45.245Z'
+}

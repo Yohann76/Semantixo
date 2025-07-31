@@ -22,10 +22,10 @@ const analyzeTextSeo = (text, keywords = []) => {
     }
 
     // Analyse avec le barème SEO
-    const baremeResults = bareme.evaluerTexteSeo(text, keywords)
+    const baremeResults = bareme.evaluateTextSEO(text, keywords)
 
     // Calcul du score SEO global
-    const seoScore = Math.round((baremeResults.score_total / baremeResults.score_maximum) * 100)
+    const seoScore = Math.round((baremeResults.totalScore / baremeResults.maxScore) * 100)
 
     return {
       success: true,
@@ -60,7 +60,7 @@ const getBaremeConfiguration = () => {
  * @returns {Object} Résultat de la validation
  */
 const validateBaremeConfiguration = () => {
-  return bareme.validerConfiguration()
+  return bareme.validateConfiguration()
 }
 
 /**
@@ -69,25 +69,23 @@ const validateBaremeConfiguration = () => {
  * @param {boolean} enabled - Activer ou désactiver
  */
 const toggleBaremeCritere = (critereId, enabled = true) => {
-  return bareme.toggleCritere(critereId, enabled)
+  return bareme.toggleCriteria(critereId, enabled)
 }
 
 /**
- * Active ou désactive un sous-critère du barème
- * @param {string} critereId - L'ID du critère parent
- * @param {string} sousCritereId - L'ID du sous-critère
- * @param {boolean} enabled - Activer ou désactiver
+ * Obtient les critères disponibles du barème
+ * @returns {Array} Liste des critères disponibles
  */
-const toggleBaremeSousCritere = (critereId, sousCritereId, enabled = true) => {
-  return bareme.toggleSousCritere(critereId, sousCritereId, enabled)
+const getBaremeCriteria = () => {
+  return bareme.getAvailableCriteria()
 }
 
 /**
- * Obtient les constantes du barème
- * @returns {Object} Constantes du barème
+ * Obtient les critères disponibles du barème
+ * @returns {Array} Liste des critères disponibles
  */
 const getBaremeConstantes = () => {
-  return bareme.getConstantes()
+  return bareme.getAvailableCriteria()
 }
 
 /**
@@ -118,7 +116,7 @@ const testBareme = () => {
   const motsCles = ['SEO', 'référencement', 'optimisation']
   
   try {
-    const resultats = bareme.evaluerTexteSeo(exempleTexte, motsCles, 'informationnelle')
+    const resultats = bareme.evaluateTextSEO(exempleTexte, motsCles)
     return {
       success: true,
       resultats,
@@ -141,7 +139,7 @@ module.exports = {
   getBaremeConfiguration,
   validateBaremeConfiguration,
   toggleBaremeCritere,
-  toggleBaremeSousCritere,
+  getBaremeCriteria,
   getBaremeConstantes,
   
   // Fonction de test

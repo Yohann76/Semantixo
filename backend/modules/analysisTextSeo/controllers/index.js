@@ -47,7 +47,7 @@ const createAnalysis = async (req, res) => {
     console.log('✅ [CONTROLLER] Analyse SEO créée avec succès:', {
       analysisId: analysis._id,
       seoScore: analysisResults.seoScore,
-      notation: analysisResults.baremeResults.notation
+      grade: analysisResults.baremeResults.grade
     });
 
     res.status(201).json({
@@ -56,7 +56,7 @@ const createAnalysis = async (req, res) => {
       data: {
         id: analysis._id,
         seoScore: analysisResults.seoScore,
-        notation: analysisResults.baremeResults.notation,
+        grade: analysisResults.baremeResults.grade,
         baremeResults: analysisResults.baremeResults,
         basicMetrics: analysisResults.basicMetrics,
         timestamp: analysis.timestamp
@@ -90,7 +90,7 @@ const getAnalyses = async (req, res) => {
         id: analysis._id,
         text: analysis.text, // Texte complet au lieu de tronqué
         seoScore: analysis.seoScore,
-        notation: analysis.baremeResults?.notation || 'Non évalué',
+        grade: analysis.baremeResults?.grade || 'Non évalué',
         keywords: analysis.keywords,
         metrics: analysis.metrics,
         baremeResults: analysis.baremeResults,
@@ -134,7 +134,7 @@ const getAnalysis = async (req, res) => {
         id: analysis._id,
         text: analysis.text,
         seoScore: analysis.seoScore,
-        notation: analysis.baremeResults?.notation || 'Non évalué',
+        grade: analysis.baremeResults?.grade || 'Non évalué',
         keywords: analysis.keywords,
         searchIntent: analysis.searchIntent,
         metrics: analysis.metrics,
@@ -223,10 +223,10 @@ const getStats = async (req, res) => {
     };
 
     // Distribution des notations
-    const notationDistribution = {};
+    const gradeDistribution = {};
     analyses.forEach(analysis => {
-      const notation = analysis.baremeResults?.notation || 'Non évalué';
-      notationDistribution[notation] = (notationDistribution[notation] || 0) + 1;
+      const grade = analysis.baremeResults?.grade || 'Non évalué';
+      gradeDistribution[grade] = (gradeDistribution[grade] || 0) + 1;
     });
 
     // Mots-clés les plus utilisés
@@ -250,7 +250,7 @@ const getStats = async (req, res) => {
       .map(analysis => ({
         id: analysis._id,
         seoScore: analysis.seoScore,
-        notation: analysis.baremeResults?.notation || 'Non évalué',
+        grade: analysis.baremeResults?.grade || 'Non évalué',
         timestamp: analysis.createdAt
       }));
 
@@ -266,7 +266,7 @@ const getStats = async (req, res) => {
         totalAnalyses,
         averageScore,
         scoreDistribution,
-        notationDistribution,
+        gradeDistribution,
         topKeywords,
         recentActivity
       }

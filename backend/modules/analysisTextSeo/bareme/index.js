@@ -1,24 +1,22 @@
 /**
  * Module de barème SEO pour l'analyse de texte
- * Point d'entrée principal pour le système de notation
+ * Architecture refactorisée selon les principes SOLID
  */
 
-const TextSeoScorer = require('./scorer')
-const { BAREME_CONFIG, CRITERES, SEUILS_NOTATION, MESSAGES_AIDE } = require('./constants')
+const ScoringEngine = require('./ScoringEngine')
+const ScoringConfig = require('./config/ScoringConfig')
 
-/**
- * Instance principale du scorer
- */
-const scorer = new TextSeoScorer()
+// Instance principale du moteur de scoring
+const scoringEngine = new ScoringEngine()
 
 /**
  * Fonction principale d'évaluation de texte SEO
- * @param {string} texte - Le texte à analyser
- * @param {Array} motsCles - Les mots-clés ciblés
+ * @param {string} text - Le texte à analyser
+ * @param {Array} keywords - Les mots-clés ciblés
  * @returns {Object} Résultats complets de l'évaluation
  */
-const evaluerTexteSeo = (texte, motsCles = []) => {
-  return scorer.evaluerTexte(texte, motsCles)
+const evaluateTextSEO = (text, keywords = []) => {
+  return scoringEngine.evaluateText(text, keywords)
 }
 
 /**
@@ -26,65 +24,62 @@ const evaluerTexteSeo = (texte, motsCles = []) => {
  * @returns {Object} Configuration complète
  */
 const getConfiguration = () => {
-  return scorer.getConfiguration()
+  return scoringEngine.getConfiguration()
 }
 
 /**
  * Valide la configuration du barème
  * @returns {Object} Résultat de la validation
  */
-const validerConfiguration = () => {
-  return scorer.validerConfiguration()
+const validateConfiguration = () => {
+  return scoringEngine.validateConfiguration()
 }
 
 /**
  * Active ou désactive un critère
- * @param {string} critereId - L'ID du critère
+ * @param {string} criteriaId - L'ID du critère
  * @param {boolean} enabled - Activer ou désactiver
  */
-const toggleCritere = (critereId, enabled = true) => {
-  return scorer.toggleCritere(critereId, enabled)
+const toggleCriteria = (criteriaId, enabled = true) => {
+  return scoringEngine.config.toggleCriteria(criteriaId, enabled)
 }
 
 /**
- * Active ou désactive un sous-critère
- * @param {string} critereId - L'ID du critère parent
- * @param {string} sousCritereId - L'ID du sous-critère
- * @param {boolean} enabled - Activer ou désactiver
+ * Obtient l'instance du moteur de scoring
+ * @returns {ScoringEngine} Instance du moteur
  */
-const toggleSousCritere = (critereId, sousCritereId, enabled = true) => {
-  return scorer.toggleSousCritere(critereId, sousCritereId, enabled)
+const getScoringEngine = () => {
+  return scoringEngine
 }
 
 /**
- * Obtient les constantes du barème
- * @returns {Object} Constantes du barème
+ * Obtient les informations sur les critères disponibles
+ * @returns {Object} Informations sur les critères
  */
-const getConstantes = () => {
-  return {
-    BAREME_CONFIG,
-    CRITERES,
-    SEUILS_NOTATION,
-    MESSAGES_AIDE
-  }
+const getAvailableCriteria = () => {
+  const config = scoringEngine.getConfiguration()
+  return Object.entries(config.criteria).map(([key, criteria]) => ({
+    id: criteria.id,
+    name: criteria.name,
+    weight: criteria.weight,
+    enabled: criteria.enabled,
+    description: criteria.description
+  }))
 }
 
 module.exports = {
   // Instance principale
-  scorer,
+  scoringEngine,
   
   // Fonctions principales
-  evaluerTexteSeo,
+  evaluateTextSEO,
   getConfiguration,
-  validerConfiguration,
-  toggleCritere,
-  toggleSousCritere,
-  getConstantes,
+  validateConfiguration,
+  toggleCriteria,
+  getScoringEngine,
+  getAvailableCriteria,
   
-  // Classes et constantes
-  TextSeoScorer,
-  BAREME_CONFIG,
-  CRITERES,
-  SEUILS_NOTATION,
-  MESSAGES_AIDE
+  // Classes pour extensibilité
+  ScoringEngine,
+  ScoringConfig
 } 

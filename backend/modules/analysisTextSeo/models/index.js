@@ -41,74 +41,58 @@ const analysisTextSeoSchema = new mongoose.Schema({
     default: []
   },
   baremeResults: {
-    score_total: {
+    totalScore: {
       type: Number,
       default: 0
     },
-    score_maximum: {
+    maxScore: {
       type: Number,
       default: 100
     },
-    notation: {
+    grade: {
       type: String,
       enum: ['Excellent', 'Très bon', 'Bon', 'Moyen', 'Insuffisant'],
       default: 'Non évalué'
     },
-    criteres: {
-      qualite_contenu: {
+    criteria: {
+      type: Map,
+      of: {
+        name: String,
+        weight: Number,
         score: Number,
-        sous_criteres: Object
-      },
-      structure_lisibilite: {
-        score: Number,
-        sous_criteres: Object
-      },
-      utilisation_mots_cles: {
-        score: Number,
-        sous_criteres: Object
-      },
-      originalite_valeur: {
-        score: Number,
-        sous_criteres: Object
-      },
-      engagement_ux: {
-        score: Number,
-        sous_criteres: Object
-      },
-      techniques_seo_base: {
-        score: Number,
-        sous_criteres: Object
+        maxScore: Number,
+        details: Object
       }
     },
-    recommandations: [{
-      critere: String,
-      score_actuel: Number,
-      score_maximum: Number,
-      pourcentage: Number,
-      recommandation: String
+    recommendations: [{
+      criteria: String,
+      currentScore: Number,
+      maxScore: Number,
+      percentage: Number,
+      recommendation: String
     }],
-    metriques: {
-      statistiques_texte: {
-        nombre_mots: Number,
-        nombre_caracteres: Number,
-        nombre_paragraphes: Number,
-        longueur_moyenne_paragraphe: Number
+    metrics: {
+      textStatistics: {
+        wordCount: Number,
+        characterCount: Number,
+        paragraphCount: Number,
+        averageWordsPerParagraph: Number
       },
-      repartition_scores: [{
-        critere: String,
+      scoreDistribution: [{
+        criteria: String,
         score: Number,
-        poids: Number,
-        pourcentage: Number
+        weight: Number,
+        percentage: Number
       }],
-      performance_globale: {
-        score_moyen: Number,
-        criteres_excellents: Number,
-        criteres_a_ameliorer: Number
+      globalPerformance: {
+        averageScore: Number,
+        excellentCriteria: Number,
+        needsImprovement: Number
       }
     },
-    bareme_version: {
+    scoringVersion: {
       type: String,
-      default: '1.0.0'
+      default: '2.3.0'
     },
     timestamp: {
       type: Date,
@@ -126,7 +110,7 @@ const analysisTextSeoSchema = new mongoose.Schema({
 // Index pour améliorer les performances des requêtes
 analysisTextSeoSchema.index({ userId: 1, createdAt: -1 });
 analysisTextSeoSchema.index({ userId: 1, seoScore: -1 });
-analysisTextSeoSchema.index({ 'baremeResults.notation': 1 });
+analysisTextSeoSchema.index({ 'baremeResults.grade': 1 });
 
 // Méthodes statiques
 analysisTextSeoSchema.statics.findByUserId = function(userId) {
@@ -140,10 +124,10 @@ analysisTextSeoSchema.statics.findByScoreRange = function(userId, minScore, maxS
   }).sort({ createdAt: -1 });
 };
 
-analysisTextSeoSchema.statics.findByNotation = function(userId, notation) {
+analysisTextSeoSchema.statics.findByGrade = function(userId, grade) {
   return this.find({ 
     userId, 
-    'baremeResults.notation': notation 
+    'baremeResults.grade': grade 
   }).sort({ createdAt: -1 });
 };
 
@@ -152,20 +136,20 @@ analysisTextSeoSchema.methods.getScorePercentage = function() {
   return Math.round((this.seoScore / 100) * 100);
 };
 
-analysisTextSeoSchema.methods.getNotation = function() {
-  return this.baremeResults?.notation || 'Non évalué';
+analysisTextSeoSchema.methods.getGrade = function() {
+  return this.baremeResults?.grade || 'Non évalué';
 };
 
 analysisTextSeoSchema.methods.getRecommendations = function() {
-  return this.baremeResults?.recommandations || [];
+  return this.baremeResults?.recommendations || [];
 };
 
-analysisTextSeoSchema.methods.getCriteresScores = function() {
-  if (!this.baremeResults?.criteres) return {};
+analysisTextSeoSchema.methods.getCriteriaScores = function() {
+  if (!this.baremeResults?.criteria) return {};
   
   const scores = {};
-  Object.entries(this.baremeResults.criteres).forEach(([key, critere]) => {
-    scores[key] = critere.score || 0;
+  this.baremeResults.criteria.forEach((value, key) => {
+    scores[key] = value.score || 0;
   });
   return scores;
 };
@@ -190,7 +174,7 @@ analysisTextSeoSchema.virtual('summary').get(function() {
     id: this._id,
     textPreview: this.text.substring(0, 100) + '...',
     seoScore: this.seoScore,
-    notation: this.getNotation(),
+    grade: this.getGrade(),
     wordCount: this.metrics.wordCount,
     keywords: this.keywords,
     searchIntent: this.searchIntent,
