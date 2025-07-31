@@ -1,4 +1,6 @@
 const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
@@ -10,13 +12,17 @@ async function detectTopicWithGPT(text) {
     return { success: false, error: 'Le texte est requis et doit être une chaîne de caractères.' };
   }
 
-  // Todo : replace prompt in analysisTextSeo/prompt/findTopicFromText.txt
-  const prompt = `
-Tu es un expert en analyse de texte. Donne-moi la thématique principale de ce texte, en un seul mot ou une courte phrase, sans phrase d'introduction ni explication. Sois précis et synthétique.
-Texte :
-"""${text}"""
-Thématique :
-`;
+  // Charger le prompt depuis le fichier
+  const promptPath = path.join(__dirname, '../prompts/findTopicFromText.txt');
+  let prompt;
+  
+  try {
+    prompt = fs.readFileSync(promptPath, 'utf8');
+    prompt = prompt.replace('{{TEXT}}', text);
+  } catch (error) {
+    console.error('Erreur lors du chargement du prompt:', error.message);
+    return { success: false, error: 'Erreur lors du chargement du prompt.' };
+  }
 
   try {
     const response = await axios.post(
