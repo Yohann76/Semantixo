@@ -45,6 +45,7 @@ const createAnalysis = async (req, res) => {
       baremeResults: analysisResults.baremeResults,
       keywords,
       topic,
+      keywordAnalysis: analysisResults.keywordAnalysis,
       timestamp: new Date()
     });
 
@@ -61,11 +62,14 @@ const createAnalysis = async (req, res) => {
       message: 'Analyse SEO créée avec succès',
       data: {
         id: analysis._id,
+        text: analysis.text,
         seoScore: analysisResults.seoScore,
         grade: analysisResults.baremeResults.grade,
         topic: topic,
+        keywords: analysis.keywords,
+        keywordAnalysis: analysisResults.keywordAnalysis,
+        metrics: analysisResults.basicMetrics,
         baremeResults: analysisResults.baremeResults,
-        basicMetrics: analysisResults.basicMetrics,
         timestamp: analysis.timestamp
       }
     });

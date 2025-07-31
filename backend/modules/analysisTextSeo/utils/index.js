@@ -4,6 +4,7 @@
  */
 
 const bareme = require('../bareme')
+const { findKeywordsFromText } = require('./findKeywordFromTopic')
 
 /**
  * Analyse SEO complète d'un texte
@@ -21,6 +22,9 @@ const analyzeTextSeo = async (text, keywords = []) => {
       averageWordLength: Math.round(text.replace(/\s+/g, '').length / text.split(/\s+/).length)
     }
 
+    // Analyse des mots-clés extraits du texte
+    const keywordAnalysis = await findKeywordsFromText(text, keywords)
+
     // Analyse avec le barème SEO
     const baremeResults = await bareme.evaluateTextSEO(text, keywords)
 
@@ -32,6 +36,7 @@ const analyzeTextSeo = async (text, keywords = []) => {
       seoScore,
       basicMetrics,
       baremeResults,
+      keywordAnalysis: keywordAnalysis.success ? keywordAnalysis.keywords : null,
       timestamp: new Date().toISOString()
     }
   } catch (error) {
@@ -42,6 +47,7 @@ const analyzeTextSeo = async (text, keywords = []) => {
       seoScore: 0,
       basicMetrics: {},
       baremeResults: null,
+      keywordAnalysis: null,
       timestamp: new Date().toISOString()
     }
   }

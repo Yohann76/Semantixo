@@ -44,6 +44,11 @@ const analysisTextSeoSchema = new mongoose.Schema({
     type: String,
     default: 'Non détecté'
   },
+  keywordAnalysis: {
+    keyword: [String],
+    moyenne_traine: [String],
+    longue_traine: [String]
+  },
   baremeResults: {
     totalScore: {
       type: Number,

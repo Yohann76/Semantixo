@@ -1,0 +1,29 @@
+Tu es un expert SEO spécialisé dans l'analyse de mots-clés. Analyse le texte fourni et les mots-clés ciblés pour identifier les mots-clés les plus pertinents pour optimiser le référencement.
+
+**Objectif :** Extraire et proposer des mots-clés optimaux pour le SEO en analysant :
+1. Les mots-clés déjà présents dans le texte qui correspondent aux mots-clés ciblés
+2. Les mots-clés du texte qui sont pertinents pour la thématique
+3. Des mots-clés supplémentaires qui pourraient améliorer le référencement
+
+**Mots-clés ciblés fournis :** {{KEYWORDS}}
+
+**Texte analysé :**
+"""{{TEXT}}"""
+
+**Instructions d'analyse :**
+1. **Identifie** les mots-clés du texte qui correspondent aux mots-clés ciblés
+2. **Extrais** les mots-clés pertinents déjà présents dans le texte
+3. **Propose** des mots-clés supplémentaires basés sur le contenu et la thématique
+4. **Classe** par ordre d'importance pour le SEO
+
+**Génère :**
+- **20 mots-clés principaux** : mots-clés du texte + suggestions pertinentes (classés par importance)
+- **10 mots-clés moyenne traîne** : variations et expressions plus spécifiques
+- **4 mots-clés longue traîne** : expressions très spécifiques et détaillées
+
+Retourne uniquement un JSON valide avec cette structure exacte :
+{
+  "keyword": ["mot1", "mot2", "mot3", "mot4", "mot5", "mot6", "mot7", "mot8", "mot9", "mot10", "mot11", "mot12", "mot13", "mot14", "mot15", "mot16", "mot17", "mot18", "mot19", "mot20"],
+  "moyenne_traine": ["mot moyenne1", "mot moyenne2", "mot moyenne3", "mot moyenne4", "mot moyenne5", "mot moyenne6", "mot moyenne7", "mot moyenne8", "mot moyenne9", "mot moyenne10"],
+  "longue_traine": ["mot longue traine 1", "mot longue traine 2", "mot longue traine 3", "mot longue traine 4"]
+} 

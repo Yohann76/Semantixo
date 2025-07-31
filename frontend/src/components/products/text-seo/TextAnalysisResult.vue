@@ -80,6 +80,60 @@
         </div>
       </div>
 
+      <!-- Analyse des mots-clés extraits -->
+      <div v-if="analysis.keywordAnalysis" class="result-section">
+        <h3 class="section-title">🔍 Analyse des mots-clés extraits</h3>
+        <div class="keyword-analysis-container">
+          <!-- Mots-clés principaux -->
+          <div class="keyword-category">
+            <h4 class="category-title">📊 Mots-clés principaux ({{ analysis.keywordAnalysis.keyword?.length || 0 }})</h4>
+            <div class="keyword-tags">
+              <span 
+                v-for="(keyword, index) in analysis.keywordAnalysis.keyword?.slice(0, 10)" 
+                :key="index"
+                class="keyword-tag primary"
+              >
+                {{ keyword }}
+              </span>
+              <span v-if="analysis.keywordAnalysis.keyword?.length > 10" class="keyword-more">
+                +{{ analysis.keywordAnalysis.keyword.length - 10 }} autres
+              </span>
+            </div>
+          </div>
+
+          <!-- Mots-clés moyenne traîne -->
+          <div class="keyword-category">
+            <h4 class="category-title">🎯 Mots-clés moyenne traîne ({{ analysis.keywordAnalysis.moyenne_traine?.length || 0 }})</h4>
+            <div class="keyword-tags">
+              <span 
+                v-for="(keyword, index) in analysis.keywordAnalysis.moyenne_traine?.slice(0, 6)" 
+                :key="index"
+                class="keyword-tag medium"
+              >
+                {{ keyword }}
+              </span>
+              <span v-if="analysis.keywordAnalysis.moyenne_traine?.length > 6" class="keyword-more">
+                +{{ analysis.keywordAnalysis.moyenne_traine.length - 6 }} autres
+              </span>
+            </div>
+          </div>
+
+          <!-- Mots-clés longue traîne -->
+          <div class="keyword-category">
+            <h4 class="category-title">🎯 Mots-clés longue traîne ({{ analysis.keywordAnalysis.longue_traine?.length || 0 }})</h4>
+            <div class="keyword-tags">
+              <span 
+                v-for="(keyword, index) in analysis.keywordAnalysis.longue_traine" 
+                :key="index"
+                class="keyword-tag long"
+              >
+                {{ keyword }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Détail du barème -->
       <div v-if="analysis.baremeResults" class="result-section">
         <h3 class="section-title">🎯 Détail du barème</h3>
@@ -916,6 +970,79 @@ const getProgressClass = (score, maxScore) => {
 .topic-badge:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
+}
+
+/* Styles pour l'analyse des mots-clés extraits */
+.keyword-analysis-container {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid #e9ecef;
+}
+
+.keyword-category {
+  margin-bottom: 25px;
+}
+
+.keyword-category:last-child {
+  margin-bottom: 0;
+}
+
+.category-title {
+  margin: 0 0 15px 0;
+  font-size: 1rem;
+  color: #2c3e50;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.keyword-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.keyword-tag {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.keyword-tag:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.keyword-tag.primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.keyword-tag.medium {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+}
+
+.keyword-tag.long {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: white;
+}
+
+.keyword-more {
+  font-size: 0.75rem;
+  color: #6c757d;
+  font-weight: 500;
+  font-style: italic;
+  padding: 4px 8px;
+  background: rgba(108, 117, 125, 0.1);
+  border-radius: 12px;
 }
 
 /* Responsive */
