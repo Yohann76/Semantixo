@@ -6,7 +6,7 @@
 class ScoringConfig {
   constructor() {
     this.version = '2.3.0'
-    this.totalPoints = 70 // 100 by default
+    this.totalPoints = 100 // 100 by default
     this.enabled = true
     
     this.criteria = {
@@ -20,29 +20,29 @@ class ScoringConfig {
       keywordPosition: {
         id: 'keyword_position',
         name: 'Position des mots-clés',
-        weight: 0,  // Désactivé // 10 
-        enabled: false,  // Désactivé
+        weight: 10,  // 10 
+        enabled: true,  // true
         description: 'Analyse de la position des mots-clés dans le texte'
       },
       contentLength: {
         id: 'content_length',
         name: 'Longueur du contenu',
-        weight: 0,  // Désactivé // 10 
-        enabled: false,  // Désactivé
+        weight: 10,  // 10 
+        enabled: true,  // true
         description: 'Évaluation de la longueur du contenu'
       },
       readability: {
         id: 'readability',
         name: 'Lisibilité',
-        weight: 10,  // Désactivé // 10 
-        enabled: true,  // Désactivé // false 
+        weight: 10,  // 10 
+        enabled: true,  // true 
         description: 'Analyse de la structure et de la lisibilité'
       },
       uniqueness: {
         id: 'uniqueness',
         name: 'Originalité', // 10 
-        weight: 0,  // Désactivé
-        enabled: false,  // Désactivé
+        weight: 10,  // 10 
+        enabled: true,  // true
         description: 'Évaluation de l\'originalité du contenu'
       }
     }

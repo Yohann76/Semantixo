@@ -1,4 +1,4 @@
-import { authHeader } from './auth'
+import authService from './auth'
 
 // TODO : manage this in the .env file for production
 const API_URL = process.env.VUE_APP_API_URL || 'http://localhost:3000/api'
@@ -13,7 +13,7 @@ export const getBaremeConfig = async () => {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        ...authHeader()
+        ...authService.getAuthHeaders()
       }
     })
 
@@ -41,7 +41,7 @@ export const getBaremeConfig = async () => {
 const getDefaultConfig = () => {
   return {
     version: '2.3.0',
-    totalPoints: 60,
+    totalPoints: 100,
     enabled: true,
     criteria: {
       keywordUsage: {
@@ -54,15 +54,15 @@ const getDefaultConfig = () => {
       keywordPosition: {
         id: 'keyword_position',
         name: 'Position des mots-clés',
-        weight: 0,
-        enabled: false,
+        weight: 10,
+        enabled: true,
         description: 'Analyse de la position des mots-clés dans le texte'
       },
       contentLength: {
         id: 'content_length',
         name: 'Longueur du contenu',
-        weight: 0,
-        enabled: false,
+        weight: 10,
+        enabled: true,
         description: 'Évaluation de la longueur du contenu'
       },
       readability: {
@@ -75,16 +75,16 @@ const getDefaultConfig = () => {
       uniqueness: {
         id: 'uniqueness',
         name: 'Originalité',
-        weight: 0,
-        enabled: false,
+        weight: 10,
+        enabled: true,
         description: 'Évaluation de l\'originalité du contenu'
       }
     },
     grading: {
-      excellent: { min: 51, label: 'Excellent' },
-      veryGood: { min: 42, label: 'Très bon' },
-      good: { min: 33, label: 'Bon' },
-      average: { min: 24, label: 'Moyen' },
+      excellent: { min: 85, label: 'Excellent' },
+      veryGood: { min: 70, label: 'Très bon' },
+      good: { min: 55, label: 'Bon' },
+      average: { min: 40, label: 'Moyen' },
       poor: { min: 0, label: 'Insuffisant' }
     },
     thresholds: {

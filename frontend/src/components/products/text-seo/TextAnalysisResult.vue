@@ -6,7 +6,7 @@
         <span class="result-date">{{ formatDate(props.analysis.timestamp || props.analysis.createdAt) }}</span>
         <div class="score-section">
                   <span class="result-score" :class="getScoreClass(props.analysis.seoScore)">
-          Score SEO: {{ props.analysis.seoScore || '0' }}/60
+          Score SEO: {{ props.analysis.seoScore || '0' }}/100
         </span>
         <span v-if="props.analysis.notation" class="result-notation" :class="getNotationClass(props.analysis.notation)">
           {{ props.analysis.notation }}
@@ -74,7 +74,7 @@
             <div class="stat-icon">📊</div>
             <div class="stat-info">
               <div class="stat-label">Score SEO</div>
-              <div class="stat-value">{{ props.analysis.seoScore || '0' }}/60</div>
+              <div class="stat-value">{{ props.analysis.seoScore || '0' }}/100</div>
             </div>
           </div>
         </div>
@@ -87,7 +87,7 @@
           <div class="overall-score">
             <div class="score-circle" :class="getScoreClass(props.analysis.seoScore)">
               <span class="score-number">{{ props.analysis.seoScore || '0' }}</span>
-              <span class="score-max">/70</span>
+              <span class="score-max">/100</span>
             </div>
                           <div class="score-info">
                 <h4 class="score-label">Score global</h4>
