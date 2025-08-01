@@ -6,15 +6,15 @@
 class ScoringConfig {
   constructor() {
     this.version = '2.3.0'
-    this.totalPoints = 60  // Changé de 100 à 60
+    this.totalPoints = 70 // 100 by default
     this.enabled = true
     
     this.criteria = {
       keywordUsage: {
         id: 'keyword_usage',
         name: 'Utilisation des mots-clés',
-        weight: 60,  // 60 points sur 60
-        enabled: true,
+        weight: 60,  // 60
+        enabled: true, // true
         description: 'Analyse de l\'utilisation des mots-clés et de leur champ lexical'
       },
       keywordPosition: {

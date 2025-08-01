@@ -107,7 +107,7 @@
             v-if="isCriteriaEnabled('keywordUsage')"
             title="🔍 Analyse sémantique (60 points)"
             :score="getCriteriaScore('keywordUsage')"
-            :maxScore="60"
+            :maxScore="getCriteriaMaxScore('keywordUsage')"
             :defaultCollapsed="false"
           >
             <div class="semantic-analysis">
@@ -457,6 +457,11 @@ const isCriteriaEnabled = (criteriaKey) => {
 const getCriteriaScore = (criteriaKey) => {
   const config = scoringConfig.value?.criteria?.[criteriaKey]
   if (!config || !config.enabled) return 0
+  
+  // Pour l'analyse sémantique, utiliser le score total de l'analyse
+  if (criteriaKey === 'keywordUsage') {
+    return props.analysis.seoScore || 0
+  }
   
   // Mapping des clés de critères vers les clés dans les résultats
   const criteriaMapping = {
