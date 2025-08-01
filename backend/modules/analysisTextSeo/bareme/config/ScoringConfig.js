@@ -48,10 +48,10 @@ class ScoringConfig {
     }
 
     this.grading = {
-      excellent: { min: 51, label: 'Excellent' },  // 85% de 60 = 51
-      veryGood: { min: 42, label: 'Très bon' },   // 70% de 60 = 42
-      good: { min: 33, label: 'Bon' },            // 55% de 60 = 33
-      average: { min: 24, label: 'Moyen' },       // 40% de 60 = 24
+      excellent: { min: 60, label: 'Excellent' },  // 85% de 70 = 60
+      veryGood: { min: 49, label: 'Très bon' },   // 70% de 70 = 49
+      good: { min: 39, label: 'Bon' },            // 55% de 70 = 39
+      average: { min: 28, label: 'Moyen' },       // 40% de 70 = 28
       poor: { min: 0, label: 'Insuffisant' }
     }
 

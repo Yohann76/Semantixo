@@ -87,12 +87,12 @@
           <div class="overall-score">
             <div class="score-circle" :class="getScoreClass(props.analysis.seoScore)">
               <span class="score-number">{{ props.analysis.seoScore || '0' }}</span>
-              <span class="score-max">/60</span>
+              <span class="score-max">/70</span>
             </div>
-            <div class="score-info">
-              <h4 class="score-label">Score global</h4>
-              <p class="score-description">Basé sur l'analyse sémantique et la qualité du contenu</p>
-            </div>
+                          <div class="score-info">
+                <h4 class="score-label">Score global</h4>
+                <p class="score-description">Basé sur l'analyse sémantique, la lisibilité et la qualité du contenu</p>
+              </div>
           </div>
         </div>
 
@@ -271,9 +271,76 @@
           >
             <div class="readability-analysis">
               <div class="analysis-description">
-                <p>Analyse de la structure et de la lisibilité</p>
+                <p>Analyse de la structure et de la lisibilité du texte</p>
               </div>
-              <!-- Contenu spécifique à la lisibilité -->
+              
+              <!-- Détails de l'analyse de lisibilité -->
+              <div v-if="props.analysis.baremeResults?.criteria?.readability?.details" class="readability-details">
+                <div class="metrics-section">
+                  <h4>📊 Métriques de lisibilité</h4>
+                  <div class="metrics-grid">
+                    <div class="metric-item">
+                      <span class="metric-label">Longueur moyenne des mots :</span>
+                      <span class="metric-value">{{ props.analysis.baremeResults.criteria.readability.details.metrics?.avgWordLength || 0 }} lettres</span>
+                    </div>
+                    <div class="metric-item">
+                      <span class="metric-label">Longueur moyenne des phrases :</span>
+                      <span class="metric-value">{{ props.analysis.baremeResults.criteria.readability.details.metrics?.avgSentenceLength || 0 }} mots</span>
+                    </div>
+                    <div class="metric-item">
+                      <span class="metric-label">Longueur moyenne des paragraphes :</span>
+                      <span class="metric-value">{{ props.analysis.baremeResults.criteria.readability.details.metrics?.avgParagraphLength || 0 }} phrases</span>
+                    </div>
+                    <div class="metric-item">
+                      <span class="metric-label">Diversité du vocabulaire :</span>
+                      <span class="metric-value">{{ Math.round((props.analysis.baremeResults.criteria.readability.details.metrics?.vocabularyDiversity || 0) * 100) }}%</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Scores détaillés -->
+                <div class="scores-section">
+                  <h4>🎯 Scores détaillés</h4>
+                  <div class="scores-grid">
+                    <div class="score-item">
+                      <span class="score-label">Longueur des mots :</span>
+                      <span class="score-value">{{ props.analysis.baremeResults.criteria.readability.details.scores?.wordLength || 0 }}/10</span>
+                    </div>
+                    <div class="score-item">
+                      <span class="score-label">Longueur des phrases :</span>
+                      <span class="score-value">{{ props.analysis.baremeResults.criteria.readability.details.scores?.sentenceLength || 0 }}/10</span>
+                    </div>
+                    <div class="score-item">
+                      <span class="score-label">Longueur des paragraphes :</span>
+                      <span class="score-value">{{ props.analysis.baremeResults.criteria.readability.details.scores?.paragraphLength || 0 }}/10</span>
+                    </div>
+                    <div class="score-item">
+                      <span class="score-label">Fréquence des lettres :</span>
+                      <span class="score-value">{{ props.analysis.baremeResults.criteria.readability.details.scores?.frequency || 0 }}/10</span>
+                    </div>
+                    <div class="score-item">
+                      <span class="score-label">Diversité du vocabulaire :</span>
+                      <span class="score-value">{{ props.analysis.baremeResults.criteria.readability.details.scores?.diversity || 0 }}/10</span>
+                    </div>
+                    <div class="score-item">
+                      <span class="score-label">Ponctuation :</span>
+                      <span class="score-value">{{ props.analysis.baremeResults.criteria.readability.details.scores?.punctuation || 0 }}/10</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Recommandations -->
+                <div v-if="props.analysis.baremeResults.criteria.readability.details.recommendations?.length > 0" class="recommendations-section">
+                  <h4>💡 Recommandations d'amélioration</h4>
+                  <ul class="recommendations-list">
+                    <li v-for="(recommendation, index) in props.analysis.baremeResults.criteria.readability.details.recommendations" 
+                        :key="index" 
+                        class="recommendation-item">
+                      {{ recommendation }}
+                    </li>
+                  </ul>
+                </div>
+              </div>
             </div>
           </CollapsibleSection>
 
@@ -465,20 +532,20 @@ const getCriteriaScore = (criteriaKey) => {
   
   // Mapping des clés de critères vers les clés dans les résultats
   const criteriaMapping = {
-    keywordUsage: 'utilisation_champ_lexical',
-    keywordPosition: 'position_implementation',
-    contentLength: 'longueur_suffisante',
-    readability: 'structure_lisibilite',
-    uniqueness: 'contenu_duplique'
+    keywordUsage: 'keyword_usage',
+    keywordPosition: 'keyword_position',
+    contentLength: 'content_length',
+    readability: 'readability',
+    uniqueness: 'uniqueness'
   }
   
   const resultKey = criteriaMapping[criteriaKey]
   
-  if (!resultKey || !props.analysis.baremeResults?.criteres?.[resultKey]) {
+  if (!resultKey || !props.analysis.baremeResults?.criteria?.[resultKey]) {
     return 0
   }
   
-  const score = props.analysis.baremeResults.criteres[resultKey].score || 0
+  const score = props.analysis.baremeResults.criteria[resultKey].score || 0
   return score
 }
 
@@ -1195,7 +1262,7 @@ const getCriteriaMaxScore = (criteriaKey) => {
   padding: 15px 0;
 }
 
-.semantic-details {
+.semantic-details, .readability-details {
   background: #f8f9fa;
   border-radius: 8px;
   padding: 20px;
@@ -1235,6 +1302,74 @@ const getCriteriaMaxScore = (criteriaKey) => {
   font-size: 0.95rem;
   color: #2c3e50;
   font-weight: 600;
+}
+
+/* Styles pour l'analyse de lisibilité */
+.readability-details .metrics-section,
+.readability-details .scores-section,
+.readability-details .recommendations-section {
+  margin-bottom: 25px;
+}
+
+.readability-details .metrics-section h4,
+.readability-details .scores-section h4,
+.readability-details .recommendations-section h4 {
+  margin: 0 0 15px 0;
+  font-size: 1rem;
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+.readability-details .metrics-grid,
+.readability-details .scores-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 15px;
+}
+
+.readability-details .metric-item,
+.readability-details .score-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.readability-details .metric-label,
+.readability-details .score-label {
+  font-size: 0.9rem;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.readability-details .metric-value,
+.readability-details .score-value {
+  font-weight: 600;
+  color: #667eea;
+}
+
+.readability-details .recommendations-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.readability-details .recommendation-item {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 6px;
+  padding: 12px 15px;
+  margin-bottom: 10px;
+  color: #856404;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.readability-details .recommendation-item:last-child {
+  margin-bottom: 0;
 }
 
 /* Responsive */

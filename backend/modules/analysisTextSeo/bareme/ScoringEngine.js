@@ -26,7 +26,7 @@ class ScoringEngine extends IScoringEngine {
     this.addEvaluator(new KeywordUsageEvaluator(this.config))
     this.addEvaluator(new KeywordPositionEvaluator(this.config))
     this.addEvaluator(new ContentLengthEvaluator(this.config))
-    this.addEvaluator(new ReadabilityEvaluator(this.config))
+    this.addEvaluator(new ReadabilityEvaluator()) // Nouveau constructeur sans config
     this.addEvaluator(new UniquenessEvaluator(this.config))
   }
 
@@ -67,17 +67,22 @@ class ScoringEngine extends IScoringEngine {
     
     for (const evaluator of this.evaluators) {
       if (evaluator.isEnabled()) {
-        const evaluation = await evaluator.evaluate({ text, keywords })
-        const criteriaInfo = evaluator.getCriteriaInfo()
+        let evaluation
         
-        // Ajouter les informations du critère à l'évaluation
-        evaluation.criteria = criteriaInfo
+        // Gestion spéciale pour ReadabilityEvaluator
+        if (evaluator.constructor.name === 'ReadabilityEvaluator') {
+          evaluation = evaluator.evaluate(text)
+          evaluation.criteria = evaluator.getCriteriaInfo()
+        } else {
+          evaluation = await evaluator.evaluate({ text, keywords })
+          evaluation.criteria = evaluator.getCriteriaInfo()
+        }
         
         evaluations.push(evaluation)
         
-        results.criteria[criteriaInfo.id] = {
-          name: criteriaInfo.name,
-          weight: criteriaInfo.weight,
+        results.criteria[evaluation.criteria.id] = {
+          name: evaluation.criteria.name,
+          weight: evaluation.criteria.weight,
           score: evaluation.score,
           maxScore: evaluation.maxScore,
           details: evaluation.details
@@ -147,7 +152,7 @@ class ScoringEngine extends IScoringEngine {
       keyword_usage: 'Développez le champ lexical de vos mots-clés en utilisant des synonymes et variations.',
       keyword_position: 'Placez vos mots-clés dans le premier paragraphe et au début des paragraphes suivants.',
       content_length: 'Rédigez un contenu suffisamment long (minimum 50 mots, idéalement plus de 500 mots).',
-      readability: 'Structurez votre contenu avec une densité appropriée et une découpe en paragraphes claire.',
+      readability: 'Améliorez la lisibilité en utilisant des phrases courtes et un vocabulaire varié.',
       uniqueness: 'Évitez la duplication de contenu pour maintenir l\'originalité de votre texte.'
     }
 
