@@ -97,7 +97,11 @@
         </div>
 
         <!-- Sections d'analyse selon la configuration -->
-        <div class="analysis-sections">
+        <div v-if="loading" class="loading-section">
+          <p>Chargement de la configuration...</p>
+        </div>
+        
+        <div v-else class="analysis-sections">
           <!-- Analyse sémantique (60 points) -->
           <CollapsibleSection 
             v-if="isCriteriaEnabled('keywordUsage')"
@@ -376,8 +380,9 @@
 </template>
 
 <script setup>
-import { defineProps } from 'vue'
+import { defineProps, ref, onMounted } from 'vue'
 import CollapsibleSection from '@/components/common/CollapsibleSection.vue'
+import { getBaremeConfig } from '@/services/baremeConfig'
 
 const props = defineProps({
   analysis: {
@@ -385,6 +390,10 @@ const props = defineProps({
     required: true
   }
 })
+
+// Configuration dynamique du barème
+const scoringConfig = ref(null)
+const loading = ref(true)
 
 // Formater la date
 const formatDate = (dateString) => {
@@ -421,53 +430,32 @@ const getNotationClass = (notation) => {
 
 
 
-// Configuration des critères selon ScoringConfig
-const scoringConfig = {
-  keywordUsage: {
-    id: 'keyword_usage',
-    name: 'Utilisation des mots-clés',
-    weight: 60,
-    enabled: true,
-    description: 'Analyse de l\'utilisation des mots-clés et de leur champ lexical'
-  },
-  keywordPosition: {
-    id: 'keyword_position',
-    name: 'Position des mots-clés',
-    weight: 0,
-    enabled: false,
-    description: 'Analyse de la position des mots-clés dans le texte'
-  },
-  contentLength: {
-    id: 'content_length',
-    name: 'Longueur du contenu',
-    weight: 0,
-    enabled: false,
-    description: 'Évaluation de la longueur du contenu'
-  },
-  readability: {
-    id: 'readability',
-    name: 'Lisibilité',
-    weight: 10,
-    enabled: true,
-    description: 'Analyse de la structure et de la lisibilité'
-  },
-  uniqueness: {
-    id: 'uniqueness',
-    name: 'Originalité',
-    weight: 0,
-    enabled: false,
-    description: 'Évaluation de l\'originalité du contenu'
+// Charger la configuration depuis le backend
+const loadBaremeConfig = async () => {
+  try {
+    loading.value = true
+    const config = await getBaremeConfig()
+    scoringConfig.value = config
+  } catch (error) {
+    console.error('Erreur lors du chargement de la configuration:', error)
+  } finally {
+    loading.value = false
   }
 }
 
+onMounted(() => {
+  loadBaremeConfig()
+})
+
 // Vérifier si un critère est activé
 const isCriteriaEnabled = (criteriaKey) => {
-  return scoringConfig[criteriaKey]?.enabled || false
+  if (!scoringConfig.value?.criteria) return false
+  return scoringConfig.value.criteria[criteriaKey]?.enabled || false
 }
 
 // Obtenir le score d'un critère
 const getCriteriaScore = (criteriaKey) => {
-  const config = scoringConfig[criteriaKey]
+  const config = scoringConfig.value?.criteria?.[criteriaKey]
   if (!config || !config.enabled) return 0
   
   // Mapping des clés de critères vers les clés dans les résultats
@@ -491,7 +479,7 @@ const getCriteriaScore = (criteriaKey) => {
 
 // Obtenir le score maximum d'un critère
 const getCriteriaMaxScore = (criteriaKey) => {
-  const config = scoringConfig[criteriaKey]
+  const config = scoringConfig.value?.criteria?.[criteriaKey]
   if (!config || !config.enabled) return 0
   return config.weight
 }
