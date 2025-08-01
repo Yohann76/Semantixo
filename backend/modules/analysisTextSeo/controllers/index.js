@@ -104,6 +104,7 @@ const getAnalyses = async (req, res) => {
         grade: analysis.baremeResults?.grade || 'Non évalué',
         topic: analysis.topic,
         keywords: analysis.keywords,
+        keywordAnalysis: analysis.keywordAnalysis, // Ajout de l'analyse des mots-clés
         metrics: analysis.metrics,
         baremeResults: analysis.baremeResults,
         timestamp: analysis.createdAt
@@ -149,6 +150,7 @@ const getAnalysis = async (req, res) => {
         grade: analysis.baremeResults?.grade || 'Non évalué',
         topic: analysis.topic,
         keywords: analysis.keywords,
+        keywordAnalysis: analysis.keywordAnalysis, // Ajout de l'analyse des mots-clés
         searchIntent: analysis.searchIntent,
         metrics: analysis.metrics,
         baremeResults: analysis.baremeResults,
