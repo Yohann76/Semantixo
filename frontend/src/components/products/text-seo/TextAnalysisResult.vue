@@ -3,14 +3,14 @@
     <div class="result-header">
       <h2 class="result-title">Résultats de l'analyse SEO</h2>
       <div class="result-meta">
-        <span class="result-date">{{ formatDate(analysis.timestamp || analysis.createdAt) }}</span>
+        <span class="result-date">{{ formatDate(props.analysis.timestamp || props.analysis.createdAt) }}</span>
         <div class="score-section">
-          <span class="result-score" :class="getScoreClass(analysis.seoScore)">
-            Score SEO: {{ analysis.seoScore || '0' }}/100
-          </span>
-          <span v-if="analysis.notation" class="result-notation" :class="getNotationClass(analysis.notation)">
-            {{ analysis.notation }}
-          </span>
+                  <span class="result-score" :class="getScoreClass(props.analysis.seoScore)">
+          Score SEO: {{ props.analysis.seoScore || '0' }}/60
+        </span>
+        <span v-if="props.analysis.notation" class="result-notation" :class="getNotationClass(props.analysis.notation)">
+          {{ props.analysis.notation }}
+        </span>
         </div>
       </div>
     </div>
@@ -23,21 +23,21 @@
           <div class="info-item">
             <div class="info-label">Mots-clés ciblés</div>
             <div class="info-value">
-              <span v-if="analysis.keywords && analysis.keywords.length > 0">
-                {{ analysis.keywords.join(', ') }}
+              <span v-if="props.analysis.keywords && props.analysis.keywords.length > 0">
+                {{ props.analysis.keywords.join(', ') }}
               </span>
               <span v-else class="no-data">Aucun mot-clé spécifié</span>
             </div>
           </div>
           <div class="info-item">
             <div class="info-label">Version du barème</div>
-            <div class="info-value">{{ analysis.baremeResults?.bareme_version || '1.0.0' }}</div>
+            <div class="info-value">{{ props.analysis.baremeResults?.bareme_version || '1.0.0' }}</div>
           </div>
           <div class="info-item">
             <div class="info-label">Thématique détectée</div>
             <div class="info-value topic-value">
-              <span v-if="analysis.topic && analysis.topic !== 'Non détecté'" class="topic-badge">
-                {{ analysis.topic }}
+              <span v-if="props.analysis.topic && props.analysis.topic !== 'Non détecté'" class="topic-badge">
+                {{ props.analysis.topic }}
               </span>
               <span v-else class="no-data">Non détecté</span>
             </div>
@@ -53,198 +53,254 @@
             <div class="stat-icon">📝</div>
             <div class="stat-info">
               <div class="stat-label">Mots</div>
-              <div class="stat-value">{{ analysis.metrics?.wordCount || analysis.wordCount || 0 }}</div>
+              <div class="stat-value">{{ props.analysis.metrics?.wordCount || props.analysis.wordCount || 0 }}</div>
             </div>
           </div>
           <div class="stat-item">
             <div class="stat-icon">🔤</div>
             <div class="stat-info">
               <div class="stat-label">Caractères</div>
-              <div class="stat-value">{{ analysis.metrics?.characterCount || analysis.characterCount || 0 }}</div>
+              <div class="stat-value">{{ props.analysis.metrics?.characterCount || props.analysis.characterCount || 0 }}</div>
             </div>
           </div>
           <div class="stat-item">
             <div class="stat-icon">📄</div>
             <div class="stat-info">
               <div class="stat-label">Paragraphes</div>
-              <div class="stat-value">{{ analysis.metrics?.paragraphCount || 0 }}</div>
+              <div class="stat-value">{{ props.analysis.metrics?.paragraphCount || 0 }}</div>
             </div>
           </div>
           <div class="stat-item">
             <div class="stat-icon">📊</div>
             <div class="stat-info">
               <div class="stat-label">Score SEO</div>
-              <div class="stat-value">{{ analysis.seoScore || '0' }}/100</div>
+              <div class="stat-value">{{ props.analysis.seoScore || '0' }}/60</div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Analyse des mots-clés extraits -->
-      <div v-if="analysis.keywordAnalysis" class="result-section">
-        <h3 class="section-title">🔍 Analyse des mots-clés extraits</h3>
-        <div class="keyword-analysis-container">
-          <!-- Mots-clés principaux -->
-          <div class="keyword-category">
-            <h4 class="category-title">📊 Mots-clés principaux ({{ analysis.keywordAnalysis.keyword?.length || 0 }})</h4>
-            <div class="keyword-tags">
-              <span 
-                v-for="(keyword, index) in analysis.keywordAnalysis.keyword?.slice(0, 10)" 
-                :key="index"
-                class="keyword-tag primary"
-              >
-                {{ keyword }}
-              </span>
-              <span v-if="analysis.keywordAnalysis.keyword?.length > 10" class="keyword-more">
-                +{{ analysis.keywordAnalysis.keyword.length - 10 }} autres
-              </span>
+      <!-- Bilan du score SEO -->
+      <div v-if="props.analysis.baremeResults" class="result-section">
+        <h3 class="section-title">📊 Bilan du score SEO</h3>
+        <div class="seo-score-overview">
+          <div class="overall-score">
+            <div class="score-circle" :class="getScoreClass(props.analysis.seoScore)">
+              <span class="score-number">{{ props.analysis.seoScore || '0' }}</span>
+              <span class="score-max">/60</span>
             </div>
-          </div>
-
-          <!-- Mots-clés moyenne traîne -->
-          <div class="keyword-category">
-            <h4 class="category-title">🎯 Mots-clés moyenne traîne ({{ analysis.keywordAnalysis.moyenne_traine?.length || 0 }})</h4>
-            <div class="keyword-tags">
-              <span 
-                v-for="(keyword, index) in analysis.keywordAnalysis.moyenne_traine?.slice(0, 6)" 
-                :key="index"
-                class="keyword-tag medium"
-              >
-                {{ keyword }}
-              </span>
-              <span v-if="analysis.keywordAnalysis.moyenne_traine?.length > 6" class="keyword-more">
-                +{{ analysis.keywordAnalysis.moyenne_traine.length - 6 }} autres
-              </span>
-            </div>
-          </div>
-
-          <!-- Mots-clés longue traîne -->
-          <div class="keyword-category">
-            <h4 class="category-title">🎯 Mots-clés longue traîne ({{ analysis.keywordAnalysis.longue_traine?.length || 0 }})</h4>
-            <div class="keyword-tags">
-              <span 
-                v-for="(keyword, index) in analysis.keywordAnalysis.longue_traine" 
-                :key="index"
-                class="keyword-tag long"
-              >
-                {{ keyword }}
-              </span>
+            <div class="score-info">
+              <h4 class="score-label">Score global</h4>
+              <p class="score-description">Basé sur l'analyse sémantique et la qualité du contenu</p>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Détail du barème -->
-      <div v-if="analysis.baremeResults" class="result-section">
-        <h3 class="section-title">🎯 Détail du barème</h3>
-        <div class="bareme-details">
-          <div class="bareme-criteres">
-            <div 
-              v-for="(critere, key) in analysis.baremeResults.criteres" 
-              :key="key"
-              class="critere-item"
-            >
-              <div class="critere-header">
-                <h4 class="critere-title">{{ getCritereTitle(key) }}</h4>
-                <div class="critere-score">
-                  <span class="score-value">{{ critere.score || 0 }}</span>
-                  <span class="score-max">/{{ getCritereMaxScore(key) }}</span>
-                </div>
+        <!-- Sections d'analyse selon la configuration -->
+        <div class="analysis-sections">
+          <!-- Analyse sémantique (60 points) -->
+          <CollapsibleSection 
+            v-if="isCriteriaEnabled('keywordUsage')"
+            title="🔍 Analyse sémantique (60 points)"
+            :score="getCriteriaScore('keywordUsage')"
+            :maxScore="60"
+            :defaultCollapsed="false"
+          >
+            <div class="semantic-analysis">
+              <div class="analysis-description">
+                <p>Analyse de l'utilisation des mots-clés et de leur champ lexical</p>
               </div>
               
-              <div class="critere-progress">
-                <div 
-                  class="progress-bar"
-                  :style="{ width: getProgressPercentage(critere.score, getCritereMaxScore(key)) + '%' }"
-                  :class="getProgressClass(critere.score, getCritereMaxScore(key))"
-                ></div>
+              <!-- Détails de l'analyse sémantique -->
+              <div v-if="props.analysis.baremeResults?.criteres?.utilisation_champ_lexical?.details" class="semantic-details">
+                <div class="thematic-info">
+                  <h4>Thématique détectée : <span class="thematic-name">{{ props.analysis.baremeResults.criteres.utilisation_champ_lexical.details.thematique_detectee }}</span></h4>
+                </div>
+                
+                <!-- Mots-clés thématiques -->
+                <div class="keywords-section">
+                  <h4>📝 Mots-clés thématiques détectés (5-6 mots)</h4>
+                  <div class="keywords-grid">
+                    <div 
+                      v-for="motCle in props.analysis.baremeResults.criteres.utilisation_champ_lexical.details.mots_cles_thematiques" 
+                      :key="motCle.mot"
+                      class="keyword-item"
+                      :class="{ 'present': motCle.present, 'absent': !motCle.present }"
+                    >
+                      <span class="keyword-text">{{ motCle.mot }}</span>
+                      <span class="keyword-occurrences">{{ motCle.occurrences }} occurrence(s)</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Synonymes importants -->
+                <div class="synonyms-section">
+                  <h4>🔄 Synonymes importants (5-6 mots)</h4>
+                  <div class="keywords-grid">
+                    <div 
+                      v-for="synonyme in props.analysis.baremeResults.criteres.utilisation_champ_lexical.details.synonymes_importants" 
+                      :key="synonyme.mot"
+                      class="keyword-item"
+                      :class="{ 'present': synonyme.present, 'absent': !synonyme.present }"
+                    >
+                      <span class="keyword-text">{{ synonyme.mot }}</span>
+                      <span class="keyword-occurrences">{{ synonyme.occurrences }} occurrence(s)</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Score de qualité -->
+                <div class="quality-score">
+                  <h4>📊 Score d'utilisation du champ lexical</h4>
+                  <div class="score-breakdown">
+                    <div class="score-item">
+                      <span class="score-label">Déclinaison des mots-clés :</span>
+                      <span class="score-value">{{ props.analysis.baremeResults.criteres.utilisation_champ_lexical.sous_criteres?.declinaison_mots_cles?.points || 0 }}/30</span>
+                    </div>
+                    <div class="score-item">
+                      <span class="score-label">Correspondance parfaite :</span>
+                      <span class="score-value">{{ props.analysis.baremeResults.criteres.utilisation_champ_lexical.sous_criteres?.correspondance_parfaite?.points || 0 }}/30</span>
+                    </div>
+                    <div class="score-item total">
+                      <span class="score-label">Total champ lexical :</span>
+                      <span class="score-value">{{ props.analysis.baremeResults.criteres.utilisation_champ_lexical.score || 0 }}/60</span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <!-- Sous-critères -->
-              <div v-if="critere.sous_criteres" class="sous-criteres">
-                <div 
-                  v-for="(sousCritere, sousKey) in critere.sous_criteres" 
-                  :key="sousKey"
-                  class="sous-critere-item"
-                >
-                  <div class="sous-critere-info">
-                    <span class="sous-critere-name">{{ getSousCritereTitle(sousKey) }}</span>
-                    <span class="sous-critere-score">{{ sousCritere.points || 0 }}/{{ sousCritere.max_points || 0 }}</span>
+              <!-- Analyse des mots-clés extraits -->
+              <div v-if="props.analysis.keywordAnalysis" class="keyword-extraction-section">
+                <h4>🔍 Analyse des mots-clés extraits</h4>
+                <div class="keyword-analysis-container">
+                  <!-- Mots-clés principaux -->
+                  <div class="keyword-category">
+                    <h5 class="category-title">📊 Mots-clés principaux ({{ props.analysis.keywordAnalysis.keyword?.length || 0 }})</h5>
+                    <div class="keyword-tags">
+                      <span 
+                        v-for="(keyword, index) in props.analysis.keywordAnalysis.keyword?.slice(0, 10)" 
+                        :key="index"
+                        class="keyword-tag primary"
+                      >
+                        {{ keyword }}
+                      </span>
+                      <span v-if="props.analysis.keywordAnalysis.keyword?.length > 10" class="keyword-more">
+                        +{{ props.analysis.keywordAnalysis.keyword.length - 10 }} autres
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Mots-clés moyenne traîne -->
+                  <div class="keyword-category">
+                    <h5 class="category-title">🎯 Mots-clés moyenne traîne ({{ props.analysis.keywordAnalysis.moyenne_traine?.length || 0 }})</h5>
+                    <div class="keyword-tags">
+                      <span 
+                        v-for="(keyword, index) in props.analysis.keywordAnalysis.moyenne_traine?.slice(0, 6)" 
+                        :key="index"
+                        class="keyword-tag medium"
+                      >
+                        {{ keyword }}
+                      </span>
+                      <span v-if="props.analysis.keywordAnalysis.moyenne_traine?.length > 6" class="keyword-more">
+                        +{{ props.analysis.keywordAnalysis.moyenne_traine.length - 6 }} autres
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Mots-clés longue traîne -->
+                  <div class="keyword-category">
+                    <h5 class="category-title">🎯 Mots-clés longue traîne ({{ props.analysis.keywordAnalysis.longue_traine?.length || 0 }})</h5>
+                    <div class="keyword-tags">
+                      <span 
+                        v-for="(keyword, index) in props.analysis.keywordAnalysis.longue_traine" 
+                        :key="index"
+                        class="keyword-tag long"
+                      >
+                        {{ keyword }}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          </CollapsibleSection>
+
+          <!-- Position des mots-clés -->
+          <CollapsibleSection 
+            v-if="isCriteriaEnabled('keywordPosition')"
+            title="📍 Position des mots-clés"
+            :score="getCriteriaScore('keywordPosition')"
+            :maxScore="getCriteriaMaxScore('keywordPosition')"
+            :defaultCollapsed="true"
+          >
+            <div class="position-analysis">
+              <div class="analysis-description">
+                <p>Analyse de la position des mots-clés dans le texte</p>
+              </div>
+              <!-- Contenu spécifique à la position des mots-clés -->
+            </div>
+          </CollapsibleSection>
+
+          <!-- Longueur du contenu -->
+          <CollapsibleSection 
+            v-if="isCriteriaEnabled('contentLength')"
+            title="📏 Longueur du contenu"
+            :score="getCriteriaScore('contentLength')"
+            :maxScore="getCriteriaMaxScore('contentLength')"
+            :defaultCollapsed="true"
+          >
+            <div class="length-analysis">
+              <div class="analysis-description">
+                <p>Évaluation de la longueur du contenu</p>
+              </div>
+              <!-- Contenu spécifique à la longueur -->
+            </div>
+          </CollapsibleSection>
+
+          <!-- Lisibilité -->
+          <CollapsibleSection 
+            v-if="isCriteriaEnabled('readability')"
+            title="📖 Lisibilité"
+            :score="getCriteriaScore('readability')"
+            :maxScore="getCriteriaMaxScore('readability')"
+            :defaultCollapsed="true"
+          >
+            <div class="readability-analysis">
+              <div class="analysis-description">
+                <p>Analyse de la structure et de la lisibilité</p>
+              </div>
+              <!-- Contenu spécifique à la lisibilité -->
+            </div>
+          </CollapsibleSection>
+
+          <!-- Originalité -->
+          <CollapsibleSection 
+            v-if="isCriteriaEnabled('uniqueness')"
+            title="✨ Originalité"
+            :score="getCriteriaScore('uniqueness')"
+            :maxScore="getCriteriaMaxScore('uniqueness')"
+            :defaultCollapsed="true"
+          >
+            <div class="uniqueness-analysis">
+              <div class="analysis-description">
+                <p>Évaluation de l'originalité du contenu</p>
+              </div>
+              <!-- Contenu spécifique à l'originalité -->
+            </div>
+          </CollapsibleSection>
         </div>
       </div>
 
-      <!-- Analyse des mots-clés thématiques -->
-      <div v-if="analysis.baremeResults?.criteres?.utilisation_champ_lexical?.details" class="result-section">
-        <h3 class="section-title">🔍 Analyse des mots-clés thématiques</h3>
-        <div class="keywords-analysis">
-          <div class="thematic-info">
-            <h4>Thématique détectée : <span class="thematic-name">{{ analysis.baremeResults.criteres.utilisation_champ_lexical.details.thematique_detectee }}</span></h4>
-          </div>
-          
-          <!-- Mots-clés thématiques -->
-          <div class="keywords-section">
-            <h4>📝 Mots-clés thématiques détectés (5-6 mots)</h4>
-            <div class="keywords-grid">
-              <div 
-                v-for="motCle in analysis.baremeResults.criteres.utilisation_champ_lexical.details.mots_cles_thematiques" 
-                :key="motCle.mot"
-                class="keyword-item"
-                :class="{ 'present': motCle.present, 'absent': !motCle.present }"
-              >
-                <span class="keyword-text">{{ motCle.mot }}</span>
-                <span class="keyword-occurrences">{{ motCle.occurrences }} occurrence(s)</span>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Synonymes importants -->
-          <div class="synonyms-section">
-            <h4>🔄 Synonymes importants (5-6 mots)</h4>
-            <div class="keywords-grid">
-              <div 
-                v-for="synonyme in analysis.baremeResults.criteres.utilisation_champ_lexical.details.synonymes_importants" 
-                :key="synonyme.mot"
-                class="keyword-item"
-                :class="{ 'present': synonyme.present, 'absent': !synonyme.present }"
-              >
-                <span class="keyword-text">{{ synonyme.mot }}</span>
-                <span class="keyword-occurrences">{{ synonyme.occurrences }} occurrence(s)</span>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Score de qualité -->
-          <div class="quality-score">
-            <h4>📊 Score d'utilisation du champ lexical</h4>
-            <div class="score-breakdown">
-              <div class="score-item">
-                <span class="score-label">Déclinaison des mots-clés :</span>
-                <span class="score-value">{{ analysis.baremeResults.criteres.utilisation_champ_lexical.sous_criteres?.declinaison_mots_cles?.points || 0 }}/30</span>
-              </div>
-              <div class="score-item">
-                <span class="score-label">Correspondance parfaite :</span>
-                <span class="score-value">{{ analysis.baremeResults.criteres.utilisation_champ_lexical.sous_criteres?.correspondance_parfaite?.points || 0 }}/30</span>
-              </div>
-              <div class="score-item total">
-                <span class="score-label">Total champ lexical :</span>
-                <span class="score-value">{{ analysis.baremeResults.criteres.utilisation_champ_lexical.score || 0 }}/60</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+
+
+
 
       <!-- Recommandations -->
-      <div v-if="analysis.baremeResults?.recommandations && analysis.baremeResults.recommandations.length > 0" class="result-section">
+      <div v-if="props.analysis.baremeResults?.recommandations && props.analysis.baremeResults.recommandations.length > 0" class="result-section">
         <h3 class="section-title">💡 Recommandations d'amélioration</h3>
         <div class="recommendations-list">
           <div 
-            v-for="(recommandation, index) in analysis.baremeResults.recommandations" 
+            v-for="(recommandation, index) in props.analysis.baremeResults.recommandations" 
             :key="index"
             class="recommendation-item"
           >
@@ -263,7 +319,7 @@
       </div>
 
       <!-- Métriques détaillées -->
-      <div v-if="analysis.baremeResults?.metriques" class="result-section">
+      <div v-if="props.analysis.baremeResults?.metriques" class="result-section">
         <h3 class="section-title">📊 Métriques détaillées</h3>
         <div class="metrics-details">
           <div class="metrics-section">
@@ -271,19 +327,19 @@
             <div class="metrics-grid">
               <div class="metric-item">
                 <span class="metric-label">Nombre de mots :</span>
-                <span class="metric-value">{{ analysis.baremeResults.metriques.statistiques_texte?.nombre_mots || 0 }}</span>
+                <span class="metric-value">{{ props.analysis.baremeResults.metriques.statistiques_texte?.nombre_mots || 0 }}</span>
               </div>
               <div class="metric-item">
                 <span class="metric-label">Nombre de caractères :</span>
-                <span class="metric-value">{{ analysis.baremeResults.metriques.statistiques_texte?.nombre_caracteres || 0 }}</span>
+                <span class="metric-value">{{ props.analysis.baremeResults.metriques.statistiques_texte?.nombre_caracteres || 0 }}</span>
               </div>
               <div class="metric-item">
                 <span class="metric-label">Nombre de paragraphes :</span>
-                <span class="metric-value">{{ analysis.baremeResults.metriques.statistiques_texte?.nombre_paragraphes || 0 }}</span>
+                <span class="metric-value">{{ props.analysis.baremeResults.metriques.statistiques_texte?.nombre_paragraphes || 0 }}</span>
               </div>
               <div class="metric-item">
                 <span class="metric-label">Longueur moyenne paragraphe :</span>
-                <span class="metric-value">{{ analysis.baremeResults.metriques.statistiques_texte?.longueur_moyenne_paragraphe || 0 }} mots</span>
+                <span class="metric-value">{{ props.analysis.baremeResults.metriques.statistiques_texte?.longueur_moyenne_paragraphe || 0 }} mots</span>
               </div>
             </div>
           </div>
@@ -293,15 +349,15 @@
             <div class="metrics-grid">
               <div class="metric-item">
                 <span class="metric-label">Score moyen :</span>
-                <span class="metric-value">{{ analysis.baremeResults.metriques.performance_globale?.score_moyen || 0 }}%</span>
+                <span class="metric-value">{{ props.analysis.baremeResults.metriques.performance_globale?.score_moyen || 0 }}%</span>
               </div>
               <div class="metric-item">
                 <span class="metric-label">Critères excellents :</span>
-                <span class="metric-value">{{ analysis.baremeResults.metriques.performance_globale?.criteres_excellents || 0 }}</span>
+                <span class="metric-value">{{ props.analysis.baremeResults.metriques.performance_globale?.criteres_excellents || 0 }}</span>
               </div>
               <div class="metric-item">
                 <span class="metric-label">Critères à améliorer :</span>
-                <span class="metric-value">{{ analysis.baremeResults.metriques.performance_globale?.criteres_a_ameliorer || 0 }}</span>
+                <span class="metric-value">{{ props.analysis.baremeResults.metriques.performance_globale?.criteres_a_ameliorer || 0 }}</span>
               </div>
             </div>
           </div>
@@ -312,7 +368,7 @@
       <div class="result-section">
         <h3 class="section-title">📄 Texte analysé</h3>
         <div class="text-content">
-          {{ analysis.text }}
+          {{ props.analysis.text }}
         </div>
       </div>
     </div>
@@ -321,8 +377,9 @@
 
 <script setup>
 import { defineProps } from 'vue'
+import CollapsibleSection from '@/components/common/CollapsibleSection.vue'
 
-defineProps({
+const props = defineProps({
   analysis: {
     type: Object,
     required: true
@@ -362,58 +419,81 @@ const getNotationClass = (notation) => {
   }
 }
 
-// Obtenir le titre d'un critère
-const getCritereTitle = (key) => {
-  const titres = {
-    'utilisation_champ_lexical': '1. Utilisation des mots clé et de leurs champ lexical',
-    'position_implementation': '2. Position et Implémentation des mots clefs',
-    'longueur_suffisante': '3. Longueur suffisante',
-    'structure_lisibilite': '4. Structure et lisibilité',
-    'contenu_duplique': '5. Contenu dupliqué'
+
+
+// Configuration des critères selon ScoringConfig
+const scoringConfig = {
+  keywordUsage: {
+    id: 'keyword_usage',
+    name: 'Utilisation des mots-clés',
+    weight: 60,
+    enabled: true,
+    description: 'Analyse de l\'utilisation des mots-clés et de leur champ lexical'
+  },
+  keywordPosition: {
+    id: 'keyword_position',
+    name: 'Position des mots-clés',
+    weight: 0,
+    enabled: false,
+    description: 'Analyse de la position des mots-clés dans le texte'
+  },
+  contentLength: {
+    id: 'content_length',
+    name: 'Longueur du contenu',
+    weight: 0,
+    enabled: false,
+    description: 'Évaluation de la longueur du contenu'
+  },
+  readability: {
+    id: 'readability',
+    name: 'Lisibilité',
+    weight: 10,
+    enabled: true,
+    description: 'Analyse de la structure et de la lisibilité'
+  },
+  uniqueness: {
+    id: 'uniqueness',
+    name: 'Originalité',
+    weight: 0,
+    enabled: false,
+    description: 'Évaluation de l\'originalité du contenu'
   }
-  return titres[key] || key
+}
+
+// Vérifier si un critère est activé
+const isCriteriaEnabled = (criteriaKey) => {
+  return scoringConfig[criteriaKey]?.enabled || false
+}
+
+// Obtenir le score d'un critère
+const getCriteriaScore = (criteriaKey) => {
+  const config = scoringConfig[criteriaKey]
+  if (!config || !config.enabled) return 0
+  
+  // Mapping des clés de critères vers les clés dans les résultats
+  const criteriaMapping = {
+    keywordUsage: 'utilisation_champ_lexical',
+    keywordPosition: 'position_implementation',
+    contentLength: 'longueur_suffisante',
+    readability: 'structure_lisibilite',
+    uniqueness: 'contenu_duplique'
+  }
+  
+  const resultKey = criteriaMapping[criteriaKey]
+  
+  if (!resultKey || !props.analysis.baremeResults?.criteres?.[resultKey]) {
+    return 0
+  }
+  
+  const score = props.analysis.baremeResults.criteres[resultKey].score || 0
+  return score
 }
 
 // Obtenir le score maximum d'un critère
-const getCritereMaxScore = (key) => {
-  const scores = {
-    'utilisation_champ_lexical': 60,
-    'position_implementation': 10,
-    'longueur_suffisante': 5,
-    'structure_lisibilite': 10,
-    'contenu_duplique': 15
-  }
-  return scores[key] || 0
-}
-
-// Obtenir le titre d'un sous-critère
-const getSousCritereTitle = (key) => {
-  const titres = {
-    'declinaison_mots_cles': 'Décliner les mots clés en plusieurs champ lexical',
-    'correspondance_parfaite': 'Correspondance parfaite au mots clé et à l\'intention de recherche',
-    'mots_cles_premier_paragraphe': 'Mots clé dans le premier paragraphe',
-    'mots_cles_debut_paragraphes': 'Mots clé dans les début de paragraphe',
-    'echelle_longueur': 'Échelle de longueur (0 pts si <50 mots, 1 pt si +50, jusqu\'à 2000)',
-    'densite_mots': 'Vérifier densité des mots',
-    'decoupe_paragraphes': 'Vérifier la découpe en plusieurs paragraphe (avec une moyenne de mots par paragraphe)',
-    'pourcentage_duplication': 'Pourcentage de duplication du contenu'
-  }
-  return titres[key] || key
-}
-
-// Calculer le pourcentage de progression
-const getProgressPercentage = (score, maxScore) => {
-  if (!maxScore) return 0
-  return Math.round((score / maxScore) * 100)
-}
-
-// Obtenir la classe CSS pour la barre de progression
-const getProgressClass = (score, maxScore) => {
-  const percentage = getProgressPercentage(score, maxScore)
-  if (percentage >= 80) return 'progress-excellent'
-  if (percentage >= 60) return 'progress-good'
-  if (percentage >= 40) return 'progress-average'
-  return 'progress-poor'
+const getCriteriaMaxScore = (criteriaKey) => {
+  const config = scoringConfig[criteriaKey]
+  if (!config || !config.enabled) return 0
+  return config.weight
 }
 </script>
 
@@ -1045,6 +1125,125 @@ const getProgressClass = (score, maxScore) => {
   border-radius: 12px;
 }
 
+/* Styles pour le bilan SEO */
+.seo-score-overview {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  padding: 25px;
+  margin-bottom: 25px;
+  color: white;
+}
+
+.overall-score {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.score-circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.2);
+  border: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+.score-number {
+  font-size: 1.5rem;
+  font-weight: bold;
+  line-height: 1;
+  color: white;
+}
+
+.score-max {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  color: white;
+  font-weight: 500;
+}
+
+.score-info {
+  flex: 1;
+}
+
+.score-label {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.score-description {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 0.9rem;
+}
+
+.analysis-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.analysis-description {
+  margin-bottom: 15px;
+}
+
+.analysis-description p {
+  color: #6c757d;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.semantic-analysis, .position-analysis, .length-analysis, .readability-analysis, .uniqueness-analysis {
+  padding: 15px 0;
+}
+
+.semantic-details {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 15px;
+}
+
+.keyword-extraction-section {
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 2px solid #e9ecef;
+}
+
+.keyword-extraction-section h4 {
+  margin: 0 0 15px 0;
+  font-size: 1.1rem;
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+.keyword-extraction-section .keyword-analysis-container {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 15px;
+  border: 1px solid #e9ecef;
+}
+
+.keyword-extraction-section .keyword-category {
+  margin-bottom: 20px;
+}
+
+.keyword-extraction-section .keyword-category:last-child {
+  margin-bottom: 0;
+}
+
+.keyword-extraction-section .category-title {
+  margin: 0 0 10px 0;
+  font-size: 0.95rem;
+  color: #2c3e50;
+  font-weight: 600;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .result-meta {
@@ -1075,6 +1274,16 @@ const getProgressClass = (score, maxScore) => {
   
   .score-breakdown {
     gap: 8px;
+  }
+  
+  .overall-score {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .score-circle {
+    width: 70px;
+    height: 70px;
   }
 }
 </style> 

@@ -20,27 +20,27 @@ class ScoringConfig {
       keywordPosition: {
         id: 'keyword_position',
         name: 'Position des mots-clés',
-        weight: 0,  // Désactivé
+        weight: 0,  // Désactivé // 10 
         enabled: false,  // Désactivé
         description: 'Analyse de la position des mots-clés dans le texte'
       },
       contentLength: {
         id: 'content_length',
         name: 'Longueur du contenu',
-        weight: 0,  // Désactivé
+        weight: 0,  // Désactivé // 10 
         enabled: false,  // Désactivé
         description: 'Évaluation de la longueur du contenu'
       },
       readability: {
         id: 'readability',
         name: 'Lisibilité',
-        weight: 0,  // Désactivé
-        enabled: false,  // Désactivé
+        weight: 10,  // Désactivé // 10 
+        enabled: true,  // Désactivé // false 
         description: 'Analyse de la structure et de la lisibilité'
       },
       uniqueness: {
         id: 'uniqueness',
-        name: 'Originalité',
+        name: 'Originalité', // 10 
         weight: 0,  // Désactivé
         enabled: false,  // Désactivé
         description: 'Évaluation de l\'originalité du contenu'
