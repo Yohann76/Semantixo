@@ -98,6 +98,10 @@
               <span class="stat-label">📄</span>
               <span class="stat-value">{{ analysis.metrics?.paragraphCount || 0 }}</span>
             </div>
+            <div v-if="analysis.type === 'text' && analysis.baremeResults?.criteria?.readability" class="stat">
+              <span class="stat-label">📖</span>
+              <span class="stat-value">{{ analysis.baremeResults.criteria.readability.score || 0 }}/10</span>
+            </div>
             <div v-if="analysis.type === 'page'" class="stat">
               <span class="stat-label">📝</span>
               <span class="stat-value">{{ analysis.wordCount || 0 }}</span>

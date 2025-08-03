@@ -95,20 +95,34 @@ const getAnalyses = async (req, res) => {
       count: analyses.length
     });
 
+
+
     res.json({
       success: true,
-      data: analyses.map(analysis => ({
-        id: analysis._id,
-        text: analysis.text, // Texte complet au lieu de tronqué
-        seoScore: analysis.seoScore,
-        grade: analysis.baremeResults?.grade || 'Non évalué',
-        topic: analysis.topic,
-        keywords: analysis.keywords,
-        keywordAnalysis: analysis.keywordAnalysis, // Ajout de l'analyse des mots-clés
-        metrics: analysis.metrics,
-        baremeResults: analysis.baremeResults,
-        timestamp: analysis.createdAt
-      }))
+      data: analyses.map(analysis => {
+        // Convertir la Map criteria en objet JavaScript si nécessaire
+        let baremeResults = analysis.baremeResults;
+        if (baremeResults && baremeResults.criteria && baremeResults.criteria instanceof Map) {
+          const criteriaObj = {};
+          baremeResults.criteria.forEach((value, key) => {
+            criteriaObj[key] = value;
+          });
+          baremeResults = { ...baremeResults, criteria: criteriaObj };
+        }
+
+        return {
+          id: analysis._id,
+          text: analysis.text, // Texte complet au lieu de tronqué
+          seoScore: analysis.seoScore,
+          grade: analysis.baremeResults?.grade || 'Non évalué',
+          topic: analysis.topic,
+          keywords: analysis.keywords,
+          keywordAnalysis: analysis.keywordAnalysis, // Ajout de l'analyse des mots-clés
+          metrics: analysis.metrics,
+          baremeResults: baremeResults,
+          timestamp: analysis.createdAt
+        };
+      })
     });
 
   } catch (error) {
@@ -141,6 +155,16 @@ const getAnalysis = async (req, res) => {
       userId
     });
 
+    // Convertir la Map criteria en objet JavaScript si nécessaire
+    let baremeResults = analysis.baremeResults;
+    if (baremeResults && baremeResults.criteria && baremeResults.criteria instanceof Map) {
+      const criteriaObj = {};
+      baremeResults.criteria.forEach((value, key) => {
+        criteriaObj[key] = value;
+      });
+      baremeResults = { ...baremeResults, criteria: criteriaObj };
+    }
+
     res.json({
       success: true,
       data: {
@@ -153,7 +177,7 @@ const getAnalysis = async (req, res) => {
         keywordAnalysis: analysis.keywordAnalysis, // Ajout de l'analyse des mots-clés
         searchIntent: analysis.searchIntent,
         metrics: analysis.metrics,
-        baremeResults: analysis.baremeResults,
+        baremeResults: baremeResults,
         timestamp: analysis.createdAt
       }
     });
