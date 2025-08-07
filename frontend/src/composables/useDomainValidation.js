@@ -1,9 +1,7 @@
 import { ref, computed } from 'vue'
 
-// TODO : get list from backend config
-// Liste des mots-clés blacklistés (doit correspondre à celle du backend)
-// Cette liste doit être synchronisée avec backend/config/blacklist_domain.js
-const BLACKLISTED_KEYWORDS = [
+// Liste de fallback en cas d'échec de l'API
+const FALLBACK_BLACKLISTED_KEYWORDS = [
   'google',
   'firefox',
   'indeed',
@@ -439,6 +437,47 @@ const BLACKLISTED_KEYWORDS = [
 export function useDomainValidation() {
   const domainInput = ref('')
   const validationError = ref('')
+  const blacklistedKeywords = ref(FALLBACK_BLACKLISTED_KEYWORDS)
+  const isLoadingBlacklist = ref(false)
+  const blacklistLoaded = ref(false)
+
+  /**
+   * Récupère la liste de blacklist depuis le backend
+   */
+  const loadBlacklistFromBackend = async () => {
+    // Si déjà chargé, ne pas recharger
+    if (blacklistLoaded.value) {
+      return
+    }
+
+    isLoadingBlacklist.value = true
+
+    try {
+      const response = await fetch('/api/config/blacklist', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.blacklistedKeywords) {
+          blacklistedKeywords.value = data.blacklistedKeywords
+          blacklistLoaded.value = true
+          console.log('Blacklist chargée depuis le backend:', blacklistedKeywords.value.length, 'mots-clés')
+        } else {
+          console.warn('Réponse invalide du backend, utilisation du fallback')
+        }
+      } else {
+        console.warn('Erreur lors du chargement de la blacklist, utilisation du fallback')
+      }
+    } catch (error) {
+      console.error('Erreur réseau lors du chargement de la blacklist:', error)
+    } finally {
+      isLoadingBlacklist.value = false
+    }
+  }
 
   /**
    * Valide un domaine ou une URL contre la blacklist
@@ -466,7 +505,7 @@ export function useDomainValidation() {
     // Vérifier chaque mot-clé blacklisté
     const foundBlacklistedKeywords = []
     
-    for (const keyword of BLACKLISTED_KEYWORDS) {
+    for (const keyword of blacklistedKeywords.value) {
       if (domainOnly.includes(keyword.toLowerCase())) {
         foundBlacklistedKeywords.push(keyword)
       }
@@ -503,11 +542,17 @@ export function useDomainValidation() {
     domainInput.value = ''
   }
 
+  // Charger la blacklist au démarrage
+  loadBlacklistFromBackend()
+
   return {
     domainInput,
     validationError,
     validateDomain,
     validateDomainRealtime,
-    clearValidation
+    clearValidation,
+    loadBlacklistFromBackend,
+    isLoadingBlacklist,
+    blacklistLoaded
   }
 } 
