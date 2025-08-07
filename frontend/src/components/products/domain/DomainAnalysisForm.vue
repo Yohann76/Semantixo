@@ -14,6 +14,9 @@
         <small class="form-help">
           Entrez le nom de domaine que vous voulez analyser (avec ou sans www)
         </small>
+        <div v-if="validationError" class="validation-error">
+          {{ validationError }}
+        </div>
       </div>
       
       <div class="form-actions">
@@ -33,13 +36,15 @@
 <script setup>
 import { ref } from 'vue'
 import { useAuth } from '../../../composables/useGlobalStores.js'
+import { useDomainValidation } from '../../../composables/useDomainValidation.js'
 
 // État réactif
 const domainToAnalyze = ref('')
 const loading = ref(false)
 
-// Utilisation du composable d'authentification
+// Utilisation des composables
 const { isAuthenticated, getAuthHeaders } = useAuth()
+const { validateDomain, validationError } = useDomainValidation()
 
 // Émettre les événements
 const emit = defineEmits(['analysis-complete', 'error'])
@@ -48,6 +53,13 @@ const emit = defineEmits(['analysis-complete', 'error'])
 const analyzeDomain = async () => {
   if (!domainToAnalyze.value.trim()) {
     emit('error', 'Veuillez entrer un nom de domaine à analyser')
+    return
+  }
+
+  // Vérifier la blacklist
+  const validation = validateDomain(domainToAnalyze.value)
+  if (!validation.isValid) {
+    emit('error', validation.message)
     return
   }
   
@@ -141,6 +153,16 @@ const analyzeDomain = async () => {
   color: #6c757d;
   margin-top: 4px;
   font-style: italic;
+}
+
+.validation-error {
+  color: #dc3545;
+  font-size: 0.9rem;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
 }
 
 .domain-input {

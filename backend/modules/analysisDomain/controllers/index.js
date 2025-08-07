@@ -1,5 +1,6 @@
 const AnalysisDomain = require('../models');
 const AnalyzerDomain = require('../utils');
+const { validateDomainBlacklist } = require('../../../utils/domainBlacklist');
 
 // @desc    Créer une nouvelle analyse de nom de domaine
 // @route   POST /api/analysis-domain
@@ -12,6 +13,15 @@ const createAnalysisDomain = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Le nom de domaine est requis'
+      });
+    }
+
+    // Vérifier la blacklist
+    const blacklistValidation = validateDomainBlacklist(domain);
+    if (!blacklistValidation.isValid) {
+      return res.status(400).json({
+        success: false,
+        message: blacklistValidation.message
       });
     }
 

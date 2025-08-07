@@ -1,5 +1,6 @@
 const AnalysisPageSeo = require('../models');
 const AnalyzerPageSeo = require('../utils');
+const { validateDomainBlacklist } = require('../../../utils/domainBlacklist');
 
 // @desc    Créer une nouvelle analyse de page SEO
 // @route   POST /api/analysis-page-seo
@@ -12,6 +13,15 @@ const createAnalysisPageSeo = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'L\'URL de la page à analyser est requise'
+      });
+    }
+
+    // Vérifier la blacklist
+    const blacklistValidation = validateDomainBlacklist(url);
+    if (!blacklistValidation.isValid) {
+      return res.status(400).json({
+        success: false,
+        message: blacklistValidation.message
       });
     }
 
