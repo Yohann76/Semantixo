@@ -258,3 +258,54 @@ docker-compose down
 - SEO analysis includes: word count, keyword density, readability score
 - All analysis routes require authentication
 - Passwords are hashed with bcrypt (salt: 12)
+
+## 🧪 Tests
+
+Le projet Semantixo dispose d'une suite de tests complète :
+
+### Tests Backend (Jest + Supertest)
+```bash
+# Tests simples et API (fonctionnent)
+make test-backend
+
+# Tests spécifiques
+cd backend && npm test -- simple.test.js
+cd backend && npm test -- api.test.js
+```
+
+### Tests Frontend (Vitest)
+```bash
+# Tests simples (fonctionnent)
+make test-frontend
+
+# Tests spécifiques
+cd frontend && npm run test -- simple.test.js
+```
+
+### Tests E2E (Playwright)
+```bash
+# Tests end-to-end
+make test-e2e
+```
+
+### Installation des Dépendances
+```bash
+# Installer toutes les dépendances de test
+make install-test-deps
+```
+
+### État Actuel
+- ✅ **Tests Backend** : Jest + Supertest configurés et fonctionnels
+- ✅ **Tests Frontend** : Vitest configuré et fonctionnel
+- ✅ **Tests E2E** : Playwright configuré
+- ⚠️ **Tests MongoDB** : Nécessitent configuration de base de données de test
+
+Pour plus de détails, consultez le [Guide des Tests](TESTING.md).
+
+## Makefile 
+
+```
+make dev-kill
+make dev-build
+make dev-run
+```
