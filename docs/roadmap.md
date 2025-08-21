@@ -17,6 +17,7 @@
 - Export PDF on frontend Analyse Maillage interne [Todo]
 - Export PDF on frontend Analyse Nom de domaine [Todo]
 
+- Use n8n for analyse SERP, scraping..? 
 
 ## Roadmap Deploy
 
