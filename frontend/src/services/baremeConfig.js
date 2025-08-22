@@ -4,12 +4,12 @@ import authService from './auth'
 const API_URL = process.env.VUE_APP_API_URL || 'http://localhost:3000/api'
 
 /**
- * Récupère la configuration du barème depuis le backend
+ * Récupère la configuration des jobs depuis le backend
  * Get config only for analysis-text-seo module
  */
-export const getBaremeConfig = async () => {
+export const getJobsConfig = async () => {
   try {
-    const response = await fetch(`${API_URL}/analysis-text-seo/bareme/config`, {
+    const response = await fetch(`${API_URL}/analysis-text-seo/jobs/config`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -24,76 +24,33 @@ export const getBaremeConfig = async () => {
     const data = await response.json()
     
     if (data.success) {
-      return data.data.configuration
+      return data.data
     } else {
       throw new Error(data.message || 'Erreur lors de la récupération de la configuration')
     }
   } catch (error) {
-    console.error('Erreur lors de la récupération de la configuration du barème:', error)
+    console.error('Erreur lors de la récupération de la configuration des jobs:', error)
     // Retourner une configuration par défaut en cas d'erreur
-    return getDefaultConfig()
+    return getDefaultJobsConfig()
   }
 }
+
+// Garde l'ancien nom pour compatibilité
+export const getBaremeConfig = getJobsConfig
 
 /**
  * Configuration par défaut en cas d'erreur de récupération
  */
-const getDefaultConfig = () => {
+const getDefaultJobsConfig = () => {
   return {
-    version: '2.3.0',
-    totalPoints: 100,
-    enabled: true,
-    criteria: {
-      keywordUsage: {
-        id: 'keyword_usage',
-        name: 'Utilisation des mots-clés',
-        weight: 60,
-        enabled: true,
-        description: 'Analyse de l\'utilisation des mots-clés et de leur champ lexical'
-      },
-      keywordPosition: {
-        id: 'keyword_position',
-        name: 'Position des mots-clés',
-        weight: 10,
-        enabled: true,
-        description: 'Analyse de la position des mots-clés dans le texte'
-      },
-      contentLength: {
-        id: 'content_length',
-        name: 'Longueur du contenu',
-        weight: 10,
-        enabled: true,
-        description: 'Évaluation de la longueur du contenu'
-      },
-      readability: {
-        id: 'readability',
-        name: 'Lisibilité',
-        weight: 10,
-        enabled: true,
-        description: 'Analyse de la structure et de la lisibilité'
-      },
-      uniqueness: {
-        id: 'uniqueness',
-        name: 'Originalité',
-        weight: 10,
-        enabled: true,
-        description: 'Évaluation de l\'originalité du contenu'
-      }
-    },
-    grading: {
-      excellent: { min: 85, label: 'Excellent' },
-      veryGood: { min: 70, label: 'Très bon' },
-      good: { min: 55, label: 'Bon' },
-      average: { min: 40, label: 'Moyen' },
-      poor: { min: 0, label: 'Insuffisant' }
-    },
-    thresholds: {
-      minWords: 50,
-      maxWords: 2000,
-      minParagraphs: 2,
-      maxWordsPerParagraph: 200,
-      minKeywordDensity: 0.5,
-      maxKeywordDensity: 3.0
-    }
+    jobs: [
+      { name: 'keyword-analysis', displayName: 'Analyse des mots-clés', weight: 40, description: 'Analyse la présence et la fréquence des mots-clés' },
+      { name: 'keyword-position', displayName: 'Position des mots-clés', weight: 15, description: 'Vérifie la position stratégique des mots-clés' },
+      { name: 'content-length', displayName: 'Longueur du contenu', weight: 15, description: 'Évalue la longueur optimale du contenu' },
+      { name: 'readability', displayName: 'Lisibilité', weight: 15, description: 'Analyse la facilité de lecture du texte' },
+      { name: 'uniqueness', displayName: 'Originalité', weight: 15, description: 'Vérifie l\'originalité et l\'unicité du contenu' }
+    ],
+    totalWeight: 100,
+    version: '1.0.0'
   }
-} 
+}

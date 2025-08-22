@@ -4,7 +4,7 @@
       <div class="text-analysis-page">
         <div class="container">
           <!-- Formulaire d'analyse (visible seulement si pas d'analyse sélectionnée) -->
-          <div v-if="!selectedAnalysis" class="analysis-form-section">
+          <div v-if="!selectedAnalysis && !isProcessing" class="analysis-form-section">
             <h1 class="page-title">Analyse SEO de Texte</h1>
             <p class="page-description">
               Analysez votre texte pour optimiser son référencement SEO avec notre système de barème avancé
@@ -22,6 +22,47 @@
               show-retry
               @retry="clearError"
             />
+          </div>
+
+          <!-- Suivi en temps réel de l'analyse -->
+          <div v-if="isProcessing" class="processing-container">
+            <div class="processing-header">
+              <h2>🚀 Analyse en cours...</h2>
+              <p>Votre contenu est en cours d'analyse par nos algorithmes SEO avancés</p>
+            </div>
+
+            <div class="progress-section">
+              <div class="progress-bar-container">
+                <div class="progress-bar">
+                  <div 
+                    class="progress-fill" 
+                    :style="{ width: `${analysisProgress}%` }"
+                  ></div>
+                </div>
+                <span class="progress-text">{{ analysisProgress }}%</span>
+              </div>
+
+              <div class="jobs-status">
+                <div 
+                  v-for="job in jobsStatus" 
+                  :key="job.name"
+                  class="job-item"
+                  :class="getJobStatusClass(job.status)"
+                >
+                  <div class="job-icon">{{ getJobIcon(job.status) }}</div>
+                  <div class="job-info">
+                    <span class="job-name">{{ getJobDisplayName(job.name) }}</span>
+                    <span class="job-status">{{ getJobStatusText(job.status) }}</span>
+                  </div>
+                  <div v-if="job.progress > 0" class="job-progress">{{ job.progress }}%</div>
+                </div>
+              </div>
+
+              <div class="processing-time">
+                <p>⏱️ Temps écoulé: {{ formatTime(processingTime) }}</p>
+                <p v-if="estimatedTimeRemaining > 0">⏳ Temps estimé restant: {{ formatTime(estimatedTimeRemaining) }}</p>
+              </div>
+            </div>
           </div>
 
           <!-- Résultat de l'analyse (affiché directement sous le formulaire) -->
@@ -60,6 +101,16 @@ const layoutRef = ref(null)
 const selectedAnalysis = ref(null)
 const currentAnalysis = ref(null) // Nouvelle analyse en cours
 
+// État pour le suivi asynchrone
+const isProcessing = ref(false)
+const analysisProgress = ref(0)
+const jobsStatus = ref([])
+const processingTime = ref(0)
+const estimatedTimeRemaining = ref(0)
+const processingStartTime = ref(null)
+const statusPollingInterval = ref(null)
+const currentAnalysisId = ref(null)
+
 // Surveiller les changements de selectedAnalysis depuis le layout
 watch(() => layoutRef.value?.selectedAnalysis?.value, (newAnalysis) => {
   selectedAnalysis.value = newAnalysis
@@ -71,13 +122,97 @@ watch(() => layoutRef.value?.selectedAnalysis?.value, (newAnalysis) => {
 
 // Gérer la completion d'une analyse
 const handleAnalysisComplete = (analysisResult) => {
-  currentAnalysis.value = analysisResult // Afficher directement sous le formulaire
-  error.value = null
-  
-  // Rafraîchir l'historique après une analyse réussie
-  if (layoutRef.value) {
-    layoutRef.value.refreshAnalyses()
+  if (analysisResult.status === 'processing') {
+    // Démarrer le suivi asynchrone
+    startAsyncTracking(analysisResult)
+  } else {
+    // Analyse terminée immédiatement
+    currentAnalysis.value = analysisResult
+    error.value = null
+    
+    // Rafraîchir l'historique après une analyse réussie
+    if (layoutRef.value) {
+      layoutRef.value.refreshAnalyses()
+    }
   }
+}
+
+// Démarrer le suivi d'une analyse asynchrone
+const startAsyncTracking = (analysisResult) => {
+  isProcessing.value = true
+  currentAnalysisId.value = analysisResult.id
+  analysisProgress.value = analysisResult.progress || 0
+  jobsStatus.value = analysisResult.jobs || []
+  processingStartTime.value = Date.now()
+  processingTime.value = 0
+  
+  // Démarrer le polling du statut
+  statusPollingInterval.value = setInterval(checkAnalysisStatus, 3000) // Toutes les 3 secondes
+  
+  // Démarrer le timer
+  const timer = setInterval(() => {
+    processingTime.value = Math.floor((Date.now() - processingStartTime.value) / 1000)
+  }, 1000)
+  
+  // Nettoyer le timer quand l'analyse est terminée
+  watch(isProcessing, (processing) => {
+    if (!processing) {
+      clearInterval(timer)
+    }
+  })
+}
+
+// Vérifier le statut de l'analyse
+const checkAnalysisStatus = async () => {
+  if (!currentAnalysisId.value) return
+  
+  try {
+    const { isAuthenticated, getAuthHeaders } = useAuth()
+    if (!isAuthenticated.value) return
+    
+    const response = await fetch(`http://localhost:3000/api/analysis-text-seo/${currentAnalysisId.value}/status`, {
+      headers: getAuthHeaders()
+    })
+    
+    const data = await response.json()
+    
+    if (!response.ok) {
+      throw new Error(data.message || 'Erreur lors de la récupération du statut')
+    }
+    
+    const statusData = data.data
+    analysisProgress.value = statusData.progress || 0
+    jobsStatus.value = statusData.jobs || []
+    
+    if (statusData.status === 'completed') {
+      // Analyse terminée
+      stopAsyncTracking()
+      currentAnalysis.value = statusData
+      
+      // Rafraîchir l'historique
+      if (layoutRef.value) {
+        layoutRef.value.refreshAnalyses()
+      }
+    } else if (statusData.failed > 0) {
+      // Certains jobs ont échoué
+      console.warn('Certains jobs ont échoué:', statusData.jobs.filter(j => j.status === 'failed'))
+    }
+    
+  } catch (error) {
+    console.error('Erreur lors de la vérification du statut:', error)
+    handleError(error.message)
+    stopAsyncTracking()
+  }
+}
+
+// Arrêter le suivi asynchrone
+const stopAsyncTracking = () => {
+  isProcessing.value = false
+  if (statusPollingInterval.value) {
+    clearInterval(statusPollingInterval.value)
+    statusPollingInterval.value = null
+  }
+  currentAnalysisId.value = null
 }
 
 // Gérer les erreurs
@@ -98,6 +233,54 @@ const clearSelection = () => {
   selectedAnalysis.value = null
   error.value = null
 }
+
+// Fonctions utilitaires pour l'affichage des jobs
+const getJobDisplayName = (jobName) => {
+  const names = {
+    'keyword-analysis': 'Analyse des mots-clés',
+    'keyword-position': 'Position des mots-clés',
+    'content-length': 'Longueur du contenu',
+    'readability': 'Lisibilité',
+    'uniqueness': 'Originalité'
+  }
+  return names[jobName] || jobName
+}
+
+const getJobIcon = (status) => {
+  const icons = {
+    'waiting': '⏳',
+    'active': '🔄',
+    'completed': '✅',
+    'failed': '❌'
+  }
+  return icons[status] || '⏳'
+}
+
+const getJobStatusClass = (status) => {
+  return `job-${status}`
+}
+
+const getJobStatusText = (status) => {
+  const texts = {
+    'waiting': 'En attente',
+    'active': 'En cours',
+    'completed': 'Terminé',
+    'failed': 'Échoué'
+  }
+  return texts[status] || status
+}
+
+const formatTime = (seconds) => {
+  if (seconds < 60) {
+    return `${seconds}s`
+  }
+  const minutes = Math.floor(seconds / 60)
+  const remainingSeconds = seconds % 60
+  return `${minutes}m ${remainingSeconds}s`
+}
+
+// Import nécessaire pour l'auth
+import { useAuth } from '../../../composables/useGlobalStores.js'
 </script>
 
 <style scoped>
@@ -176,5 +359,166 @@ const clearSelection = () => {
 
 .selected-analysis-section {
   padding: 20px 0;
+}
+
+/* Styles pour le suivi asynchrone */
+.processing-container {
+  background: white;
+  border-radius: 15px;
+  padding: 30px;
+  margin: 30px auto;
+  max-width: 800px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+.processing-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.processing-header h2 {
+  color: #333;
+  margin-bottom: 10px;
+  font-size: 1.8rem;
+}
+
+.processing-header p {
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.progress-section {
+  margin-top: 25px;
+}
+
+.progress-bar-container {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 12px;
+  background: #e9ecef;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 6px;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-weight: bold;
+  color: #333;
+  min-width: 50px;
+  text-align: right;
+}
+
+.jobs-status {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 25px;
+}
+
+.job-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 15px;
+  border-radius: 8px;
+  border: 2px solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+.job-item.job-waiting {
+  border-color: #ffc107;
+  background: #fff8e1;
+}
+
+.job-item.job-active {
+  border-color: #17a2b8;
+  background: #e1f5fe;
+  animation: pulse 2s infinite;
+}
+
+.job-item.job-completed {
+  border-color: #28a745;
+  background: #e8f5e8;
+}
+
+.job-item.job-failed {
+  border-color: #dc3545;
+  background: #ffebee;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.job-icon {
+  font-size: 1.2rem;
+  margin-right: 12px;
+  min-width: 24px;
+  text-align: center;
+}
+
+.job-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.job-name {
+  font-weight: 600;
+  color: #333;
+  font-size: 0.95rem;
+}
+
+.job-status {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.job-progress {
+  font-weight: bold;
+  color: #667eea;
+  font-size: 0.9rem;
+}
+
+.processing-time {
+  text-align: center;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #667eea;
+}
+
+.processing-time p {
+  margin: 5px 0;
+  color: #555;
+  font-size: 0.95rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .processing-container {
+    margin: 20px;
+    padding: 20px;
+  }
+  
+  .job-item {
+    padding: 10px 12px;
+  }
+  
+  .progress-bar-container {
+    gap: 10px;
+  }
 }
 </style> 

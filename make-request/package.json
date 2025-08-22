@@ -8,6 +8,7 @@
     "test-all": "node test-all-apis.js",
     "get-token": "node get-token.js",
     "test-text": "node test-analysis-text-seo.js",
+    "test-async": "node test-async-analysis.js",
     "test-domain": "node test-analysis-domain.js",
     "test-internal": "node test-analysis-internal-link.js",
     "test-page": "node test-analysis-page-seo.js"

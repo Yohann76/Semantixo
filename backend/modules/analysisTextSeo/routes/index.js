@@ -7,7 +7,8 @@ const {
   getAnalysis,
   deleteAnalysis,
   getStats,
-  getBaremeConfig
+  getAnalysisStatus,
+  getJobsConfig
 } = require('../controllers');
 
 // Routes protégées par authentification
@@ -22,13 +23,16 @@ router.get('/', getAnalyses);
 // GET /api/analysis-text-seo/:id - Récupérer une analyse spécifique
 router.get('/:id', getAnalysis);
 
+// GET /api/analysis-text-seo/:id/status - Obtenir le statut d'une analyse en cours
+router.get('/:id/status', getAnalysisStatus);
+
 // DELETE /api/analysis-text-seo/:id - Supprimer une analyse
 router.delete('/:id', deleteAnalysis);
 
 // GET /api/analysis-text-seo/stats - Obtenir les statistiques
 router.get('/stats', getStats);
 
-// GET /api/analysis-text-seo/bareme/config - Obtenir la configuration du barème
-router.get('/bareme/config', getBaremeConfig);
+// GET /api/analysis-text-seo/jobs/config - Obtenir la configuration des jobs
+router.get('/jobs/config', getJobsConfig);
 
-module.exports = router; 
+module.exports = router;

@@ -1,16 +1,15 @@
 /**
  * Utilitaires pour l'analyse SEO de texte
- * Intègre le système de barème modulaire
+ * Version simplifiée sans système de barème
  */
 
-const bareme = require('../bareme')
 const { findKeywordsFromText } = require('./findKeywordFromTopic')
 
 /**
- * Analyse SEO complète d'un texte
+ * Analyse SEO simplifiée d'un texte
  * @param {string} text - Le texte à analyser
  * @param {Array} keywords - Les mots-clés ciblés
- * @returns {Object} Résultats d'analyse avec barème
+ * @returns {Object} Résultats d'analyse simplifiés
  */
 const analyzeTextSeo = async (text, keywords = []) => {
   try {
@@ -25,17 +24,10 @@ const analyzeTextSeo = async (text, keywords = []) => {
     // Analyse des mots-clés extraits du texte
     const keywordAnalysis = await findKeywordsFromText(text, keywords)
 
-    // Analyse avec le barème SEO
-    const baremeResults = await bareme.evaluateTextSEO(text, keywords)
-
-    // Calcul du score SEO global
-    const seoScore = Math.round((baremeResults.totalScore / baremeResults.maxScore) * 100)
-
     return {
       success: true,
-      seoScore,
+      seoScore: 0, // Sera calculé par les jobs
       basicMetrics,
-      baremeResults,
       keywordAnalysis: keywordAnalysis.success ? keywordAnalysis.keywords : null,
       timestamp: new Date().toISOString()
     }
@@ -46,7 +38,6 @@ const analyzeTextSeo = async (text, keywords = []) => {
       error: error.message,
       seoScore: 0,
       basicMetrics: {},
-      baremeResults: null,
       keywordAnalysis: null,
       timestamp: new Date().toISOString()
     }
@@ -54,86 +45,45 @@ const analyzeTextSeo = async (text, keywords = []) => {
 }
 
 /**
- * Obtient la configuration du barème
- * @returns {Object} Configuration du barème
+ * Obtient la configuration des jobs d'analyse
+ * @returns {Object} Configuration des jobs
  */
-const getBaremeConfiguration = () => {
-  return bareme.getConfiguration()
-}
-
-/**
- * Valide la configuration du barème
- * @returns {Object} Résultat de la validation
- */
-const validateBaremeConfiguration = () => {
-  return bareme.validateConfiguration()
-}
-
-/**
- * Active ou désactive un critère du barème
- * @param {string} critereId - L'ID du critère
- * @param {boolean} enabled - Activer ou désactiver
- */
-const toggleBaremeCritere = (critereId, enabled = true) => {
-  return bareme.toggleCriteria(critereId, enabled)
-}
-
-/**
- * Obtient les critères disponibles du barème
- * @returns {Array} Liste des critères disponibles
- */
-const getBaremeCriteria = () => {
-  return bareme.getAvailableCriteria()
-}
-
-/**
- * Obtient les critères disponibles du barème
- * @returns {Array} Liste des critères disponibles
- */
-const getBaremeConstantes = () => {
-  return bareme.getAvailableCriteria()
-}
-
-/**
- * Teste le système de barème avec un exemple
- * @returns {Object} Résultats du test
- */
-const testBareme = () => {
-  const exempleTexte = `
-    ## Introduction au SEO
-
-    Le référencement naturel (SEO) est une technique essentielle pour améliorer la visibilité d'un site web dans les moteurs de recherche.
-
-    ### Les bases du SEO
-
-    - Optimisation des mots-clés
-    - Création de contenu de qualité
-    - Structure technique du site
-
-    ### Techniques avancées
-
-    1. Optimisation on-page
-    2. Stratégie de backlinks
-    3. Analyse des performances
-
-    Le SEO nécessite une approche méthodique et une patience constante pour obtenir des résultats durables.
-  `
-
-  const motsCles = ['SEO', 'référencement', 'optimisation']
-  
-  try {
-    const resultats = bareme.evaluateTextSEO(exempleTexte, motsCles)
-    return {
-      success: true,
-      resultats,
-      message: 'Test du barème réussi'
-    }
-  } catch (error) {
-    return {
-      success: false,
-      error: error.message,
-      message: 'Test du barème échoué'
-    }
+const getJobsConfiguration = () => {
+  return {
+    jobs: [
+      {
+        name: 'keyword-analysis',
+        displayName: 'Analyse des mots-clés',
+        weight: 40,
+        description: 'Analyse la présence et la fréquence des mots-clés'
+      },
+      {
+        name: 'keyword-position',
+        displayName: 'Position des mots-clés',
+        weight: 15,
+        description: 'Vérifie la position stratégique des mots-clés'
+      },
+      {
+        name: 'content-length',
+        displayName: 'Longueur du contenu',
+        weight: 15,
+        description: 'Évalue la longueur optimale du contenu'
+      },
+      {
+        name: 'readability',
+        displayName: 'Lisibilité',
+        weight: 15,
+        description: 'Analyse la facilité de lecture du texte'
+      },
+      {
+        name: 'uniqueness',
+        displayName: 'Originalité',
+        weight: 15,
+        description: 'Vérifie l\'originalité et l\'unicité du contenu'
+      }
+    ],
+    totalWeight: 100,
+    version: '2.0.0'
   }
 }
 
@@ -141,16 +91,6 @@ module.exports = {
   // Fonction principale d'analyse
   analyzeTextSeo,
   
-  // Fonctions de gestion du barème
-  getBaremeConfiguration,
-  validateBaremeConfiguration,
-  toggleBaremeCritere,
-  getBaremeCriteria,
-  getBaremeConstantes,
-  
-  // Fonction de test
-  testBareme,
-  
-  // Export du module bareme complet
-  bareme
+  // Configuration des jobs
+  getJobsConfiguration
 } 

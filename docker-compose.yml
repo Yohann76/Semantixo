@@ -34,15 +34,54 @@ services:
       PORT: 3000
       NODE_ENV: development
       OPENAI_API_KEY: ${OPENAI_API_KEY}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
     ports:
       - "3000:3000"
     depends_on:
       - mongodb
+      - redis
     networks:
       - semantixo-network
     volumes:
       - ./backend:/app
       - /app/node_modules
+
+  # Redis pour les jobs asynchrones
+  redis:
+    image: redis:7-alpine
+    container_name: semantixo-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - semantixo-network
+
+  # Worker pour l'analyse de texte SEO
+  text-seo-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.worker
+    container_name: semantixo-text-seo-worker
+    restart: unless-stopped
+    depends_on:
+      - redis
+      - mongodb
+    environment:
+      - NODE_ENV=development
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - MONGODB_URI=mongodb://admin:password123@mongodb:27017/semantixo?authSource=admin
+      - JWT_SECRET=votre_secret_jwt_tres_securise_ici_changez_le_en_production
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - semantixo-network
 
   # Frontend Vue.js (optional - you can continue to use npm run serve)
   frontend:
@@ -60,6 +99,7 @@ services:
 
 volumes:
   mongodb_data:
+  redis_data:
 
 networks:
   semantixo-network:

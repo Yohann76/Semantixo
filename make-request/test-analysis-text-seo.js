@@ -48,16 +48,27 @@ async function testAnalysisTextSeo() {
     const data = await response.json();
     
     if (response.ok) {
-      console.log('✅ Succès! Réponse de l\'API:\n');
-      console.log(JSON.stringify(data, null, 2));
-      
-      if (data.data) {
-        console.log('\n📈 Résumé de l\'analyse:');
-        console.log(`- Score SEO: ${data.data.seoScore}/100`);
-        console.log(`- Grade: ${data.data.grade}`);
-        console.log(`- Thématique: ${data.data.topic}`);
-        console.log(`- Mots-clés: ${data.data.keywords?.join(', ')}`);
-        console.log(`- Nombre de mots: ${data.data.metrics?.wordCount}`);
+      if (data.data.status === 'processing') {
+        console.log('🚀 Analyse asynchrone démarrée!');
+        console.log(`📊 ID: ${data.data.id}`);
+        console.log(`📊 Status: ${data.data.status}`);
+        console.log(`📊 Jobs créés: ${data.data.jobs?.length || 0}`);
+        console.log(`📊 Temps estimé: ${data.data.estimatedTime}`);
+        
+        // Suivre le progrès
+        await followAnalysisProgress(data.data.id);
+      } else {
+        console.log('✅ Analyse synchrone terminée!');
+        console.log(JSON.stringify(data, null, 2));
+        
+        if (data.data) {
+          console.log('\n📈 Résumé de l\'analyse:');
+          console.log(`- Score SEO: ${data.data.seoScore}/100`);
+          console.log(`- Grade: ${data.data.grade}`);
+          console.log(`- Thématique: ${data.data.topic}`);
+          console.log(`- Mots-clés: ${data.data.keywords?.join(', ')}`);
+          console.log(`- Nombre de mots: ${data.data.metrics?.wordCount}`);
+        }
       }
     } else {
       console.log('❌ Erreur! Réponse de l\'API:\n');
@@ -72,6 +83,93 @@ async function testAnalysisTextSeo() {
       console.log('npm install node-fetch');
     }
   }
+}
+
+// Suivre le progrès d'une analyse asynchrone
+async function followAnalysisProgress(analysisId) {
+  console.log('\n📊 Suivi du progrès de l\'analyse...\n');
+  
+  let completed = false;
+  let attempts = 0;
+  const maxAttempts = 30; // 3 minutes max
+  
+  while (!completed && attempts < maxAttempts) {
+    attempts++;
+    
+    // Attendre 6 secondes entre chaque vérification
+    await new Promise(resolve => setTimeout(resolve, 6000));
+    
+    try {
+      const response = await fetch(`${config.BASE_URL}/analysis-text-seo/${analysisId}/status`, {
+        headers: {
+          'Authorization': `Bearer ${config.TOKEN}`
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        console.log('❌ Erreur récupération statut:', data);
+        break;
+      }
+      
+      const status = data.data;
+      console.log(`🔄 Vérification ${attempts}/${maxAttempts} - Progrès: ${status.progress || 0}%`);
+      
+      if (status.jobs) {
+        status.jobs.forEach(job => {
+          const icon = job.status === 'completed' ? '✅' : 
+                      job.status === 'failed' ? '❌' : 
+                      job.status === 'active' ? '🔄' : '⏳';
+          const name = getJobDisplayName(job.name);
+          const progress = job.progress > 0 ? ` (${job.progress}%)` : '';
+          console.log(`  ${icon} ${name}: ${job.status}${progress}`);
+        });
+      }
+      
+      if (status.status === 'completed') {
+        completed = true;
+        console.log('\n🎉 Analyse terminée avec succès!');
+        console.log('📊 Résultats finaux:');
+        console.log(`- Score SEO: ${status.seoScore}/100`);
+        console.log(`- Grade: ${status.grade}`);
+        console.log(`- Thématique: ${status.topic}`);
+        console.log(`- Mots: ${status.metrics?.wordCount}`);
+        
+        if (status.baremeResults?.criteria) {
+          console.log('\n📈 Scores par critère:');
+          Object.entries(status.baremeResults.criteria).forEach(([key, criteria]) => {
+            const percentage = Math.round(criteria.score / criteria.maxScore * 100);
+            console.log(`  - ${criteria.name}: ${criteria.score}/${criteria.maxScore} (${percentage}%)`);
+          });
+        }
+      }
+      
+      console.log('');
+      
+    } catch (error) {
+      console.error('❌ Erreur lors du suivi:', error.message);
+      break;
+    }
+  }
+  
+  if (!completed) {
+    console.log('⏰ Timeout: L\'analyse prend plus de temps que prévu');
+    console.log(`💡 Vous pouvez vérifier le statut plus tard avec:`);
+    console.log(`GET ${config.BASE_URL}/analysis-text-seo/${analysisId}/status`);
+  }
+}
+
+// Fonction utilitaire pour les noms de jobs
+function getJobDisplayName(jobName) {
+  const names = {
+    'keyword-analysis': 'Analyse des mots-clés',
+    'keyword-position': 'Position des mots-clés',
+    'content-length': 'Longueur du contenu',
+    'readability': 'Lisibilité',
+    'uniqueness': 'Originalité'
+  };
+  return names[jobName] || jobName;
 }
 
 // Vérifier si la configuration est correcte
