@@ -47,45 +47,45 @@ async function startWorker() {
     const textAnalysisQueue = new Queue('text analysis', redisConfig);
 
     
-    const KeywordAnalysisJob = require('./KeywordAnalysisJob');
-    const KeywordPositionJob = require('./KeywordPositionJob');
-    const ContentLengthJob = require('./ContentLengthJob');
-    const ReadabilityJob = require('./ReadabilityJob');
-    const UniquenessJob = require('./UniquenessJob');
+    const KeywordAnalysisJobProcessor = require('./KeywordAnalysisJob');
+    const KeywordPositionJobProcessor = require('./KeywordPositionJob');
+    const ContentLengthJobProcessor = require('./ContentLengthJob');
+    const ReadabilityJobProcessor = require('./ReadabilityJob');
+    const UniquenessJobProcessor = require('./UniquenessJob');
     
 
     
     textAnalysisQueue.process('keyword-analysis', 2, async (job) => {
 
-      const result = await KeywordAnalysisJob.process(job);
+      const result = await KeywordAnalysisJobProcessor.process(job);
 
       return result;
     });
     
     textAnalysisQueue.process('keyword-position', 2, async (job) => {
 
-      const result = await KeywordPositionJob.process(job);
+      const result = await KeywordPositionJobProcessor.process(job);
 
       return result;
     });
     
     textAnalysisQueue.process('content-length', 3, async (job) => {
 
-      const result = await ContentLengthJob.process(job);
+      const result = await ContentLengthJobProcessor.process(job);
 
       return result;
     });
     
     textAnalysisQueue.process('readability', 2, async (job) => {
 
-      const result = await ReadabilityJob.process(job);
+      const result = await ReadabilityJobProcessor.process(job);
 
       return result;
     });
     
     textAnalysisQueue.process('uniqueness', 1, async (job) => {
 
-      const result = await UniquenessJob.process(job);
+      const result = await UniquenessJobProcessor.process(job);
 
       return result;
     });

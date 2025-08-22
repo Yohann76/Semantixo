@@ -1,36 +1,56 @@
 const AnalysisTextSeo = require('../models/AnalysisTextSeo');
 const JobUtils = require('./JobUtils');
+const { KeywordPositionJob: KeywordPositionJobModel } = require('../models');
 
-class KeywordPositionJob {
+class KeywordPositionJobProcessor {
   static async process(job) {
     const { analysisId, text, keywords } = job.data;
+    const startTime = Date.now();
     
     try {
-      await JobUtils.updateJobStatus(analysisId, 'keyword-position', 'processing', {
-        details: 'Analyse de position des mots-clés en cours...',
-        startedAt: new Date()
+      // Créer l'enregistrement du job en base avec tous les champs requis
+      const jobRecord = new KeywordPositionJobModel({
+        analysisId,
+        jobName: 'keyword-position',
+        status: 'active',
+        createdAt: new Date(),
+        updatedAt: new Date()
       });
+      await jobRecord.save();
+      console.log(`✅ [KeywordPositionJobProcessor] Job créé en base pour ${analysisId}`);
+
+      // Plus besoin d'appeler updateJobStatus - on met à jour directement notre propre collection
 
       await job.progress(30);
 
-      const analysis = await KeywordPositionJob.analyzeKeywordPositions(text, keywords);
+      const analysis = await KeywordPositionJobProcessor.analyzeKeywordPositions(text, keywords);
       await job.progress(70);
 
-      const recommendations = KeywordPositionJob.generateRecommendations(analysis);
+      const recommendations = KeywordPositionJobProcessor.generateRecommendations(analysis);
       await job.progress(90);
 
-      await JobUtils.updateJobStatus(analysisId, 'keyword-position', 'completed', {
-        score: analysis.score,
-        details: `Position analysée: ${analysis.titleScore}% titre, ${analysis.firstParagraphScore}% début`,
-        completedAt: new Date(),
-        metrics: {
-          positionScore: analysis.score,
-          titlePresence: analysis.titlePresence,
-          firstParagraphPresence: analysis.firstParagraphPresence,
-          distributionScore: analysis.distributionScore
+      // Mettre à jour le score global de l'analyse après completion
+      await JobUtils.updateGlobalScore(analysisId);
+
+      // Mettre à jour l'enregistrement du job en base
+      await KeywordPositionJobModel.findOneAndUpdate(
+        { analysisId, jobName: 'keyword-position' },
+        {
+          status: 'completed',
+          score: analysis.score,
+          details: `Position analysée: ${analysis.titleScore}% titre, ${analysis.firstParagraphScore}% début`,
+          metrics: {
+            positionScore: analysis.score,
+            titlePresence: analysis.titlePresence,
+            firstParagraphPresence: analysis.firstParagraphPresence,
+            distributionScore: analysis.distributionScore
+          },
+          recommendations: recommendations,
+          processingTime: Date.now() - startTime,
+          rawData: { text, keywords, analysis }
         },
-        recommendations: recommendations
-      });
+        { upsert: true, new: true }
+      );
 
       await job.progress(100);
 
@@ -44,13 +64,28 @@ class KeywordPositionJob {
       };
 
     } catch (error) {
-      console.error(`❌ [KeywordPositionJob] Erreur pour ${analysisId}:`, error);
+      console.error(`❌ [KeywordPositionJobProcessor] Erreur pour ${analysisId}:`, error);
       
-      await JobUtils.updateJobStatus(analysisId, 'keyword-position', 'failed', {
-        details: 'Erreur lors de l\'analyse de position',
-        error: error.message,
-        completedAt: new Date()
-      });
+      // Mettre à jour l'enregistrement du job en base (erreur)
+      await KeywordPositionJobModel.findOneAndUpdate(
+        { analysisId, jobName: 'keyword-position' },
+        {
+          status: 'failed',
+          error: {
+            message: error.message,
+            stack: error.stack
+          },
+          processingTime: Date.now() - startTime
+        },
+        { upsert: true, new: true }
+      );
+      
+      // Mettre à jour le score global même en cas d'erreur
+      try {
+        await JobUtils.updateGlobalScore(analysisId);
+      } catch (globalError) {
+        console.error('❌ Erreur mise à jour score global:', globalError);
+      }
       
       throw error;
     }
@@ -153,4 +188,4 @@ class KeywordPositionJob {
   }
 }
 
-module.exports = KeywordPositionJob;
+module.exports = KeywordPositionJobProcessor;

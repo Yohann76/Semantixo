@@ -2,14 +2,14 @@
   <div class="text-analysis-result-container">
     <div class="result-header">
       <h2 class="result-title">📊 Résultats de l'analyse SEO</h2>
-      <div class="result-meta">
-        <span class="result-date">{{ formatDate(props.analysis.timestamp || props.analysis.createdAt) }}</span>
+              <div class="result-meta">
+        <span class="result-date">{{ formatDate(props.analysis.analysis?.createdAt || props.analysis.createdAt) }}</span>
         <div class="score-section">
-          <span class="result-score" :class="getScoreClass(props.analysis.seoScore)">
-            Score SEO: {{ props.analysis.seoScore || '0' }}/100
+          <span class="result-score" :class="getScoreClass(props.analysis.analysis?.scoreSeo || props.analysis.seoScore)">
+            Score SEO: {{ props.analysis.analysis?.scoreSeo || props.analysis.seoScore || '0' }}/100
           </span>
-          <span v-if="props.analysis.notation" class="result-notation" :class="getNotationClass(props.analysis.notation)">
-            {{ props.analysis.notation }}
+          <span v-if="props.analysis.analysis?.notation || props.analysis.notation" class="result-notation" :class="getNotationClass(props.analysis.analysis?.notation || props.analysis.notation)">
+            {{ props.analysis.analysis?.notation || props.analysis.notation }}
           </span>
         </div>
       </div>
@@ -23,16 +23,41 @@
             <h4>Métadonnées de la requête :</h4>
             <pre>{{
               JSON.stringify({
-                id: props.analysis.id,
-                user_id: props.analysis.user_id,
-                status: props.analysis.status,
-                createdAt: props.analysis.createdAt,
-                parameter: props.analysis.parameter,
-                seoScore: props.analysis.seoScore,
-                notation: props.analysis.notation,
-                progress: props.analysis.progress
+                id: props.analysis.analysis?.id || props.analysis.id,
+                user_id: props.analysis.analysis?.user_id || props.analysis.user_id,
+                status: props.analysis.analysis?.status || props.analysis.status,
+                createdAt: props.analysis.analysis?.createdAt || props.analysis.createdAt,
+                parameter: props.analysis.analysis?.parameter || props.analysis.parameter,
+                seoScore: props.analysis.analysis?.scoreSeo || props.analysis.seoScore,
+                notation: props.analysis.analysis?.notation || props.analysis.notation,
+                progress: props.analysis.analysis?.progress || props.analysis.progress
               }, null, 2)
             }}</pre>
+          </div>
+        </CollapsibleSection>
+      </div>
+
+      <!-- RÉSUMÉ DES JOBS -->
+      <div class="result-section">
+        <CollapsibleSection title="📊 Résumé des jobs d'analyse" :defaultCollapsed="false">
+          <div class="jobs-summary">
+            <div class="jobs-grid">
+              <div v-for="jobType in ['keyword-analysis', 'keyword-position', 'content-length', 'readability', 'uniqueness']" 
+                   :key="jobType" 
+                   class="job-card"
+                   :class="getJobStatusClass(jobType)">
+                <div class="job-header">
+                  <h4>{{ getJobDisplayName(jobType) }}</h4>
+                  <span class="job-weight">{{ getJobWeight(jobType) }}%</span>
+                </div>
+                <div class="job-status" :class="getJobStatusClass(jobType)">
+                  {{ getJobStatusDisplay(jobType) }}
+                </div>
+                <div v-if="getJobStatus(jobType) === 'completed'" class="job-score">
+                  Score: {{ getJobScore(jobType) }}/100
+                </div>
+              </div>
+            </div>
           </div>
         </CollapsibleSection>
       </div>
@@ -42,7 +67,16 @@
         <CollapsibleSection title="📊 Analyse des mots-clés" :defaultCollapsed="true">
           <div class="json-viewer">
             <h4>Poids: {{ getJobWeight('keyword-analysis') }} | Status: {{ getJobStatus('keyword-analysis') }}</h4>
-            <pre>{{ JSON.stringify(getFullJobData('keyword-analysis'), null, 2) }}</pre>
+            <div v-if="getJobStatus('keyword-analysis') === 'completed'" class="job-completed">
+              <pre>{{ JSON.stringify(getFullJobData('keyword-analysis'), null, 2) }}</pre>
+            </div>
+            <div v-else-if="getJobStatus('keyword-analysis') === 'active'" class="job-processing">
+              <p>🔄 Job en cours de traitement...</p>
+              <pre>{{ JSON.stringify(getJobProgress('keyword-analysis'), null, 2) }}</pre>
+            </div>
+            <div v-else class="job-waiting">
+              <p>⏳ Job en attente de démarrage...</p>
+            </div>
           </div>
         </CollapsibleSection>
       </div>
@@ -52,7 +86,16 @@
         <CollapsibleSection title="📍 Position des mots-clés" :defaultCollapsed="true">
           <div class="json-viewer">
             <h4>Poids: {{ getJobWeight('keyword-position') }} | Status: {{ getJobStatus('keyword-position') }}</h4>
-            <pre>{{ JSON.stringify(getFullJobData('keyword-position'), null, 2) }}</pre>
+            <div v-if="getJobStatus('keyword-position') === 'completed'" class="job-completed">
+              <pre>{{ JSON.stringify(getFullJobData('keyword-position'), null, 2) }}</pre>
+            </div>
+            <div v-else-if="getJobStatus('keyword-position') === 'active'" class="job-processing">
+              <p>🔄 Job en cours de traitement...</p>
+              <pre>{{ JSON.stringify(getJobProgress('keyword-position'), null, 2) }}</pre>
+            </div>
+            <div v-else class="job-waiting">
+              <p>⏳ Job en attente de démarrage...</p>
+            </div>
           </div>
         </CollapsibleSection>
       </div>
@@ -62,7 +105,16 @@
         <CollapsibleSection title="📏 Longueur du contenu" :defaultCollapsed="true">
           <div class="json-viewer">
             <h4>Poids: {{ getJobWeight('content-length') }} | Status: {{ getJobStatus('content-length') }}</h4>
-            <pre>{{ JSON.stringify(getFullJobData('content-length'), null, 2) }}</pre>
+            <div v-if="getJobStatus('content-length') === 'completed'" class="job-completed">
+              <pre>{{ JSON.stringify(getFullJobData('content-length'), null, 2) }}</pre>
+            </div>
+            <div v-else-if="getJobStatus('content-length') === 'active'" class="job-processing">
+              <p>🔄 Job en cours de traitement...</p>
+              <pre>{{ JSON.stringify(getJobProgress('content-length'), null, 2) }}</pre>
+            </div>
+            <div v-else class="job-waiting">
+              <p>⏳ Job en attente de démarrage...</p>
+            </div>
           </div>
         </CollapsibleSection>
       </div>
@@ -72,7 +124,16 @@
         <CollapsibleSection title="📖 Lisibilité" :defaultCollapsed="true">
           <div class="json-viewer">
             <h4>Poids: {{ getJobWeight('readability') }} | Status: {{ getJobStatus('readability') }}</h4>
-            <pre>{{ JSON.stringify(getFullJobData('readability'), null, 2) }}</pre>
+            <div v-if="getJobStatus('readability') === 'completed'" class="job-completed">
+              <pre>{{ JSON.stringify(getFullJobData('readability'), null, 2) }}</pre>
+            </div>
+            <div v-else-if="getJobStatus('readability') === 'active'" class="job-processing">
+              <p>🔄 Job en cours de traitement...</p>
+              <pre>{{ JSON.stringify(getJobProgress('readability'), null, 2) }}</pre>
+            </div>
+            <div v-else class="job-waiting">
+              <p>⏳ Job en attente de démarrage...</p>
+            </div>
           </div>
         </CollapsibleSection>
       </div>
@@ -82,7 +143,16 @@
         <CollapsibleSection title="🔍 Originalité" :defaultCollapsed="true">
           <div class="json-viewer">
             <h4>Poids: {{ getJobWeight('uniqueness') }} | Status: {{ getJobStatus('uniqueness') }}</h4>
-            <pre>{{ JSON.stringify(getFullJobData('uniqueness'), null, 2) }}</pre>
+            <div v-if="getJobStatus('uniqueness') === 'completed'" class="job-completed">
+              <pre>{{ JSON.stringify(getFullJobData('uniqueness'), null, 2) }}</pre>
+            </div>
+            <div v-else-if="getJobStatus('uniqueness') === 'active'" class="job-processing">
+              <p>🔄 Job en cours de traitement...</p>
+              <pre>{{ JSON.stringify(getJobProgress('uniqueness'), null, 2) }}</pre>
+            </div>
+            <div v-else class="job-waiting">
+              <p>⏳ Job en attente de démarrage...</p>
+            </div>
           </div>
         </CollapsibleSection>
       </div>
@@ -101,7 +171,7 @@
       <div class="result-section">
         <CollapsibleSection title="📄 Texte analysé" :defaultCollapsed="true">
           <div class="text-content">
-            {{ props.analysis.text || props.analysis.parameter?.text || 'Aucun texte trouvé' }}
+            {{ props.analysis.analysis?.parameter?.text || props.analysis.parameter?.text || props.analysis.text || 'Aucun texte trouvé' }}
           </div>
         </CollapsibleSection>
       </div>
@@ -159,36 +229,95 @@ const getNotationClass = (notation) => {
   }
 }
 
-// Récupérer les informations d'un job spécifique
-const getJobInfo = (jobName) => {
-  if (!props.analysis.jobs) return null
-  const job = props.analysis.jobs.find(j => j.name === jobName)
-  return job?.info || null
-}
-
-// Récupérer le poids d'un job spécifique
+// Fonctions adaptées pour la nouvelle architecture
 const getJobWeight = (jobName) => {
-  if (!props.analysis.jobs) return 0
-  const job = props.analysis.jobs.find(j => j.name === jobName)
-  return job?.poidScoreSEO || 0
+  // Configuration statique des poids
+  const weights = {
+    'keyword-analysis': 40,
+    'keyword-position': 15,
+    'content-length': 15,
+    'readability': 15,
+    'uniqueness': 15
+  }
+  return weights[jobName] || 0
 }
 
-// Récupérer le status d'un job spécifique
 const getJobStatus = (jobName) => {
-  if (!props.analysis.jobs) return 'Non trouvé'
-  const job = props.analysis.jobs.find(j => j.name === jobName)
-  return job?.status || 'Non trouvé'
+  if (props.analysis.jobs && props.analysis.jobs[jobName]) {
+    return props.analysis.jobs[jobName].status || 'waiting'
+  }
+  return 'waiting'
 }
 
-// Récupérer toutes les données d'un job (pour JSON)
 const getFullJobData = (jobName) => {
-  if (!props.analysis.jobs) return { error: 'Aucun job trouvé' }
-  const job = props.analysis.jobs.find(j => j.name === jobName)
-  return job || { error: `Job '${jobName}' non trouvé` }
+  if (props.analysis.jobs && props.analysis.jobs[jobName]) {
+    return props.analysis.jobs[jobName]
+  }
+  return { 
+    error: `Job '${jobName}' non trouvé`,
+    status: 'waiting',
+    message: 'Ce job n\'a pas encore été traité ou les données détaillées ne sont pas disponibles.'
+  }
+}
+
+const getJobProgress = (jobName) => {
+  if (props.analysis.jobs && props.analysis.jobs[jobName]) {
+    const job = props.analysis.jobs[jobName]
+    return {
+      status: job.status,
+      message: job.status === 'active' ? 'Job en cours de traitement...' : 'Job en attente',
+      timestamp: job.updatedAt || job.createdAt || new Date().toISOString()
+    }
+  }
+  return {
+    status: 'waiting',
+    message: 'Job pas encore démarré',
+    timestamp: new Date().toISOString()
+  }
+}
+
+// Méthodes pour le résumé des jobs
+const getJobDisplayName = (jobType) => {
+  const names = {
+    'keyword-analysis': 'Analyse des mots-clés',
+    'keyword-position': 'Position des mots-clés',
+    'content-length': 'Longueur du contenu',
+    'readability': 'Lisibilité',
+    'uniqueness': 'Originalité'
+  }
+  return names[jobType] || jobType
+}
+
+const getJobStatusDisplay = (jobType) => {
+  const status = getJobStatus(jobType)
+  switch (status) {
+    case 'completed': return '✅ Terminé'
+    case 'active': return '🔄 En cours'
+    case 'failed': return '❌ Échoué'
+    default: return '⏳ En attente'
+  }
+}
+
+const getJobStatusClass = (jobType) => {
+  const status = getJobStatus(jobType)
+  switch (status) {
+    case 'completed': return 'job-completed'
+    case 'active': return 'job-processing'
+    case 'failed': return 'job-failed'
+    default: return 'job-waiting'
+  }
+}
+
+const getJobScore = (jobType) => {
+  if (props.analysis.jobs && props.analysis.jobs[jobType]) {
+    return props.analysis.jobs[jobType].score || 0
+  }
+  return 0
 }
 
 // Debug test des fonctions helper
-console.log('🔍 [DEBUG] Test getJobInfo("keyword-analysis"):', getJobInfo('keyword-analysis'))
+console.log('🔍 [DEBUG] Analysis structure:', props.analysis)
+console.log('🔍 [DEBUG] Jobs available:', props.analysis?.jobs ? Object.keys(props.analysis.jobs) : 'No jobs')
 console.log('🔍 [DEBUG] Test getFullJobData("keyword-analysis"):', getFullJobData('keyword-analysis'))
 </script>
 
@@ -300,6 +429,137 @@ console.log('🔍 [DEBUG] Test getFullJobData("keyword-analysis"):', getFullJobD
   color: #333;
   white-space: pre-wrap;
   word-wrap: break-word;
+}
+
+/* Styles pour les différents états des jobs */
+.job-completed {
+  border-left: 4px solid #28a745;
+  padding-left: 15px;
+}
+
+.job-processing {
+  border-left: 4px solid #ffc107;
+  padding-left: 15px;
+}
+
+.job-waiting {
+  border-left: 4px solid #6c757d;
+  padding-left: 15px;
+}
+
+.job-processing p {
+  color: #856404;
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 4px;
+  padding: 10px;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.job-waiting p {
+  color: #6c757d;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 10px;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+/* Styles pour le résumé des jobs */
+.jobs-summary {
+  margin-top: 20px;
+}
+
+.jobs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.job-card {
+  background: white;
+  border: 2px solid #dee2e6;
+  border-radius: 8px;
+  padding: 15px;
+  transition: all 0.3s ease;
+}
+
+.job-card.job-completed {
+  border-color: #28a745;
+  background: linear-gradient(135deg, #f8fff9 0%, #e8f5e8 100%);
+}
+
+.job-card.job-processing {
+  border-color: #ffc107;
+  background: linear-gradient(135deg, #fffdf8 0%, #fff8e8 100%);
+}
+
+.job-card.job-waiting {
+  border-color: #6c757d;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.job-card.job-failed {
+  border-color: #dc3545;
+  background: linear-gradient(135deg, #fff8f8 0%, #ffe8e8 100%);
+}
+
+.job-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.job-header h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #495057;
+}
+
+.job-weight {
+  background: #667eea;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.job-status {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.job-status.job-completed {
+  color: #28a745;
+}
+
+.job-status.job-processing {
+  color: #856404;
+}
+
+.job-status.job-waiting {
+  color: #6c757d;
+}
+
+.job-status.job-failed {
+  color: #dc3545;
+}
+
+.job-score {
+  font-size: 14px;
+  font-weight: bold;
+  color: #495057;
+  text-align: center;
+  padding: 8px;
+  background: rgba(102, 126, 234, 0.1);
+  border-radius: 6px;
 }
 
 .text-content {

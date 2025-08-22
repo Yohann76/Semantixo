@@ -1,37 +1,59 @@
 const AnalysisTextSeo = require('../models/AnalysisTextSeo');
 const JobUtils = require('./JobUtils');
+const { ReadabilityJob: ReadabilityJobModel } = require('../models');
 
-class ReadabilityJob {
+class ReadabilityJobProcessor {
   static async process(job) {
     const { analysisId, text } = job.data;
+    const startTime = Date.now();
     
     try {
-      await JobUtils.updateJobStatus(analysisId, 'readability', 'processing', {
-        details: 'Analyse de lisibilité en cours...',
-        startedAt: new Date()
+      // Créer l'enregistrement du job en base avec tous les champs requis
+      const jobRecord = new ReadabilityJobModel({
+        analysisId,
+        jobName: 'readability',
+        status: 'active',
+        createdAt: new Date(),
+        timestamp: new Date()
       });
+      await jobRecord.save();
+      console.log(`✅ [ReadabilityJobProcessor] Job créé en base pour ${analysisId}`);
+
+      // Plus besoin d'appeler updateJobStatus - on met à jour directement notre propre collection
 
       await job.progress(30);
 
-      const analysis = await ReadabilityJob.analyzeReadability(text);
+      const analysis = await ReadabilityJobProcessor.analyzeReadability(text);
       await job.progress(70);
 
-      const recommendations = ReadabilityJob.generateRecommendations(analysis);
+      const recommendations = ReadabilityJobProcessor.generateRecommendations(analysis);
 
-      await JobUtils.updateJobStatus(analysisId, 'readability', 'completed', {
-        score: analysis.score,
-        details: `Lisibilité: ${analysis.fleschScore}/100, niveau ${analysis.readingLevel}`,
-        completedAt: new Date(),
-        metrics: {
-          readabilityScore: analysis.score,
-          fleschScore: analysis.fleschScore,
-          readingLevel: analysis.readingLevel,
-          avgSentenceLength: analysis.avgSentenceLength,
-          avgSyllablesPerWord: analysis.avgSyllablesPerWord,
-          complexWords: analysis.complexWords
+      // Mettre à jour le score global de l'analyse après completion
+      await JobUtils.updateGlobalScore(analysisId);
+
+      // Mettre à jour l'enregistrement du job en base
+      await ReadabilityJobModel.findOneAndUpdate(
+        { analysisId, jobName: 'readability' },
+        {
+          status: 'completed',
+          score: analysis.score,
+          details: `Lisibilité: ${analysis.fleschScore}/100, niveau ${analysis.readingLevel}`,
+          metrics: {
+            readabilityScore: analysis.score,
+            fleschScore: analysis.fleschScore,
+            readingLevel: analysis.readingLevel,
+            avgSentenceLength: analysis.avgSentenceLength,
+            avgSyllablesPerWord: analysis.avgSyllablesPerWord,
+            complexWords: analysis.complexWords,
+            totalSentences: analysis.totalSentences || 0,
+            totalSyllables: analysis.totalSyllables || 0
+          },
+          recommendations: recommendations,
+          processingTime: Date.now() - startTime,
+          rawData: { text, analysis }
         },
-        recommendations: recommendations
-      });
+        { upsert: true, new: true }
+      );
 
       await job.progress(100);
 
@@ -45,13 +67,28 @@ class ReadabilityJob {
       };
 
     } catch (error) {
-      console.error(`❌ [ReadabilityJob] Erreur pour ${analysisId}:`, error);
+      console.error(`❌ [ReadabilityJobProcessor] Erreur pour ${analysisId}:`, error);
       
-      await JobUtils.updateJobStatus(analysisId, 'readability', 'failed', {
-        details: 'Erreur lors de l\'analyse de lisibilité',
-        error: error.message,
-        completedAt: new Date()
-      });
+      // Mettre à jour l'enregistrement du job en base (erreur)
+      await ReadabilityJobModel.findOneAndUpdate(
+        { analysisId, jobName: 'readability' },
+        {
+          status: 'failed',
+          error: {
+            message: error.message,
+            stack: error.stack
+          },
+          processingTime: Date.now() - startTime
+        },
+        { upsert: true, new: true }
+      );
+      
+      // Mettre à jour le score global même en cas d'erreur
+      try {
+        await JobUtils.updateGlobalScore(analysisId);
+      } catch (globalError) {
+        console.error('❌ Erreur mise à jour score global:', globalError);
+      }
       
       throw error;
     }
@@ -87,7 +124,7 @@ class ReadabilityJob {
     let complexWords = 0;
     
     words.forEach(word => {
-      const syllables = ReadabilityJob.countSyllables(word);
+      const syllables = ReadabilityJobProcessor.countSyllables(word);
       totalSyllables += syllables;
       
       // Mots complexes (3+ syllabes)
@@ -189,4 +226,4 @@ class ReadabilityJob {
   }
 }
 
-module.exports = ReadabilityJob;
+module.exports = ReadabilityJobProcessor;

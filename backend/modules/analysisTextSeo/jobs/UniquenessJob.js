@@ -1,36 +1,58 @@
 const AnalysisTextSeo = require('../models/AnalysisTextSeo');
 const JobUtils = require('./JobUtils');
+const { UniquenessJob: UniquenessJobModel } = require('../models');
 
-class UniquenessJob {
+class UniquenessJobProcessor {
   static async process(job) {
     const { analysisId, text } = job.data;
+    const startTime = Date.now();
     
     try {
-      await JobUtils.updateJobStatus(analysisId, 'uniqueness', 'processing', {
-        details: 'Analyse d\'originalité en cours...',
-        startedAt: new Date()
+      // Créer l'enregistrement du job en base avec tous les champs requis
+      const jobRecord = new UniquenessJobModel({
+        analysisId,
+        jobName: 'uniqueness',
+        status: 'active',
+        createdAt: new Date(),
+        updatedAt: new Date()
       });
+      await jobRecord.save();
+      console.log(`✅ [UniquenessJobProcessor] Job créé en base pour ${analysisId}`);
+
+      // Plus besoin d'appeler updateJobStatus - on met à jour directement notre propre collection
 
       await job.progress(30);
 
-      const analysis = await UniquenessJob.analyzeUniqueness(text);
+      const analysis = await UniquenessJobProcessor.analyzeUniqueness(text);
       await job.progress(70);
 
-      const recommendations = UniquenessJob.generateRecommendations(analysis);
+      const recommendations = UniquenessJobProcessor.generateRecommendations(analysis);
 
-      await JobUtils.updateJobStatus(analysisId, 'uniqueness', 'completed', {
-        score: analysis.score,
-        details: `Originalité: ${analysis.uniquenessPercentage}%, diversité vocabulaire: ${analysis.vocabularyDiversity}%`,
-        completedAt: new Date(),
-        metrics: {
-          uniquenessPercentage: analysis.uniquenessPercentage,
-          vocabularyDiversity: analysis.vocabularyDiversity,
-          repetitionRate: analysis.repetitionRate,
-          uniqueWords: analysis.uniqueWords,
-          totalWords: analysis.totalWords
+      // Mettre à jour le score global de l'analyse après completion
+      await JobUtils.updateGlobalScore(analysisId);
+
+      // Mettre à jour l'enregistrement du job en base
+      await UniquenessJobModel.findOneAndUpdate(
+        { analysisId, jobName: 'uniqueness' },
+        {
+          status: 'completed',
+          score: analysis.score,
+          details: `Originalité: ${analysis.uniquenessPercentage}%, diversité vocabulaire: ${analysis.vocabularyDiversity}%`,
+          metrics: {
+            uniquenessPercentage: analysis.uniquenessPercentage,
+            vocabularyDiversity: analysis.vocabularyDiversity,
+            repetitionRate: analysis.repetitionRate,
+            uniqueWords: analysis.uniqueWords,
+            totalWords: analysis.totalWords,
+            duplicateContent: analysis.duplicateContent || [],
+            similarityIndex: analysis.similarityIndex || 0
+          },
+          recommendations: recommendations,
+          processingTime: Date.now() - startTime,
+          rawData: { text, analysis }
         },
-        recommendations: recommendations
-      });
+        { upsert: true, new: true }
+      );
 
       await job.progress(100);
 
@@ -44,13 +66,28 @@ class UniquenessJob {
       };
 
     } catch (error) {
-      console.error(`❌ [UniquenessJob] Erreur pour ${analysisId}:`, error);
+      console.error(`❌ [UniquenessJobProcessor] Erreur pour ${analysisId}:`, error);
       
-      await JobUtils.updateJobStatus(analysisId, 'uniqueness', 'failed', {
-        details: 'Erreur lors de l\'analyse d\'originalité',
-        error: error.message,
-        completedAt: new Date()
-      });
+      // Mettre à jour l'enregistrement du job en base (erreur)
+      await UniquenessJobModel.findOneAndUpdate(
+        { analysisId, jobName: 'uniqueness' },
+        {
+          status: 'failed',
+          error: {
+            message: error.message,
+            stack: error.stack
+          },
+          processingTime: Date.now() - startTime
+        },
+        { upsert: true, new: true }
+      );
+      
+      // Mettre à jour le score global même en cas d'erreur
+      try {
+        await JobUtils.updateGlobalScore(analysisId);
+      } catch (globalError) {
+        console.error('❌ Erreur mise à jour score global:', globalError);
+      }
       
       throw error;
     }
@@ -177,4 +214,4 @@ class UniquenessJob {
   }
 }
 
-module.exports = UniquenessJob;
+module.exports = UniquenessJobProcessor;

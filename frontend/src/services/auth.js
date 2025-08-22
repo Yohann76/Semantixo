@@ -115,6 +115,30 @@ class AuthService {
   }
 }
 
+/**
+ * Fonction utilitaire pour faire des requêtes authentifiées
+ * @param {string} url - URL de la requête
+ * @param {object} options - Options fetch
+ * @returns {Promise<Response>} - Réponse de la requête
+ */
+export const authFetch = async (url, options = {}) => {
+  const authService = new AuthService();
+  
+  if (!authService.isAuthenticated()) {
+    throw new Error('Vous devez être connecté pour effectuer cette action');
+  }
+
+  const authHeaders = authService.getAuthHeaders();
+  
+  return fetch(`http://localhost:3000${url}`, {
+    ...options,
+    headers: {
+      ...authHeaders,
+      ...options.headers
+    }
+  });
+};
+
 // Instance singleton
 const authService = new AuthService();
 

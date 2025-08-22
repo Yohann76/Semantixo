@@ -73,6 +73,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useAuth } from '../../../composables/useGlobalStores.js'
+import AnalysisTextSeoService from '../../../services/analysisTextSeo.js'
 
 // État réactif
 const textToAnalyze = ref('')
@@ -81,7 +82,7 @@ const keywordInput = ref('')
 const loading = ref(false)
 
 // Utilisation du composable d'authentification
-const { isAuthenticated, getAuthHeaders } = useAuth()
+const { isAuthenticated } = useAuth()
 
 // Émettre les événements
 const emit = defineEmits(['analysis-complete', 'error'])
@@ -137,17 +138,10 @@ const analyzeText = async () => {
       return
     }
 
-    const headers = getAuthHeaders()
-    
     // Nettoyer les données avant l'envoi
     // eslint-disable-next-line no-control-regex
     const cleanText = textToAnalyze.value.trim().replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
     const cleanKeywords = keywords.value.map(k => k.trim()).filter(k => k.length > 0)
-    
-    const requestBody = {
-      text: cleanText,
-      keywords: cleanKeywords
-    }
 
     console.log('📊 [TEXT FORM] Envoi analyse:', {
       textLength: cleanText.length,
@@ -155,57 +149,21 @@ const analyzeText = async () => {
       keywords: cleanKeywords
     })
     
-    console.log('🔥 [FORM] Sending request to:', 'http://localhost:3000/api/analysis-text-seo')
-    console.log('🔥 [FORM] Headers:', headers)
+    // Utiliser le nouveau service
+    const result = await AnalysisTextSeoService.createAnalysis(cleanText, cleanKeywords)
     
-    const bodyString = JSON.stringify(requestBody)
-    console.log('🔥 [FORM] Body string length:', bodyString.length)
-    console.log('🔥 [FORM] Body preview:', bodyString.substring(0, 200))
+    console.log('✅ [TEXT FORM] Analyse réussie:', result)
     
-    const response = await fetch('http://localhost:3000/api/analysis-text-seo', {
-      method: 'POST',
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json'
-      },
-      body: bodyString
-    })
+    // Réinitialiser le formulaire
+    textToAnalyze.value = ''
+    keywords.value = []
     
-    console.log('🔥 [FORM] Response status:', response.status)
-    console.log('🔥 [FORM] Response ok:', response.ok)
+    // Émettre l'événement avec les données reçues
+    emit('analysis-complete', result)
     
-    const data = await response.json()
-    console.log('🔥 [FORM] Response data:', data)
-    
-    if (response.ok) {
-      console.log('✅ [TEXT FORM] Analyse réussie:', {
-        seoScore: data.data.seoScore,
-        notation: data.data.notation
-      })
-      
-      console.log('🔥 [FORM] Emitting analysis-complete with:', data.data)
-      emit('analysis-complete', data.data)
-    } else {
-      // Gestion des erreurs spécifiques
-      let errorMessage = 'Erreur lors de l\'analyse'
-      
-      if (response.status === 400) {
-        errorMessage = data.message || 'Données invalides'
-      } else if (response.status === 401) {
-        errorMessage = 'Session expirée. Veuillez vous reconnecter.'
-      } else if (response.status === 500) {
-        errorMessage = data.message || 'Erreur serveur lors de l\'analyse'
-      } else {
-        errorMessage = data.message || `Erreur ${response.status}: ${response.statusText}`
-      }
-      
-      emit('error', errorMessage)
-      console.error('❌ [TEXT FORM] Erreur analyse:', data)
-    }
-  } catch (err) {
-    const errorMessage = `Erreur de connexion: ${err.message}`
-    emit('error', errorMessage)
-    console.error('❌ [TEXT FORM] Erreur réseau:', err)
+  } catch (error) {
+    console.error('❌ [TEXT FORM] Erreur:', error)
+    emit('error', error.message || 'Une erreur est survenue lors de l\'analyse')
   } finally {
     loading.value = false
   }

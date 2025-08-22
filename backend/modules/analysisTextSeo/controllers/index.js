@@ -1,18 +1,12 @@
-const AnalysisTextSeo = require('../models/AnalysisTextSeo');
+const { AnalysisTextSeo } = require('../models');
+const AnalysisAggregationService = require('../services/AnalysisAggregationService');
+const { startTextAnalysis } = require('../jobs');
 
-// Helper pour obtenir le nom d'affichage des jobs
-const getJobDisplayName = (jobName) => {
-  const names = {
-    'keyword-analysis': 'Analyse des mots-clés',
-    'keyword-position': 'Position des mots-clés', 
-    'content-length': 'Longueur du contenu',
-    'readability': 'Lisibilité',
-    'uniqueness': 'Originalité'
-  };
-  return names[jobName] || jobName;
-};
+// ===== NOUVELLE ARCHITECTURE =====
 
-// Créer une nouvelle analyse de texte SEO
+/**
+ * Créer une nouvelle analyse de texte SEO
+ */
 const createAnalysis = async (req, res) => {
   console.log('🔥 [CONTROLLER] createAnalysis called!');
   console.log('🔥 [CONTROLLER] req.body:', JSON.stringify(req.body, null, 2));
@@ -29,9 +23,7 @@ const createAnalysis = async (req, res) => {
       });
     }
 
-
-
-    // Créer l'analyse avec le modèle AnalysisTextSeo
+    // Créer l'analyse avec le nouveau modèle léger
     const analysis = new AnalysisTextSeo({
       user_id: userId,
       parameter: {
@@ -39,66 +31,26 @@ const createAnalysis = async (req, res) => {
         keywords
       },
       status: 'processing',
-      scoreSeo: 0
+      scoreSeo: 0,
+      progress: 0
     });
 
-    // Initialiser les jobs
-    analysis.initializeJobs();
     await analysis.save();
 
+    // Démarrer l'analyse asynchrone avec BullMQ
+    await startTextAnalysis(analysis._id, text, keywords);
 
+    console.log(`✅ [CONTROLLER] Analyse créée avec ID: ${analysis._id}`);
 
-    const { startTextAnalysis } = require('../jobs');
+    // Retourner la vue d'ensemble
+    const overview = await AnalysisAggregationService.getAnalysisOverview(analysis._id, userId);
     
-
-    const jobsResult = await startTextAnalysis(analysis._id.toString(), text, keywords);
-
-
-
     res.status(201).json({
       success: true,
-      message: 'Analyse SEO démarrée avec succès',
-      data: {
-        id: analysis._id,
-        request_id: analysis.request_id,
-        user_id: analysis.user_id,
-        parameter: analysis.parameter,
-        // Données directes pour compatibilité frontend
-        text: analysis.parameter?.text || '',
-        keywords: analysis.parameter?.keywords || [],
-        status: analysis.status,
-        scoreSeo: analysis.scoreSeo,
-        seoScore: analysis.scoreSeo,
-        notation: analysis.scoreSeo >= 80 ? 'Excellent' : 
-                 analysis.scoreSeo >= 60 ? 'Bon' : 
-                 analysis.scoreSeo >= 40 ? 'Moyen' : 'À améliorer',
-        progress: 0,
-        timestamp: analysis.createdAt,
-        createdAt: analysis.createdAt,
-        jobs: analysis.jobs.map(job => ({
-          name: job.name,
-          poidScoreSEO: job.poidScoreSEO,
-          status: job.status,
-          score: job.info?.score || 0,
-          info: job.info
-        })),
-        // Vue simplifiée des jobs avec poids et scores
-        jobsSimplified: {
-          totalPoids: analysis.jobs.reduce((total, job) => total + (job.poidScoreSEO || 0), 0),
-          scoreTotal: analysis.scoreSeo,
-          details: analysis.jobs.map(job => ({
-            name: job.name,
-            displayName: getJobDisplayName(job.name),
-            poids: job.poidScoreSEO,
-            score: job.info?.score || 0,
-            status: job.status,
-            contribution: job.status === 'completed' ? 
-              Math.round((job.info?.score || 0) * (job.poidScoreSEO / 100)) : 0
-          }))
-        },
-        estimatedTime: '10-30 secondes'
-      }
+      message: 'Analyse créée avec succès',
+      data: overview
     });
+
   } catch (error) {
     console.error('❌ [CONTROLLER] Erreur création analyse:', error);
     res.status(500).json({
@@ -109,52 +61,96 @@ const createAnalysis = async (req, res) => {
   }
 };
 
-const getAnalyses = async (req, res) => {
+/**
+ * Obtenir une vue d'ensemble d'une analyse (métadonnées + résumé jobs)
+ */
+const getAnalysisOverview = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const overview = await AnalysisAggregationService.getAnalysisOverview(id, userId);
+    
+    res.json({
+      success: true,
+      data: overview
+    });
+
+  } catch (error) {
+    console.error('❌ [CONTROLLER] Erreur récupération overview:', error);
+    res.status(404).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Obtenir une analyse complète (métadonnées + détails complets des jobs)
+ */
+const getAnalysisComplete = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const complete = await AnalysisAggregationService.getAnalysisComplete(id, userId);
+    
+    res.json({
+      success: true,
+      data: complete
+    });
+
+  } catch (error) {
+    console.error('❌ [CONTROLLER] Erreur récupération complète:', error);
+    res.status(404).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Obtenir les détails d'un job spécifique
+ */
+const getJobDetails = async (req, res) => {
+  try {
+    const { id, jobType } = req.params;
+    const userId = req.user.id;
+
+    const jobDetails = await AnalysisAggregationService.getJobDetails(id, jobType, userId);
+    
+    res.json({
+      success: true,
+      data: jobDetails
+    });
+
+  } catch (error) {
+    console.error('❌ [CONTROLLER] Erreur récupération job:', error);
+    res.status(404).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Obtenir la liste des analyses pour l'historique (vue rapide)
+ */
+const getAnalysesList = async (req, res) => {
   try {
     const userId = req.user.id;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
 
-    const analyses = await AnalysisTextSeo.find({ user_id: userId })
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
-
-    const total = await AnalysisTextSeo.countDocuments({ user_id: userId });
-
-    const formattedAnalyses = analyses.map(analysis => ({
-      id: analysis._id, // Frontend utilise 'id'
-      request_id: analysis.request_id,
-      status: analysis.status,
-      scoreSeo: analysis.scoreSeo,
-      seoScore: analysis.scoreSeo, // Compatibilité frontend
-      notation: analysis.scoreSeo >= 80 ? 'Excellent' : 
-               analysis.scoreSeo >= 60 ? 'Bon' : 
-               analysis.scoreSeo >= 40 ? 'Moyen' : 'À améliorer',
-      // Données directes pour compatibilité frontend
-      text: analysis.parameter?.text || '',
-      keywords: analysis.parameter?.keywords || [],
-      parameter: analysis.parameter,
-      jobs: analysis.jobs,
-      timestamp: analysis.createdAt,
-      createdAt: analysis.createdAt,
-      type: 'text' // Type pour l'historique
-    }));
-
+    const result = await AnalysisAggregationService.getAnalysesList(userId, page, limit);
+    
     res.json({
       success: true,
-      data: formattedAnalyses, // Directement le tableau pour l'historique
-      pagination: {
-        currentPage: page,
-        totalPages: Math.ceil(total / limit),
-        totalAnalyses: total,
-        hasNextPage: page < Math.ceil(total / limit),
-        hasPrevPage: page > 1
-      }
+      ...result
     });
+
   } catch (error) {
-    console.error('❌ [CONTROLLER] Erreur récupération analyses:', error);
+    console.error('❌ [CONTROLLER] Erreur récupération liste:', error);
     res.status(500).json({
       success: false,
       message: 'Erreur lors de la récupération des analyses',
@@ -163,58 +159,16 @@ const getAnalyses = async (req, res) => {
   }
 };
 
-// Récupérer une analyse spécifique
-const getAnalysis = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const userId = req.user.id;
-
-    const analysis = await AnalysisTextSeo.findOne({
-      _id: id,
-      user_id: userId
-    });
-
-    if (!analysis) {
-      return res.status(404).json({
-        success: false,
-        message: 'Analyse non trouvée'
-      });
-    }
-
-    res.json({
-      success: true,
-      data: {
-        request_id: analysis.request_id,
-        user_id: analysis.user_id,
-        parameter: analysis.parameter,
-        status: analysis.status,
-        scoreSeo: analysis.scoreSeo,
-        jobs: analysis.jobs,
-        createdAt: analysis.createdAt,
-        updatedAt: analysis.updatedAt
-      }
-    });
-  } catch (error) {
-    console.error('❌ [CONTROLLER] Erreur récupération analyse:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Erreur lors de la récupération de l\'analyse',
-      error: error.message
-    });
-  }
-};
-
-// Supprimer une analyse
+/**
+ * Supprimer une analyse
+ */
 const deleteAnalysis = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
 
-    const analysis = await AnalysisTextSeo.findOneAndDelete({
-      _id: id,
-      user_id: userId
-    });
-
+    // Vérifier que l'analyse appartient à l'utilisateur
+    const analysis = await AnalysisTextSeo.findOne({ _id: id, user_id: userId });
     if (!analysis) {
       return res.status(404).json({
         success: false,
@@ -222,57 +176,70 @@ const deleteAnalysis = async (req, res) => {
       });
     }
 
+    // Supprimer l'analyse principale
+    await AnalysisTextSeo.findByIdAndDelete(id);
+
+    // Supprimer tous les jobs associés
+    const { KeywordAnalysisJob, KeywordPositionJob, ContentLengthJob, ReadabilityJob, UniquenessJob } = require('../models');
+    await Promise.all([
+      KeywordAnalysisJob.deleteMany({ analysisId: id }),
+      KeywordPositionJob.deleteMany({ analysisId: id }),
+      ContentLengthJob.deleteMany({ analysisId: id }),
+      ReadabilityJob.deleteMany({ analysisId: id }),
+      UniquenessJob.deleteMany({ analysisId: id })
+    ]);
+
     res.json({
       success: true,
       message: 'Analyse supprimée avec succès'
     });
+
   } catch (error) {
-    console.error('❌ [CONTROLLER] Erreur suppression analyse:', error);
+    console.error('❌ [CONTROLLER] Erreur suppression:', error);
     res.status(500).json({
       success: false,
-      message: 'Erreur lors de la suppression de l\'analyse',
+      message: 'Erreur lors de la suppression',
       error: error.message
     });
   }
 };
 
-// Obtenir les statistiques
+/**
+ * Obtenir les statistiques générales
+ */
 const getStats = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const totalAnalyses = await AnalysisTextSeo.countDocuments({ user_id: userId });
-    const completedAnalyses = await AnalysisTextSeo.countDocuments({ 
-      user_id: userId, 
-      status: 'completed' 
-    });
-    const processingAnalyses = await AnalysisTextSeo.countDocuments({ 
-      user_id: userId, 
-      status: 'processing' 
-    });
+    const stats = await AnalysisTextSeo.aggregate([
+      { $match: { user_id: userId } },
+      {
+        $group: {
+          _id: null,
+          totalAnalyses: { $sum: 1 },
+          completedAnalyses: { $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] } },
+          avgScore: { $avg: '$scoreSeo' },
+          maxScore: { $max: '$scoreSeo' },
+          minScore: { $min: '$scoreSeo' }
+        }
+      }
+    ]);
 
-    // Score moyen
-    const completedAnalysesWithScore = await AnalysisTextSeo.find({
-      user_id: userId,
-      status: 'completed',
-      scoreSeo: { $gt: 0 }
-    });
-
-    const averageScore = completedAnalysesWithScore.length > 0
-      ? completedAnalysesWithScore.reduce((sum, analysis) => sum + analysis.scoreSeo, 0) / completedAnalysesWithScore.length
-      : 0;
+    const result = stats[0] || {
+      totalAnalyses: 0,
+      completedAnalyses: 0,
+      avgScore: 0,
+      maxScore: 0,
+      minScore: 0
+    };
 
     res.json({
       success: true,
-      data: {
-        totalAnalyses,
-        completedAnalyses,
-        processingAnalyses,
-        averageScore: Math.round(averageScore)
-      }
+      data: result
     });
+
   } catch (error) {
-    console.error('❌ [CONTROLLER] Erreur récupération stats:', error);
+    console.error('❌ [CONTROLLER] Erreur statistiques:', error);
     res.status(500).json({
       success: false,
       message: 'Erreur lors de la récupération des statistiques',
@@ -281,181 +248,93 @@ const getStats = async (req, res) => {
   }
 };
 
-// Obtenir le statut d'une analyse (pour le polling)
+/**
+ * Obtenir la configuration des jobs disponibles
+ */
+const getJobsConfig = async (req, res) => {
+  try {
+    const config = AnalysisTextSeo.getJobsConfig();
+    
+    res.json({
+      success: true,
+      data: config
+    });
+
+  } catch (error) {
+    console.error('❌ [CONTROLLER] Erreur config jobs:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la récupération de la configuration',
+      error: error.message
+    });
+  }
+};
+
+// ===== COMPATIBILITÉ TEMPORAIRE =====
+
+/**
+ * @deprecated Utiliser getAnalysisOverview à la place
+ * Endpoint de compatibilité temporaire
+ */
 const getAnalysisStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
 
-    const analysis = await AnalysisTextSeo.findOne({
-      _id: id,
-      user_id: userId
-    });
-
-    if (!analysis) {
-      return res.status(404).json({
-        success: false,
-        message: 'Analyse non trouvée'
-      });
-    }
-
-    // Calculer le progrès et les métriques
-    const completedJobsArray = analysis.jobs.filter(job => job.status === 'completed');
-    const failedJobs = analysis.jobs.filter(job => job.status === 'failed');
-    const totalJobs = analysis.jobs.length;
-    const progress = totalJobs > 0 ? Math.round((completedJobsArray.length / totalJobs) * 100) : 0;
+    // Rediriger vers la nouvelle méthode
+    const overview = await AnalysisAggregationService.getAnalysisOverview(id, userId);
     
-    // Extraire les métriques des jobs
-    const keywordJob = analysis.jobs.find(job => job.name === 'keyword-analysis');
-    const contentJob = analysis.jobs.find(job => job.name === 'content-length');
-    const readabilityJob = analysis.jobs.find(job => job.name === 'readability');
-    
-    const wordCount = contentJob?.info?.metrics?.wordCount || 0;
-    const charCount = analysis.parameter?.text?.length || 0;
-    const paragraphCount = analysis.parameter?.text?.split('\n\n').length || 1;
-
-    res.json({
-      success: true,
-      data: {
-        id: analysis._id,
-        request_id: analysis.request_id,
-        user_id: analysis.user_id,
-        parameter: analysis.parameter,
-        // Données directes pour compatibilité frontend
-        text: analysis.parameter?.text || '',
-        keywords: analysis.parameter?.keywords || [],
-        topic: keywordJob?.info?.metrics?.detectedTopic || 'Non détecté',
-        status: analysis.status,
-        scoreSeo: analysis.scoreSeo,
-        seoScore: analysis.scoreSeo,
-        notation: analysis.scoreSeo >= 80 ? 'Excellent' : 
-                 analysis.scoreSeo >= 60 ? 'Bon' : 
-                 analysis.scoreSeo >= 40 ? 'Moyen' : 'À améliorer',
-        progress,
-        timestamp: analysis.createdAt,
-        createdAt: analysis.createdAt,
-        // Structure baremeResults pour métriques détaillées
-        baremeResults: {
-          bareme_version: '1.0.0',
-          score_global: analysis.scoreSeo,
-          metriques: {
-            statistiques_texte: {
-              nombre_mots: wordCount,
-              nombre_caracteres: charCount,
-              nombre_paragraphes: paragraphCount,
-              longueur_moyenne_paragraphe: paragraphCount > 0 ? Math.round(wordCount / paragraphCount) : 0
-            },
-            performance_globale: {
-              score_moyen: Math.round(analysis.scoreSeo),
-              criteres_excellents: completedJobsArray.filter(job => (job.info?.score || 0) >= 80).length,
-              criteres_a_ameliorer: completedJobsArray.filter(job => (job.info?.score || 0) < 60).length
-            }
-          }
-        },
-        jobs: analysis.jobs.map(job => ({
-          name: job.name,
-          poidScoreSEO: job.poidScoreSEO,
-          status: job.status,
-          score: job.info?.score || 0,
-          info: job.info
-        })),
-        // Vue simplifiée des jobs avec poids et scores
-        jobsSimplified: {
-          totalPoids: analysis.jobs.reduce((total, job) => total + (job.poidScoreSEO || 0), 0),
-          scoreTotal: analysis.scoreSeo,
-          details: analysis.jobs.map(job => ({
-            name: job.name,
-            displayName: getJobDisplayName(job.name),
-            poids: job.poidScoreSEO,
-            score: job.info?.score || 0,
-            status: job.status,
-            contribution: job.status === 'completed' ? 
-              Math.round((job.info?.score || 0) * (job.poidScoreSEO / 100)) : 0
-          }))
+    // Formater pour l'ancien format attendu par le frontend
+    const legacyFormat = {
+      id: overview.id,
+      user_id: overview.user_id,
+      status: overview.status,
+      seoScore: overview.scoreSeo,
+      notation: overview.notation,
+      progress: overview.progress,
+      parameter: overview.parameter,
+      createdAt: overview.createdAt,
+      text: overview.parameter?.text,
+      keywords: overview.parameter?.keywords,
+      topic: 'Non détecté', // Placeholder
+      // Simuler l'ancien format jobs pour compatibilité
+      jobs: overview.jobsSummary?.map(job => ({
+        name: job.type,
+        poidScoreSEO: job.weight,
+        status: job.status,
+        info: {
+          score: job.score,
+          details: `Status: ${job.status}`,
+          metrics: {},
+          recommendations: []
         }
-      }
-    });
-  } catch (error) {
-    console.error('❌ [CONTROLLER] Erreur statut analyse:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Erreur lors de la récupération du statut',
-      error: error.message
-    });
-  }
-};
-
-// Obtenir la configuration des jobs disponibles
-const getJobsConfig = async (req, res) => {
-  try {
-    const jobsConfig = {
-      KeywordAnalysis: {
-        name: 'KeywordAnalysis',
-        displayName: 'Analyse des mots-clés',
-        description: 'Analyse la densité et la pertinence des mots-clés dans le texte',
-        poidScoreSEO: '40%',
-        weight: 40,
-        estimatedTime: '5-10s'
-      },
-      KeywordPosition: {
-        name: 'KeywordPosition',
-        displayName: 'Position des mots-clés',
-        description: 'Vérifie la position optimale des mots-clés dans le contenu',
-        poidScoreSEO: '15%',
-        weight: 15,
-        estimatedTime: '3-5s'
-      },
-      ContentLength: {
-        name: 'ContentLength',
-        displayName: 'Longueur du contenu',
-        description: 'Évalue si la longueur du contenu est optimale pour le SEO',
-        poidScoreSEO: '15%',
-        weight: 15,
-        estimatedTime: '1-2s'
-      },
-      Readability: {
-        name: 'Readability',
-        displayName: 'Lisibilité',
-        description: 'Analyse la facilité de lecture et la structure du texte',
-        poidScoreSEO: '15%',
-        weight: 15,
-        estimatedTime: '3-5s'
-      },
-      Uniqueness: {
-        name: 'Uniqueness',
-        displayName: 'Originalité',
-        description: 'Vérifie l\'originalité et l\'absence de contenu dupliqué',
-        poidScoreSEO: '15%',
-        weight: 15,
-        estimatedTime: '5-8s'
-      }
+      })) || []
     };
-
+    
     res.json({
       success: true,
-      data: {
-        availableJobs: Object.values(jobsConfig),
-        totalJobs: Object.keys(jobsConfig).length,
-        totalWeight: 100,
-        estimatedTotalTime: '17-30 secondes'
-      }
+      data: legacyFormat
     });
+
   } catch (error) {
-    console.error('❌ [CONTROLLER] Erreur config jobs:', error);
-    res.status(500).json({
+    console.error('❌ [CONTROLLER] Erreur status (legacy):', error);
+    res.status(404).json({
       success: false,
-      message: 'Erreur lors de la récupération de la configuration des jobs',
-      error: error.message
+      message: error.message
     });
   }
 };
 
 module.exports = {
+  // Nouvelle architecture
   createAnalysis,
-  getAnalyses,
-  getAnalysis,
+  getAnalysisOverview,
+  getAnalysisComplete,
+  getJobDetails,
+  getAnalysesList,
   deleteAnalysis,
   getStats,
-  getAnalysisStatus,
-  getJobsConfig
+  getJobsConfig,
+  // Compatibilité temporaire
+  getAnalysisStatus
 };

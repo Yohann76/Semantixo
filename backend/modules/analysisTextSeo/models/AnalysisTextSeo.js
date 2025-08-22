@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-// Modèle pour l'analyse de texte SEO avec structure JSON personnalisée
+// Modèle léger pour l'analyse de texte SEO (métadonnées uniquement)
 const AnalysisTextSeoSchema = new mongoose.Schema({
   request_id: {
     type: String,
@@ -26,126 +26,47 @@ const AnalysisTextSeoSchema = new mongoose.Schema({
     min: 0,
     max: 100
   },
-  jobs: [
-    {
-      name: {
-        type: String,
-        enum: ['keyword-analysis', 'keyword-position', 'content-length', 'readability', 'uniqueness']
-      },
-      poidScoreSEO: {
-        type: Number,
-        default: function() {
-          const weights = {
-            'keyword-analysis': 40,
-            'keyword-position': 15, 
-            'content-length': 15,
-            'readability': 15,
-            'uniqueness': 15
-          };
-          return weights[this.name] || 0;
-        }
-      },
-      status: {
-        type: String,
-        enum: ['waiting', 'processing', 'completed', 'failed'],
-        default: 'waiting'
-      },
-      info: {
-        score: { type: Number, default: 0 },
-        details: { type: String, default: 'En attente de traitement' },
-        startedAt: Date,
-        completedAt: Date,
-        processingTime: Number,
-        error: String,
-        metrics: {
-          keywordDensity: Number,
-          wordCount: Number,
-          readabilityScore: Number,
-          uniquenessPercentage: Number,
-          positionScore: Number
-        },
-        recommendations: [String]
-      }
-    }
-  ]
+  progress: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 100
+  },
+  metadata: {
+    version: { type: String, default: '2.0' },
+    strategy: { type: String, default: 'detailed_jobs' },
+    completedAt: Date,
+    jobsCount: { type: Number, default: 5 }
+  }
 }, {
   timestamps: true
 });
 
-AnalysisTextSeoSchema.methods.initializeJobs = function() {
-  this.jobs = [
-    {
-      name: 'keyword-analysis',
-      poidScoreSEO: 40,
-      status: 'waiting',
-      info: { 
-        score: 0, 
-        details: 'En attente d\'analyse des mots-clés',
-        metrics: {},
-        recommendations: []
-      }
-    },
-    {
-      name: 'keyword-position', 
-      poidScoreSEO: 15,
-      status: 'waiting',
-      info: { 
-        score: 0, 
-        details: 'En attente d\'analyse de position des mots-clés',
-        metrics: {},
-        recommendations: []
-      }
-    },
-    {
-      name: 'content-length',
-      poidScoreSEO: 15,
-      status: 'waiting',
-      info: { 
-        score: 0, 
-        details: 'En attente d\'analyse de longueur du contenu',
-        metrics: {},
-        recommendations: []
-      }
-    },
-    {
-      name: 'readability',
-      poidScoreSEO: 15,
-      status: 'waiting',
-      info: { 
-        score: 0, 
-        details: 'En attente d\'analyse de lisibilité',
-        metrics: {},
-        recommendations: []
-      }
-    },
-    {
-      name: 'uniqueness',
-      poidScoreSEO: 15,
-      status: 'waiting',
-      info: { 
-        score: 0, 
-        details: 'En attente d\'analyse d\'originalité',
-        metrics: {},
-        recommendations: []
-      }
-    }
+// Configuration des jobs disponibles
+AnalysisTextSeoSchema.statics.getJobsConfig = function() {
+  return [
+    { type: 'keyword-analysis', weight: 40, name: 'Analyse des mots-clés' },
+    { type: 'keyword-position', weight: 15, name: 'Position des mots-clés' },
+    { type: 'content-length', weight: 15, name: 'Longueur du contenu' },
+    { type: 'readability', weight: 15, name: 'Lisibilité' },
+    { type: 'uniqueness', weight: 15, name: 'Originalité' }
   ];
 };
 
-// Calculer le score global SEO
-AnalysisTextSeoSchema.methods.calculateScoreSeo = function() {
-  let totalScore = 0;
-  
-  this.jobs.forEach(job => {
-    if (job.status === 'completed') {
-      const weight = job.poidScoreSEO || 0; 
-      const score = job.info.score || 0;
-      totalScore += score * (weight / 100);
-    }
-  });
-  
-  this.scoreSeo = Math.round(totalScore);
-  return this.scoreSeo;
+// Méthode pour calculer le score basé sur les jobs externes
+AnalysisTextSeoSchema.methods.calculateProgress = function() {
+  // Le progress sera calculé par l'agrégation des jobs
+  return this.progress;
+};
+
+// Méthode utilitaire pour la notation
+AnalysisTextSeoSchema.methods.getNotation = function() {
+  const score = this.scoreSeo;
+  if (score >= 85) return 'Excellent';
+  if (score >= 70) return 'Très bon';
+  if (score >= 55) return 'Bon';
+  if (score >= 40) return 'Moyen';
+  return 'À améliorer';
 };
 
 module.exports = mongoose.model('AnalysisTextSeo', AnalysisTextSeoSchema);

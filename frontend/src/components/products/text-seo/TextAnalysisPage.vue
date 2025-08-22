@@ -77,6 +77,8 @@
 
 
 
+
+
           <!-- Résultat d'une analyse sélectionnée depuis l'historique -->
           <div v-if="selectedAnalysis && !currentAnalysis" class="selected-analysis-section">
             <div class="back-button-container">
@@ -93,13 +95,13 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onUnmounted } from 'vue'
 import ApplicationLayout from '../../common/ApplicationLayout.vue'
 import TextAnalysisForm from './TextAnalysisForm.vue'
 import TextAnalysisResult from './TextAnalysisResult.vue'
-
 import ErrorMessage from '../../common/ErrorMessage.vue'
-import { useAuth } from '@/composables/useGlobalStores'
+// import { useAuth } from '@/composables/useGlobalStores' // Non utilisé avec le nouveau service
+import AnalysisTextSeoService from '../../../services/analysisTextSeo.js'
 
 console.log('🔥 [PAGE] TextAnalysisPage loaded!')
 console.log('🔥 [PAGE] TextAnalysisResult component:', TextAnalysisResult)
@@ -117,7 +119,7 @@ const jobsStatus = ref([])
 const processingTime = ref(0)
 const estimatedTimeRemaining = ref(0)
 const processingStartTime = ref(null)
-const statusPollingInterval = ref(null)
+const stopPolling = ref(null) // Fonction pour arrêter le polling
 const currentAnalysisId = ref(null)
 
 // Surveiller les changements de selectedAnalysis depuis le layout
@@ -151,17 +153,24 @@ const handleAnalysisComplete = (analysisResult) => {
   }
 }
 
-// Démarrer le suivi d'une analyse asynchrone
-const startAsyncTracking = (analysisResult) => {
+// Démarrer le suivi d'une analyse asynchrone avec le nouveau service
+const startAsyncTracking = async (analysisResult) => {
   isProcessing.value = true
   currentAnalysisId.value = analysisResult.id
   analysisProgress.value = analysisResult.progress || 0
-  jobsStatus.value = analysisResult.jobs || []
+  jobsStatus.value = analysisResult.jobsSummary || []
   processingStartTime.value = Date.now()
   processingTime.value = 0
   
-  // Démarrer le polling du statut
-  statusPollingInterval.value = setInterval(checkAnalysisStatus, 3000) // Toutes les 3 secondes
+  // Charger immédiatement les données en temps réel et les afficher
+  await loadRealtimeData()
+  
+  // Démarrer le polling avec le nouveau service
+  stopPolling.value = AnalysisTextSeoService.startProgressPolling(
+    analysisResult.id,
+    handlePollingUpdate,
+    2000 // Toutes les 2 secondes
+  )
   
   // Démarrer le timer
   const timer = setInterval(() => {
@@ -176,56 +185,137 @@ const startAsyncTracking = (analysisResult) => {
   })
 }
 
-// Vérifier le statut de l'analyse
-const checkAnalysisStatus = async () => {
+// Gérer les mises à jour du polling
+const handlePollingUpdate = async (overview) => {
+  if (overview.error) {
+    console.error('❌ [POLLING] Erreur:', overview.error)
+    error.value = overview.error
+    stopAsyncTracking()
+    return
+  }
+  
+  console.log('🔄 [POLLING] Mise à jour reçue:', overview)
+  
+  // Mettre à jour l'état
+  analysisProgress.value = overview.progress || 0
+  jobsStatus.value = overview.jobsSummary || []
+  
+  // Mettre à jour les données en temps réel pour montrer les résultats partiels
+  await loadRealtimeData()
+  
+  if (overview.status === 'completed') {
+    // Analyse terminée - récupérer les détails complets
+    console.log('🔍 [DEBUG] Analysis completed via polling')
+    stopAsyncTracking()
+    loadCompleteAnalysis(overview.id)
+    
+    // Rafraîchir l'historique
+    if (layoutRef.value) {
+      layoutRef.value.refreshAnalyses()
+    }
+  } else if (overview.status === 'failed') {
+    console.error('❌ [POLLING] Analyse échouée')
+    error.value = 'L\'analyse a échoué'
+    stopAsyncTracking()
+  }
+}
+
+// Charger l'analyse complète une fois terminée
+const loadCompleteAnalysis = async (analysisId) => {
+  try {
+    const completeData = await AnalysisTextSeoService.getAnalysisComplete(analysisId)
+    console.log('🔍 [DEBUG] Complete analysis loaded:', completeData)
+    currentAnalysis.value = completeData
+  } catch (error) {
+    console.error('❌ [PAGE] Erreur chargement analyse complète:', error)
+    // Fallback vers l'overview si le complet échoue
+    try {
+      const overview = await AnalysisTextSeoService.getAnalysisOverview(analysisId)
+      currentAnalysis.value = { analysis: overview, jobs: {} }
+    } catch (fallbackError) {
+      console.error('❌ [PAGE] Erreur fallback overview:', fallbackError)
+      error.value = 'Impossible de charger les résultats'
+    }
+  }
+}
+
+// Charger les données en temps réel depuis la base de données
+const loadRealtimeData = async () => {
   if (!currentAnalysisId.value) return
   
   try {
-    const { isAuthenticated, getAuthHeaders } = useAuth()
-    if (!isAuthenticated.value) return
+    console.log('🔄 [PAGE] Chargement des données en temps réel...')
+    const completeData = await AnalysisTextSeoService.getAnalysisComplete(currentAnalysisId.value)
     
-    const response = await fetch(`http://localhost:3000/api/analysis-text-seo/${currentAnalysisId.value}/status`, {
-      headers: getAuthHeaders()
-    })
-    
-    const data = await response.json()
-    
-    if (!response.ok) {
-      throw new Error(data.message || 'Erreur lors de la récupération du statut')
+    if (completeData && completeData.jobs) {
+      console.log('✅ [PAGE] Données en temps réel chargées:', completeData)
+      currentAnalysis.value = completeData
+    } else {
+      console.log('⚠️ [PAGE] Pas de données complètes disponibles, création de données factices')
+      currentAnalysis.value = createFallbackData()
     }
-    
-    const statusData = data.data
-    analysisProgress.value = statusData.progress || 0
-    jobsStatus.value = statusData.jobs || []
-    
-    if (statusData.status === 'completed') {
-      // Analyse terminée
-      console.log('🔍 [DEBUG] Analysis completed via polling, setting currentAnalysis:', statusData)
-      stopAsyncTracking()
-      currentAnalysis.value = statusData
-      
-      // Rafraîchir l'historique
-      if (layoutRef.value) {
-        layoutRef.value.refreshAnalyses()
-      }
-    } else if (statusData.failed > 0) {
-      // Certains jobs ont échoué
-      console.warn('Certains jobs ont échoué:', statusData.jobs.filter(j => j.status === 'failed'))
-    }
-    
   } catch (error) {
-    console.error('Erreur lors de la vérification du statut:', error)
-    handleError(error.message)
-    stopAsyncTracking()
+    console.log('⚠️ [PAGE] Erreur chargement données temps réel, utilisation des données factices:', error.message)
+    currentAnalysis.value = createFallbackData()
   }
+}
+
+// Créer des données factices pour l'affichage initial
+const createFallbackData = () => {
+  return {
+    analysis: {
+      id: currentAnalysisId.value,
+      status: 'processing',
+      progress: analysisProgress.value,
+      createdAt: new Date().toISOString(),
+      user_id: 'current',
+      parameter: {
+        text: 'Analyse en cours...',
+        keywords: []
+      }
+    },
+    jobs: {
+      'keyword-analysis': {
+        status: getJobStatus('keyword-analysis'),
+        score: 0,
+        details: 'Job en cours de traitement...'
+      },
+      'keyword-position': {
+        status: getJobStatus('keyword-position'),
+        score: 0,
+        details: 'Job en cours de traitement...'
+      },
+      'content-length': {
+        status: getJobStatus('content-length'),
+        score: 0,
+        details: 'Job en cours de traitement...'
+      },
+      'readability': {
+        status: getJobStatus('readability'),
+        score: 0,
+        details: 'Job en cours de traitement...'
+      },
+      'uniqueness': {
+        status: getJobStatus('uniqueness'),
+        score: 0,
+        details: 'Job en cours de traitement...'
+      }
+    }
+  }
+}
+
+// Obtenir le statut d'un job depuis jobsStatus
+const getJobStatus = (jobType) => {
+  const job = jobsStatus.value.find(j => j.type === jobType)
+  return job ? job.status : 'waiting'
 }
 
 // Arrêter le suivi asynchrone
 const stopAsyncTracking = () => {
   isProcessing.value = false
-  if (statusPollingInterval.value) {
-    clearInterval(statusPollingInterval.value)
-    statusPollingInterval.value = null
+  if (stopPolling.value) {
+    stopPolling.value()
+    stopPolling.value = null
   }
   currentAnalysisId.value = null
 }
@@ -262,6 +352,12 @@ const getJobDisplayName = (jobName) => {
   }
   return names[jobName] || jobName
 }
+
+// Nettoyage au démontage du composant
+onUnmounted(() => {
+  console.log('🧹 [PAGE] Nettoyage du composant')
+  stopAsyncTracking()
+})
 
 const getJobIcon = (status) => {
   const icons = {
@@ -333,6 +429,8 @@ const formatTime = (seconds) => {
 .analysis-result-section {
   margin-top: 40px;
 }
+
+
 
 .result-separator {
   text-align: center;
