@@ -27,12 +27,13 @@
       </div>
       
       <div v-else class="analyses-list">
-        <div 
-          v-for="analysis in filteredAnalyses" 
-          :key="analysis.id" 
-          class="analysis-item"
-          @click="selectAnalysis(analysis)"
-        >
+                 <div 
+           v-for="analysis in filteredAnalyses" 
+           :key="analysis.id" 
+           class="analysis-item"
+           :class="{ 'loading-analysis': loadingAnalysis }"
+           @click="selectAnalysis(analysis)"
+         >
           <div class="analysis-header">
             <div class="analysis-date">
               {{ formatShortDate(analysis.createdAt || analysis.timestamp) }}
@@ -132,6 +133,7 @@
 import { ref, onMounted, defineExpose, defineEmits, computed } from 'vue'
 import { useAuth } from '../composables/useGlobalStores.js'
 import { useAnalysisScore } from '../composables/useAnalysisScore.js'
+import AnalysisTextSeoService from '../services/analysisTextSeo.js'
 
 // eslint-disable-next-line no-undef
 const props = defineProps({
@@ -150,6 +152,7 @@ const { extractSeoScore, getScoreClass, getProgressPercentage } = useAnalysisSco
 const analyses = ref([])
 const loading = ref(true)
 const error = ref(null)
+const loadingAnalysis = ref(false) // Pour l'indicateur de chargement d'une analyse spécifique
 
 const emit = defineEmits(['select-analysis'])
 
@@ -432,8 +435,36 @@ const truncateText = (text, maxLength) => {
   return text.length > maxLength ? text.substring(0, maxLength) + '...' : text
 }
 
-const selectAnalysis = (analysis) => {
-  emit('select-analysis', analysis)
+const selectAnalysis = async (analysis) => {
+  // Si c'est une analyse de texte, charger les données complètes
+  if (analysis.type === 'text') {
+    loadingAnalysis.value = true
+    try {
+      // Utiliser le même service que la page de résultats
+      const completeData = await AnalysisTextSeoService.getAnalysisComplete(analysis.id)
+      console.log('📊 [HISTORY] Complete analysis data loaded:', completeData)
+      
+      // Émettre directement l'analyse complète avec la structure attendue
+      emit('select-analysis', completeData)
+    } catch (error) {
+      console.error('❌ [HISTORY] Error loading complete analysis:', error)
+      // En cas d'erreur, essayer de charger l'overview comme fallback
+      try {
+        const overview = await AnalysisTextSeoService.getAnalysisOverview(analysis.id)
+        console.log('⚠️ [HISTORY] Fallback to overview:', overview)
+        emit('select-analysis', { analysis: overview, jobs: {} })
+      } catch (fallbackError) {
+        console.error('❌ [HISTORY] Fallback also failed:', fallbackError)
+        // Émettre l'analyse de base en dernier recours
+        emit('select-analysis', analysis)
+      }
+    } finally {
+      loadingAnalysis.value = false
+    }
+  } else {
+    // Pour les autres types d'analyses, émettre directement
+    emit('select-analysis', analysis)
+  }
 }
 
 const goToNewAnalysis = () => {
@@ -584,6 +615,26 @@ defineExpose({
 .analysis-item:hover {
   border-color: #667eea;
   box-shadow: 0 1px 4px rgba(102, 126, 234, 0.15);
+}
+
+.analysis-item.loading-analysis {
+  opacity: 0.7;
+  pointer-events: none;
+  position: relative;
+}
+
+.analysis-item.loading-analysis::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 2px solid #667eea;
+  border-top: 2px solid transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
 
 .analysis-header {

@@ -3,7 +3,7 @@
  * Principe SOLID : Single Responsibility - Responsabilité unique de gestion des scores
  */
 
-import { computed } from 'vue'
+
 
 /**
  * Extrait le score SEO d'une analyse selon différents formats de données
