@@ -1,6 +1,7 @@
 const AnalysisTextSeo = require('../models/AnalysisTextSeo');
 const JobUtils = require('./JobUtils');
 const { ContentLengthJob: ContentLengthJobModel } = require('../models');
+const { JobProcessorUtils } = require('../utils');
 
 class ContentLengthJobProcessor {
   static async process(job) {
@@ -8,49 +9,38 @@ class ContentLengthJobProcessor {
     const startTime = Date.now();
     
     try {
-      // Créer l'enregistrement du job en base avec tous les champs requis
-      const jobRecord = new ContentLengthJobModel({
-        analysisId,
-        jobName: 'content-length',
-        status: 'active',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
-      await jobRecord.save();
-      console.log(`✅ [ContentLengthJobProcessor] Job créé en base pour ${analysisId}`);
+      // Valider les données d'entrée
+      JobProcessorUtils.validateJobData(job.data, ['analysisId', 'text']);
+      
+      // Créer l'enregistrement du job en base
+      await JobProcessorUtils.createJobRecord(ContentLengthJobModel, analysisId, 'content-length');
+      
+      // Mettre à jour la progression
+      await JobProcessorUtils.updateProgress(job, 20);
 
-      // Plus besoin d'appeler updateJobStatus - on met à jour directement notre propre collection
-
-      await job.progress(50);
-
+      // Analyse de la longueur du contenu
       const analysis = await ContentLengthJobProcessor.analyzeContentLength(text);
-      await job.progress(80);
+      await JobProcessorUtils.updateProgress(job, 60);
 
+      // Générer des recommandations
       const recommendations = ContentLengthJobProcessor.generateRecommendations(analysis);
+      await JobProcessorUtils.updateProgress(job, 80);
 
-      // Mettre à jour l'enregistrement du job en base
-      await ContentLengthJobModel.findOneAndUpdate(
-        { analysisId, jobName: 'content-length' },
-        {
-          status: 'completed',
-          score: analysis.score,
-                  details: `Longueur analysée: ${analysis.charCount} caractères (${analysis.lengthCategory})`,
-        metrics: {
-          charCount: analysis.charCount,
-          lengthCategory: analysis.lengthCategory,
-          percentage: analysis.percentage
-        },
-          recommendations: recommendations,
-          processingTime: Date.now() - startTime,
-          rawData: { text, analysis }
-        },
-        { upsert: true, new: true }
+      // Sauvegarder les résultats
+      await JobProcessorUtils.updateJobWithResults(
+        ContentLengthJobModel,
+        analysisId,
+        'content-length',
+        analysis,
+        recommendations,
+        startTime,
+        { text, analysis }
       );
 
-      await job.progress(100);
+      await JobProcessorUtils.updateProgress(job, 100);
 
-      // Mettre à jour le score global APRÈS la sauvegarde réussie
-      await JobUtils.updateGlobalScore(analysisId);
+      // Mettre à jour le score global avec retry
+      await JobProcessorUtils.updateGlobalScoreWithRetry(analysisId);
       
       return {
         success: true,
@@ -62,23 +52,18 @@ class ContentLengthJobProcessor {
     } catch (error) {
       console.error(`❌ [ContentLengthJobProcessor] Erreur pour ${analysisId}:`, error);
       
-      // Mettre à jour l'enregistrement du job en base (erreur)
-      await ContentLengthJobModel.findOneAndUpdate(
-        { analysisId, jobName: 'content-length' },
-        {
-          status: 'failed',
-          error: {
-            message: error.message,
-            stack: error.stack
-          },
-          processingTime: Date.now() - startTime
-        },
-        { upsert: true, new: true }
+      // Mettre à jour le job avec l'erreur
+      await JobProcessorUtils.updateJobWithError(
+        ContentLengthJobModel,
+        analysisId,
+        'content-length',
+        error,
+        startTime
       );
       
       // Mettre à jour le score global même en cas d'erreur
       try {
-        await JobUtils.updateGlobalScore(analysisId);
+        await JobProcessorUtils.updateGlobalScoreWithRetry(analysisId);
       } catch (globalError) {
         console.error('❌ Erreur mise à jour score global:', globalError);
       }
@@ -88,48 +73,80 @@ class ContentLengthJobProcessor {
   }
 
   static async analyzeContentLength(text) {
-    const cleanText = text.trim();
+    const charCount = text ? text.length : 0;
     
-    // Compter les caractères (critère principal)
-    const charCount = cleanText.length;
-    
-    // Calculer le score selon la logique simple
+    // Échelle de points selon la longueur (0 à 15 points)
     let score = 0;
     let lengthCategory = '';
     
-    if (charCount < 50) {
-      score = 0.3; // 2% de 15
+    if (charCount < 5) {
+      score = 0;
       lengthCategory = 'Très court';
-    } else if (charCount < 100) {
-      score = 7.5; // 50% de 15
+    } else if (charCount < 50) {
+      score = 1;
       lengthCategory = 'Court';
-    } else if (charCount < 150) {
-      score = 12; // 80% de 15
+    } else if (charCount < 100) {
+      score = 2;
+      lengthCategory = 'Assez court';
+    } else if (charCount < 200) {
+      score = 3;
+      lengthCategory = 'Court-moyen';
+    } else if (charCount < 400) {
+      score = 4;
+      lengthCategory = 'Moyen-court';
+    } else if (charCount < 600) {
+      score = 5;
       lengthCategory = 'Moyen';
+    } else if (charCount < 800) {
+      score = 6;
+      lengthCategory = 'Moyen-long';
+    } else if (charCount < 1000) {
+      score = 7;
+      lengthCategory = 'Long';
+    } else if (charCount < 1200) {
+      score = 8;
+      lengthCategory = 'Assez long';
+    } else if (charCount < 1400) {
+      score = 9;
+      lengthCategory = 'Très long';
+    } else if (charCount < 1600) {
+      score = 10;
+      lengthCategory = 'Extrêmement long';
+    } else if (charCount < 1800) {
+      score = 11;
+      lengthCategory = 'Excessivement long';
+    } else if (charCount < 2000) {
+      score = 12;
+      lengthCategory = 'Presque optimal';
+    } else if (charCount < 2200) {
+      score = 13;
+      lengthCategory = 'Quasi optimal';
     } else {
-      score = 15; // 100% de 15
+      score = 15;
       lengthCategory = 'Optimal';
     }
     
     return {
-      score: Math.round(score), // Score sur 15 (poids du job)
-      charCount,
-      lengthCategory,
-      percentage: Math.round((score / 15) * 100) // Pourcentage du score max
+      score: score,
+      charCount: charCount,
+      lengthCategory: lengthCategory,
+      percentage: Math.round((score / 15) * 100)
     };
   }
 
   static generateRecommendations(analysis) {
     const recommendations = [];
     
-    if (analysis.charCount < 50) {
-      recommendations.push("Votre contenu est trop court. Ajoutez au moins 50 caractères pour un meilleur SEO.");
-    } else if (analysis.charCount < 100) {
-      recommendations.push("Votre contenu pourrait être plus long. Objectif : 150+ caractères pour un score optimal.");
-    } else if (analysis.charCount < 150) {
-      recommendations.push("Presque optimal ! Ajoutez quelques caractères pour atteindre le score maximum.");
+    if (analysis.score === 0) {
+      recommendations.push("Votre contenu est trop court. Ajoutez au moins 5 caractères pour commencer à gagner des points.");
+    } else if (analysis.score < 5) {
+      recommendations.push(`Votre contenu (${analysis.charCount} caractères) est encore trop court. Objectif : 600+ caractères pour un score moyen.`);
+    } else if (analysis.score < 10) {
+      recommendations.push(`Votre contenu (${analysis.charCount} caractères) progresse bien. Continuez pour atteindre 1400+ caractères.`);
+    } else if (analysis.score < 15) {
+      recommendations.push(`Excellente longueur (${analysis.charCount} caractères) ! Ajoutez quelques caractères pour atteindre le score maximum.`);
     } else {
-      recommendations.push("Excellente longueur de contenu ! Votre texte a une taille optimale pour le SEO.");
+      recommendations.push(`Longueur parfaite (${analysis.charCount} caractères) ! Votre contenu a une taille optimale pour le SEO.`);
     }
     
     return recommendations;

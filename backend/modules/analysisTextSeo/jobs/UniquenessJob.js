@@ -1,6 +1,7 @@
 const AnalysisTextSeo = require('../models/AnalysisTextSeo');
 const JobUtils = require('./JobUtils');
 const { UniquenessJob: UniquenessJobModel } = require('../models');
+const { JobProcessorUtils } = require('../utils');
 
 class UniquenessJobProcessor {
   static async process(job) {
@@ -8,81 +9,61 @@ class UniquenessJobProcessor {
     const startTime = Date.now();
     
     try {
-      // Créer l'enregistrement du job en base avec tous les champs requis
-      const jobRecord = new UniquenessJobModel({
-        analysisId,
-        jobName: 'uniqueness',
-        status: 'active',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
-      await jobRecord.save();
-      console.log(`✅ [UniquenessJobProcessor] Job créé en base pour ${analysisId}`);
+      // Valider les données d'entrée
+      JobProcessorUtils.validateJobData(job.data, ['analysisId', 'text']);
+      
+      // Créer l'enregistrement du job en base
+      await JobProcessorUtils.createJobRecord(UniquenessJobModel, analysisId, 'uniqueness');
+      
+      // Mettre à jour la progression
+      await JobProcessorUtils.updateProgress(job, 20);
 
-      // Plus besoin d'appeler updateJobStatus - on met à jour directement notre propre collection
-
-      await job.progress(30);
-
+      // Analyse de l'originalité
       const analysis = await UniquenessJobProcessor.analyzeUniqueness(text);
-      await job.progress(70);
+      await JobProcessorUtils.updateProgress(job, 60);
 
+      // Générer des recommandations
       const recommendations = UniquenessJobProcessor.generateRecommendations(analysis);
+      await JobProcessorUtils.updateProgress(job, 80);
 
-      // Mettre à jour l'enregistrement du job en base
-      await UniquenessJobModel.findOneAndUpdate(
-        { analysisId, jobName: 'uniqueness' },
-        {
-          status: 'completed',
-          score: analysis.score,
-          details: `Originalité: ${analysis.uniquenessPercentage}%, diversité vocabulaire: ${analysis.vocabularyDiversity}%`,
-          metrics: {
-            uniquenessPercentage: analysis.uniquenessPercentage,
-            vocabularyDiversity: analysis.vocabularyDiversity,
-            repetitionRate: analysis.repetitionRate,
-            uniqueWords: analysis.uniqueWords,
-            totalWords: analysis.totalWords,
-            duplicateContent: analysis.duplicateContent || [],
-            similarityIndex: analysis.similarityIndex || 0
-          },
-          recommendations: recommendations,
-          processingTime: Date.now() - startTime,
-          rawData: { text, analysis }
-        },
-        { upsert: true, new: true }
+      // Sauvegarder les résultats avec score 0
+      await JobProcessorUtils.updateJobWithResults(
+        UniquenessJobModel,
+        analysisId,
+        'uniqueness',
+        analysis,
+        recommendations,
+        startTime,
+        { text, analysis }
       );
 
-      await job.progress(100);
+      await JobProcessorUtils.updateProgress(job, 100);
 
-      // Mettre à jour le score global APRÈS la sauvegarde réussie
-      await JobUtils.updateGlobalScore(analysisId);
+      // Mettre à jour le score global avec retry
+      await JobProcessorUtils.updateGlobalScoreWithRetry(analysisId);
       
       return {
         success: true,
-        score: analysis.score,
-        metrics: analysis,
-        recommendations: recommendations
+        score: 0, // Score fixe à 0
+        metrics: { score: 0 },
+        recommendations: ['Score fixe à 0 - Aucune logique d\'évaluation']
       };
 
     } catch (error) {
       console.error(`❌ [UniquenessJobProcessor] Erreur pour ${analysisId}:`, error);
       
-      // Mettre à jour l'enregistrement du job en base (erreur)
-      await UniquenessJobModel.findOneAndUpdate(
-        { analysisId, jobName: 'uniqueness' },
-        {
-          status: 'failed',
-          error: {
-            message: error.message,
-            stack: error.stack
-          },
-          processingTime: Date.now() - startTime
-        },
-        { upsert: true, new: true }
+      // Mettre à jour le job avec l'erreur
+      await JobProcessorUtils.updateJobWithError(
+        UniquenessJobModel,
+        analysisId,
+        'uniqueness',
+        error,
+        startTime
       );
       
       // Mettre à jour le score global même en cas d'erreur
       try {
-        await JobUtils.updateGlobalScore(analysisId);
+        await JobProcessorUtils.updateGlobalScoreWithRetry(analysisId);
       } catch (globalError) {
         console.error('❌ Erreur mise à jour score global:', globalError);
       }
@@ -92,123 +73,22 @@ class UniquenessJobProcessor {
   }
 
   static async analyzeUniqueness(text) {
-    const cleanText = text.toLowerCase().replace(/[^\w\s]/g, ' ');
-    const words = cleanText.split(/\s+/).filter(word => word.length > 2); // Ignorer les mots très courts
-    const totalWords = words.length;
-    
-    if (totalWords === 0) {
-      return {
-        score: 0,
-        uniquenessPercentage: 0,
-        vocabularyDiversity: 0,
-        repetitionRate: 100,
-        uniqueWords: 0,
-        totalWords: 0
-      };
-    }
-    
-    // Calculer la diversité du vocabulaire
-    const wordFrequency = {};
-    words.forEach(word => {
-      wordFrequency[word] = (wordFrequency[word] || 0) + 1;
-    });
-    
-    const uniqueWords = Object.keys(wordFrequency).length;
-    const vocabularyDiversity = (uniqueWords / totalWords) * 100;
-    
-    // Analyser les répétitions
-    let repetitionScore = 0;
-    let overusedWords = 0;
-    
-    // Mots communs à ignorer (articles, prépositions, etc.)
-    const commonWords = new Set([
-      'le', 'la', 'les', 'un', 'une', 'des', 'du', 'de', 'et', 'ou', 'que', 'qui', 
-      'il', 'elle', 'on', 'nous', 'vous', 'ils', 'elles', 'ce', 'cette', 'ces',
-      'dans', 'sur', 'avec', 'pour', 'par', 'sans', 'sous', 'vers', 'chez',
-      'est', 'sont', 'était', 'être', 'avoir', 'fait', 'faire', 'dit', 'dire',
-      'très', 'plus', 'moins', 'bien', 'mal', 'tout', 'tous', 'toute', 'toutes'
-    ]);
-    
-    Object.entries(wordFrequency).forEach(([word, frequency]) => {
-      if (!commonWords.has(word) && word.length > 3) {
-        const expectedFrequency = Math.max(1, Math.floor(totalWords / 100)); // 1% max
-        if (frequency > expectedFrequency * 3) {
-          overusedWords++;
-          repetitionScore -= (frequency - expectedFrequency) * 2;
-        }
-      }
-    });
-    
-    // Calculer le score d'originalité (sur 15 car poids = 15)
-    let uniquenessScore = 15;
-    
-    // Pénaliser la faible diversité
-    if (vocabularyDiversity < 30) {
-      uniquenessScore -= (30 - vocabularyDiversity) * 0.3; // 2% de 15
-    }
-    
-    // Pénaliser les répétitions excessives
-    uniquenessScore += Math.max(-7.5, repetitionScore * 0.15); // 50% de 15
-    
-    // Bonus pour bonne diversité
-    if (vocabularyDiversity > 50) {
-      uniquenessScore += 1.5; // 10% de 15
-    }
-    
-    // Analyser les phrases répétitives (approximation)
-    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 10);
-    const sentenceStarts = sentences.map(s => s.trim().substring(0, 20).toLowerCase());
-    const uniqueSentenceStarts = new Set(sentenceStarts).size;
-    
-    if (sentences.length > 0) {
-      const sentenceDiversity = (uniqueSentenceStarts / sentences.length) * 100;
-      if (sentenceDiversity < 80) {
-        uniquenessScore -= (80 - sentenceDiversity) * 0.075; // 0.5% de 15
-      }
-    }
-    
-    uniquenessScore = Math.max(0, Math.min(15, uniquenessScore));
-    
+    // Score fixe à 0 - Aucune logique d'évaluation
     return {
-      score: Math.round(uniquenessScore),
-      uniquenessPercentage: Math.round(uniquenessScore),
-      vocabularyDiversity: Math.round(vocabularyDiversity * 10) / 10,
-      repetitionRate: Math.round((100 - vocabularyDiversity) * 10) / 10,
-      uniqueWords,
-      totalWords,
-      overusedWords,
-      sentenceDiversity: sentences.length > 0 ? Math.round((uniqueSentenceStarts / sentences.length) * 100) : 100
+      score: 0,
+      uniquenessPercentage: 0,
+      vocabularyDiversity: 0,
+      repetitionRate: 100,
+      uniqueWords: 0,
+      totalWords: 0,
+      overusedWords: 0,
+      sentenceDiversity: 100
     };
   }
 
   static generateRecommendations(analysis) {
-    const recommendations = [];
-    
-    if (analysis.vocabularyDiversity < 40) {
-      recommendations.push("Enrichissez votre vocabulaire pour éviter les répétitions");
-    }
-    
-    if (analysis.overusedWords > 0) {
-      recommendations.push(`${analysis.overusedWords} mot(s) sont sur-utilisé(s). Variez vos expressions`);
-    }
-    
-    if (analysis.sentenceDiversity < 70) {
-      recommendations.push("Variez la structure de vos phrases pour plus d'originalité");
-    }
-    
-    if (analysis.vocabularyDiversity > 60) {
-      recommendations.push("Excellente diversité de vocabulaire !");
-    }
-    
-    if (analysis.uniquenessPercentage < 50) {
-      recommendations.push("Travaillez l'originalité de votre contenu pour vous démarquer");
-    }
-    
-    if (analysis.totalWords < 100) {
-      recommendations.push("Un contenu plus long permettrait une meilleure analyse d'originalité");
-    }
-    
-    return recommendations;
+    // Recommandations fixes - Score fixe à 0
+    return ['Score fixe à 0 - Aucune logique d\'évaluation'];
   }
 }
 
