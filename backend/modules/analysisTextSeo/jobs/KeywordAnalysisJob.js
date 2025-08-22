@@ -5,8 +5,6 @@ class KeywordAnalysisJob {
   static async process(job) {
     const { analysisId, text, keywords } = job.data;
     
-    console.log(`🔍 [KeywordAnalysisJob] Début analyse pour ${analysisId}`);
-    
     try {
       // Mettre à jour le statut du job
       await JobUtils.updateJobStatus(analysisId, 'keyword-analysis', 'processing', {
@@ -41,7 +39,7 @@ class KeywordAnalysisJob {
 
       await job.progress(100);
 
-      console.log(`✅ [KeywordAnalysisJob] Terminé pour ${analysisId} - Score: ${analysis.score}`);
+
       
       return {
         success: true,
@@ -64,7 +62,6 @@ class KeywordAnalysisJob {
   }
 
   static async analyzeKeywords(text, keywords) {
-    // Nettoyer et préparer le texte
     const cleanText = text.toLowerCase().replace(/[^\w\s]/g, ' ');
     const words = cleanText.split(/\s+/).filter(word => word.length > 0);
     const wordCount = words.length;
@@ -73,13 +70,12 @@ class KeywordAnalysisJob {
     let relevanceScore = 0;
     
     if (keywords && keywords.length > 0) {
-      // Analyser chaque mot-clé
+
       keywords.forEach(keyword => {
         const keywordLower = keyword.toLowerCase();
         const keywordCount = (cleanText.match(new RegExp(`\\b${keywordLower}\\b`, 'g')) || []).length;
         totalKeywordCount += keywordCount;
         
-        // Calculer le score de pertinence basé sur la position et la fréquence
         if (keywordCount > 0) {
           const firstPosition = cleanText.indexOf(keywordLower);
           const positionBonus = firstPosition < 100 ? 20 : firstPosition < 300 ? 10 : 0;
@@ -143,8 +139,6 @@ class KeywordAnalysisJob {
     
     return recommendations;
   }
-
-
 }
 
 module.exports = KeywordAnalysisJob;

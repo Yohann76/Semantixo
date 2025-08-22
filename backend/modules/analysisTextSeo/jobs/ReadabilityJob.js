@@ -5,8 +5,6 @@ class ReadabilityJob {
   static async process(job) {
     const { analysisId, text } = job.data;
     
-    console.log(`📖 [ReadabilityJob] Début analyse pour ${analysisId}`);
-    
     try {
       await JobUtils.updateJobStatus(analysisId, 'readability', 'processing', {
         details: 'Analyse de lisibilité en cours...',
@@ -37,7 +35,7 @@ class ReadabilityJob {
 
       await job.progress(100);
 
-      console.log(`✅ [ReadabilityJob] Terminé pour ${analysisId} - Score: ${analysis.score}`);
+
       
       return {
         success: true,
@@ -189,8 +187,6 @@ class ReadabilityJob {
     
     return recommendations;
   }
-
-  // Méthode supprimée - utilise JobUtils.updateJobStatus
 }
 
 module.exports = ReadabilityJob;

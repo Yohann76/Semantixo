@@ -57,7 +57,6 @@ const AnalysisTextSeoSchema = new mongoose.Schema({
         completedAt: Date,
         processingTime: Number,
         error: String,
-        // Informations spécifiques pour l'historique et stats
         metrics: {
           keywordDensity: Number,
           wordCount: Number,
@@ -73,7 +72,6 @@ const AnalysisTextSeoSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Initialiser les jobs par défaut avec la structure souhaitée
 AnalysisTextSeoSchema.methods.initializeJobs = function() {
   this.jobs = [
     {
@@ -140,15 +138,13 @@ AnalysisTextSeoSchema.methods.calculateScoreSeo = function() {
   
   this.jobs.forEach(job => {
     if (job.status === 'completed') {
-      const weight = job.poidScoreSEO || 0; // Utilise le poids numérique du job
+      const weight = job.poidScoreSEO || 0; 
       const score = job.info.score || 0;
-      totalScore += score * (weight / 100); // Divise par 100 pour convertir le pourcentage
+      totalScore += score * (weight / 100);
     }
   });
   
   this.scoreSeo = Math.round(totalScore);
-  
-  // Retourner le score calculé
   return this.scoreSeo;
 };
 

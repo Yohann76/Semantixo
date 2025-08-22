@@ -5,8 +5,6 @@ class KeywordPositionJob {
   static async process(job) {
     const { analysisId, text, keywords } = job.data;
     
-    console.log(`📍 [KeywordPositionJob] Début analyse pour ${analysisId}`);
-    
     try {
       await JobUtils.updateJobStatus(analysisId, 'keyword-position', 'processing', {
         details: 'Analyse de position des mots-clés en cours...',
@@ -36,7 +34,7 @@ class KeywordPositionJob {
 
       await job.progress(100);
 
-      console.log(`✅ [KeywordPositionJob] Terminé pour ${analysisId} - Score: ${analysis.score}`);
+
       
       return {
         success: true,
@@ -153,8 +151,6 @@ class KeywordPositionJob {
     
     return recommendations;
   }
-
-  // Méthode supprimée - utilise JobUtils.updateJobStatus
 }
 
 module.exports = KeywordPositionJob;

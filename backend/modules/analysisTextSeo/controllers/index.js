@@ -13,11 +13,7 @@ const createAnalysis = async (req, res) => {
       });
     }
 
-    console.log('🚀 [CONTROLLER] Début analyse SEO:', {
-      userId,
-      textLength: text.length,
-      keywordsCount: keywords.length
-    });
+
 
     // Créer l'analyse avec le modèle AnalysisTextSeo
     const analysis = new AnalysisTextSeo({
@@ -34,20 +30,15 @@ const createAnalysis = async (req, res) => {
     analysis.initializeJobs();
     await analysis.save();
 
-    // Démarrer les jobs d'analyse asynchrone
-    console.log('🔄 [CONTROLLER] Import du module jobs...');
+
+
     const { startTextAnalysis } = require('../jobs');
     
-    console.log('🚀 [CONTROLLER] Lancement des jobs pour analyse:', analysis._id.toString());
+
     const jobsResult = await startTextAnalysis(analysis._id.toString(), text, keywords);
 
-    console.log('✅ [CONTROLLER] Analyse créée et jobs lancés:', {
-      request_id: analysis.request_id,
-      jobsCount: jobsResult.jobs.length,
-      jobsList: jobsResult.jobs.map(j => ({ id: j.id, name: j.name, status: j.status }))
-    });
 
-    // Réponse avec le format JSON demandé + compatibilité frontend
+
     res.status(201).json({
       success: true,
       message: 'Analyse SEO démarrée avec succès',
@@ -87,7 +78,6 @@ const createAnalysis = async (req, res) => {
   }
 };
 
-// Récupérer toutes les analyses
 const getAnalyses = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -102,7 +92,6 @@ const getAnalyses = async (req, res) => {
 
     const total = await AnalysisTextSeo.countDocuments({ user_id: userId });
 
-    // Format compatible avec l'historique frontend
     const formattedAnalyses = analyses.map(analysis => ({
       id: analysis._id, // Frontend utilise 'id'
       request_id: analysis.request_id,

@@ -5,8 +5,6 @@ class ContentLengthJob {
   static async process(job) {
     const { analysisId, text } = job.data;
     
-    console.log(`📏 [ContentLengthJob] Début analyse pour ${analysisId}`);
-    
     try {
       await JobUtils.updateJobStatus(analysisId, 'content-length', 'processing', {
         details: 'Analyse de la longueur du contenu en cours...',
@@ -36,7 +34,7 @@ class ContentLengthJob {
 
       await job.progress(100);
 
-      console.log(`✅ [ContentLengthJob] Terminé pour ${analysisId} - Score: ${analysis.score}`);
+
       
       return {
         success: true,
@@ -157,8 +155,6 @@ class ContentLengthJob {
     
     return recommendations;
   }
-
-  // Méthode supprimée - utilise JobUtils.updateJobStatus
 }
 
 module.exports = ContentLengthJob;

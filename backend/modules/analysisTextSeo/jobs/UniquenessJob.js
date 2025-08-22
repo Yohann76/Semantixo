@@ -5,8 +5,6 @@ class UniquenessJob {
   static async process(job) {
     const { analysisId, text } = job.data;
     
-    console.log(`🔍 [UniquenessJob] Début analyse pour ${analysisId}`);
-    
     try {
       await JobUtils.updateJobStatus(analysisId, 'uniqueness', 'processing', {
         details: 'Analyse d\'originalité en cours...',
@@ -36,7 +34,7 @@ class UniquenessJob {
 
       await job.progress(100);
 
-      console.log(`✅ [UniquenessJob] Terminé pour ${analysisId} - Score: ${analysis.score}`);
+
       
       return {
         success: true,
@@ -177,8 +175,6 @@ class UniquenessJob {
     
     return recommendations;
   }
-
-  // Méthode supprimée - utilise JobUtils.updateJobStatus
 }
 
 module.exports = UniquenessJob;
