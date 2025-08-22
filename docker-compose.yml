@@ -83,19 +83,30 @@ services:
     networks:
       - semantixo-network
 
-  # Frontend Vue.js (optional - you can continue to use npm run serve)
+  # Frontend Vue.js - Mode développement avec hot reload
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      target: development-stage  # Utiliser le stage de développement #esle : production-stage
+      args:
+        - NODE_ENV=development # production
     container_name: semantixo-frontend
     restart: unless-stopped
     ports:
-      - "8081:80"
+      - "8081:8080"  # Port 8081 pour le développement # 8080 pour la production?
     depends_on:
       - backend
     networks:
       - semantixo-network
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - DOCKER_ENV=true  # Pour savoir qu'on est dans Docker
+      - CHOKIDAR_USEPOLLING=true  # Pour le hot reload sur Windows/Docker
+      - WATCHPACK_POLLING=true
 
 volumes:
   mongodb_data:
