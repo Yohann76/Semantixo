@@ -65,6 +65,8 @@
             </div>
           </div>
 
+
+
           <!-- Résultat de l'analyse (affiché directement sous le formulaire) -->
           <div v-if="currentAnalysis" class="analysis-result-section">
             <div class="result-separator">
@@ -72,6 +74,8 @@
             </div>
             <TextAnalysisResult :analysis="currentAnalysis" />
           </div>
+
+
 
           <!-- Résultat d'une analyse sélectionnée depuis l'historique -->
           <div v-if="selectedAnalysis && !currentAnalysis" class="selected-analysis-section">
@@ -93,7 +97,12 @@ import { ref, watch } from 'vue'
 import ApplicationLayout from '../../common/ApplicationLayout.vue'
 import TextAnalysisForm from './TextAnalysisForm.vue'
 import TextAnalysisResult from './TextAnalysisResult.vue'
+
 import ErrorMessage from '../../common/ErrorMessage.vue'
+import { useAuth } from '@/composables/useGlobalStores'
+
+console.log('🔥 [PAGE] TextAnalysisPage loaded!')
+console.log('🔥 [PAGE] TextAnalysisResult component:', TextAnalysisResult)
 
 // État réactif
 const error = ref(null)
@@ -122,11 +131,16 @@ watch(() => layoutRef.value?.selectedAnalysis?.value, (newAnalysis) => {
 
 // Gérer la completion d'une analyse
 const handleAnalysisComplete = (analysisResult) => {
+  console.log('🔍 [DEBUG] handleAnalysisComplete called with:', analysisResult)
+  console.log('🔍 [DEBUG] analysisResult.status:', analysisResult.status)
+  
   if (analysisResult.status === 'processing') {
     // Démarrer le suivi asynchrone
+    console.log('🔍 [DEBUG] Starting async tracking...')
     startAsyncTracking(analysisResult)
   } else {
     // Analyse terminée immédiatement
+    console.log('🔍 [DEBUG] Analysis completed immediately, setting currentAnalysis')
     currentAnalysis.value = analysisResult
     error.value = null
     
@@ -186,6 +200,7 @@ const checkAnalysisStatus = async () => {
     
     if (statusData.status === 'completed') {
       // Analyse terminée
+      console.log('🔍 [DEBUG] Analysis completed via polling, setting currentAnalysis:', statusData)
       stopAsyncTracking()
       currentAnalysis.value = statusData
       
@@ -234,6 +249,8 @@ const clearSelection = () => {
   error.value = null
 }
 
+
+
 // Fonctions utilitaires pour l'affichage des jobs
 const getJobDisplayName = (jobName) => {
   const names = {
@@ -279,8 +296,7 @@ const formatTime = (seconds) => {
   return `${minutes}m ${remainingSeconds}s`
 }
 
-// Import nécessaire pour l'auth
-import { useAuth } from '../../../composables/useGlobalStores.js'
+
 </script>
 
 <style scoped>

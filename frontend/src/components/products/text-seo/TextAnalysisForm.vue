@@ -115,6 +115,10 @@ const removeKeyword = (index) => {
 
 // Méthode d'analyse
 const analyzeText = async () => {
+  console.log('🔥 [FORM] analyzeText function called!')
+  console.log('🔥 [FORM] Text length:', textToAnalyze.value.length)
+  console.log('🔥 [FORM] Keywords count:', keywords.value.length)
+  
   if (!textToAnalyze.value.trim()) {
     emit('error', 'Veuillez entrer un texte à analyser')
     return
@@ -135,16 +139,28 @@ const analyzeText = async () => {
 
     const headers = getAuthHeaders()
     
+    // Nettoyer les données avant l'envoi
+    // eslint-disable-next-line no-control-regex
+    const cleanText = textToAnalyze.value.trim().replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
+    const cleanKeywords = keywords.value.map(k => k.trim()).filter(k => k.length > 0)
+    
     const requestBody = {
-      text: textToAnalyze.value,
-      keywords: keywords.value
+      text: cleanText,
+      keywords: cleanKeywords
     }
 
     console.log('📊 [TEXT FORM] Envoi analyse:', {
-      textLength: textToAnalyze.value.length,
-      keywordsCount: keywords.value.length,
-      keywords: keywords.value
+      textLength: cleanText.length,
+      keywordsCount: cleanKeywords.length,
+      keywords: cleanKeywords
     })
+    
+    console.log('🔥 [FORM] Sending request to:', 'http://localhost:3000/api/analysis-text-seo')
+    console.log('🔥 [FORM] Headers:', headers)
+    
+    const bodyString = JSON.stringify(requestBody)
+    console.log('🔥 [FORM] Body string length:', bodyString.length)
+    console.log('🔥 [FORM] Body preview:', bodyString.substring(0, 200))
     
     const response = await fetch('http://localhost:3000/api/analysis-text-seo', {
       method: 'POST',
@@ -152,10 +168,14 @@ const analyzeText = async () => {
         ...headers,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(requestBody)
+      body: bodyString
     })
     
+    console.log('🔥 [FORM] Response status:', response.status)
+    console.log('🔥 [FORM] Response ok:', response.ok)
+    
     const data = await response.json()
+    console.log('🔥 [FORM] Response data:', data)
     
     if (response.ok) {
       console.log('✅ [TEXT FORM] Analyse réussie:', {
@@ -163,6 +183,7 @@ const analyzeText = async () => {
         notation: data.data.notation
       })
       
+      console.log('🔥 [FORM] Emitting analysis-complete with:', data.data)
       emit('analysis-complete', data.data)
     } else {
       // Gestion des erreurs spécifiques

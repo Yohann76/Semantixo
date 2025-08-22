@@ -1,10 +1,5 @@
 <template>
   <div id="app">
-    <!-- Test console.log -->
-    <script>
-      console.log('🧪 [TEST] App.vue template chargé')
-    </script>
-    
     <Navbar />
     <main class="main-content">
       <router-view />

@@ -1,7 +1,23 @@
 const AnalysisTextSeo = require('../models/AnalysisTextSeo');
 
+// Helper pour obtenir le nom d'affichage des jobs
+const getJobDisplayName = (jobName) => {
+  const names = {
+    'keyword-analysis': 'Analyse des mots-clés',
+    'keyword-position': 'Position des mots-clés', 
+    'content-length': 'Longueur du contenu',
+    'readability': 'Lisibilité',
+    'uniqueness': 'Originalité'
+  };
+  return names[jobName] || jobName;
+};
+
 // Créer une nouvelle analyse de texte SEO
 const createAnalysis = async (req, res) => {
+  console.log('🔥 [CONTROLLER] createAnalysis called!');
+  console.log('🔥 [CONTROLLER] req.body:', JSON.stringify(req.body, null, 2));
+  console.log('🔥 [CONTROLLER] req.user:', req.user ? 'Present' : 'NULL');
+  
   try {
     const { text, keywords = [] } = req.body;
     const userId = req.user.id;
@@ -63,8 +79,23 @@ const createAnalysis = async (req, res) => {
           name: job.name,
           poidScoreSEO: job.poidScoreSEO,
           status: job.status,
+          score: job.info?.score || 0,
           info: job.info
         })),
+        // Vue simplifiée des jobs avec poids et scores
+        jobsSimplified: {
+          totalPoids: analysis.jobs.reduce((total, job) => total + (job.poidScoreSEO || 0), 0),
+          scoreTotal: analysis.scoreSeo,
+          details: analysis.jobs.map(job => ({
+            name: job.name,
+            displayName: getJobDisplayName(job.name),
+            poids: job.poidScoreSEO,
+            score: job.info?.score || 0,
+            status: job.status,
+            contribution: job.status === 'completed' ? 
+              Math.round((job.info?.score || 0) * (job.poidScoreSEO / 100)) : 0
+          }))
+        },
         estimatedTime: '10-30 secondes'
       }
     });
@@ -325,8 +356,23 @@ const getAnalysisStatus = async (req, res) => {
           name: job.name,
           poidScoreSEO: job.poidScoreSEO,
           status: job.status,
+          score: job.info?.score || 0,
           info: job.info
-        }))
+        })),
+        // Vue simplifiée des jobs avec poids et scores
+        jobsSimplified: {
+          totalPoids: analysis.jobs.reduce((total, job) => total + (job.poidScoreSEO || 0), 0),
+          scoreTotal: analysis.scoreSeo,
+          details: analysis.jobs.map(job => ({
+            name: job.name,
+            displayName: getJobDisplayName(job.name),
+            poids: job.poidScoreSEO,
+            score: job.info?.score || 0,
+            status: job.status,
+            contribution: job.status === 'completed' ? 
+              Math.round((job.info?.score || 0) * (job.poidScoreSEO / 100)) : 0
+          }))
+        }
       }
     });
   } catch (error) {
