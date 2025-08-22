@@ -131,6 +131,7 @@
 <script setup>
 import { ref, onMounted, defineExpose, defineEmits, computed } from 'vue'
 import { useAuth } from '../composables/useGlobalStores.js'
+import { useAnalysisScore } from '../composables/useAnalysisScore.js'
 
 // eslint-disable-next-line no-undef
 const props = defineProps({
@@ -144,6 +145,7 @@ const props = defineProps({
 })
 
 const { isAuthenticated, getAuthHeaders } = useAuth()
+const { extractSeoScore, getScoreClass, getProgressPercentage } = useAnalysisScore()
 
 const analyses = ref([])
 const loading = ref(true)
@@ -206,7 +208,11 @@ const loadAnalyses = async () => {
               ...analysis,
               type: 'text',
               displayText: analysis.text || '',
-              notation: analysis.notation || 'Non évalué'
+              notation: analysis.notation || 'Non évalué',
+              // Principe SOLID : Interface Segregation - Assurer la cohérence des données
+              scoreSeo: analysis.scoreSeo || 0,
+              seoScore: analysis.scoreSeo || 0, // Compatibilité avec l'ancien format
+              createdAt: analysis.createdAt || analysis.timestamp || new Date().toISOString()
             }))
             allAnalyses = allAnalyses.concat(textAnalyses)
           } else {
@@ -415,20 +421,8 @@ const formatShortDate = (dateString) => {
 }
 
 const getAnalysisScore = (analysis) => {
-  return analysis.seoScore || 0
-}
-
-const getScoreClass = (score) => {
-  if (!score || score === 0) return 'score-poor'
-  if (score >= 85) return 'score-excellent'
-  if (score >= 70) return 'score-good'
-  if (score >= 55) return 'score-average'
-  return 'score-poor'
-}
-
-const getProgressPercentage = (score) => {
-  const numScore = Number(score) || 0
-  return Math.min(Math.max(numScore, 0), 100)
+  // Utiliser le composable centralisé pour l'extraction du score
+  return extractSeoScore(analysis)
 }
 
 

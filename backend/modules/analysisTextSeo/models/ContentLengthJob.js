@@ -21,36 +21,27 @@ const ContentLengthJobSchema = new mongoose.Schema({
     default: 'waiting'
   },
   
-  // Poids dans le score SEO
-  poidScoreSEO: {
-    type: Number,
-    required: true,
-    default: 15
-  },
+
   
   // Résultats de l'analyse
   score: {
     type: Number,
     min: 0,
-    max: 100
+    max: 15  // Score sur 15 (poids du job)
   },
   
   details: {
     type: String
   },
   
-  // Métriques spécifiques à la longueur du contenu
+  // Métriques simplifiées pour la longueur du contenu
   metrics: {
-    wordCount: Number,
-    charCount: Number,
-    paragraphCount: Number,
-    sentenceCount: Number,
+    charCount: Number,  // Nombre de caractères
     lengthCategory: {
       type: String,
-      enum: ['too-short', 'short', 'optimal', 'long', 'too-long']
+      enum: ['Très court', 'Court', 'Moyen', 'Optimal']  // Nouvelles catégories
     },
-    avgWordsPerParagraph: Number,
-    avgWordsPerSentence: Number
+    percentage: Number  // Pourcentage du score max (0-100%)
   },
   
   // Recommandations

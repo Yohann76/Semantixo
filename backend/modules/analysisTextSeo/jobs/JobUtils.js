@@ -19,6 +19,9 @@ class JobUtils {
    */
   static async updateGlobalScore(analysisId) {
     try {
+      // Attendre un peu pour s'assurer que MongoDB a persisté les données
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       const result = await AnalysisAggregationService.updateGlobalScore(analysisId);
       console.log(`🎯 [JobUtils] Score global mis à jour pour ${analysisId}: ${result.score}/100 (${result.progress}%)`);
       return result;

@@ -28,9 +28,6 @@ class UniquenessJobProcessor {
 
       const recommendations = UniquenessJobProcessor.generateRecommendations(analysis);
 
-      // Mettre à jour le score global de l'analyse après completion
-      await JobUtils.updateGlobalScore(analysisId);
-
       // Mettre à jour l'enregistrement du job en base
       await UniquenessJobModel.findOneAndUpdate(
         { analysisId, jobName: 'uniqueness' },
@@ -56,7 +53,8 @@ class UniquenessJobProcessor {
 
       await job.progress(100);
 
-
+      // Mettre à jour le score global APRÈS la sauvegarde réussie
+      await JobUtils.updateGlobalScore(analysisId);
       
       return {
         success: true,
@@ -141,20 +139,20 @@ class UniquenessJobProcessor {
       }
     });
     
-    // Calculer le score d'originalité
-    let uniquenessScore = 100;
+    // Calculer le score d'originalité (sur 15 car poids = 15)
+    let uniquenessScore = 15;
     
     // Pénaliser la faible diversité
     if (vocabularyDiversity < 30) {
-      uniquenessScore -= (30 - vocabularyDiversity) * 2;
+      uniquenessScore -= (30 - vocabularyDiversity) * 0.3; // 2% de 15
     }
     
     // Pénaliser les répétitions excessives
-    uniquenessScore += Math.max(-50, repetitionScore);
+    uniquenessScore += Math.max(-7.5, repetitionScore * 0.15); // 50% de 15
     
     // Bonus pour bonne diversité
     if (vocabularyDiversity > 50) {
-      uniquenessScore += 10;
+      uniquenessScore += 1.5; // 10% de 15
     }
     
     // Analyser les phrases répétitives (approximation)
@@ -165,11 +163,11 @@ class UniquenessJobProcessor {
     if (sentences.length > 0) {
       const sentenceDiversity = (uniqueSentenceStarts / sentences.length) * 100;
       if (sentenceDiversity < 80) {
-        uniquenessScore -= (80 - sentenceDiversity) * 0.5;
+        uniquenessScore -= (80 - sentenceDiversity) * 0.075; // 0.5% de 15
       }
     }
     
-    uniquenessScore = Math.max(0, Math.min(100, uniquenessScore));
+    uniquenessScore = Math.max(0, Math.min(15, uniquenessScore));
     
     return {
       score: Math.round(uniquenessScore),

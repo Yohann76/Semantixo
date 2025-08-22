@@ -28,9 +28,6 @@ class ReadabilityJobProcessor {
 
       const recommendations = ReadabilityJobProcessor.generateRecommendations(analysis);
 
-      // Mettre à jour le score global de l'analyse après completion
-      await JobUtils.updateGlobalScore(analysisId);
-
       // Mettre à jour l'enregistrement du job en base
       await ReadabilityJobModel.findOneAndUpdate(
         { analysisId, jobName: 'readability' },
@@ -57,7 +54,8 @@ class ReadabilityJobProcessor {
 
       await job.progress(100);
 
-
+      // Mettre à jour le score global APRÈS la sauvegarde réussie
+      await JobUtils.updateGlobalScore(analysisId);
       
       return {
         success: true,
@@ -150,17 +148,17 @@ class ReadabilityJobProcessor {
     else if (fleschScore >= 30) readingLevel = 'Difficile';
     else readingLevel = 'Très difficile';
     
-    // Calculer le score SEO basé sur la lisibilité
-    let score = Math.round(fleschScore * 0.8); // Base sur Flesch
+    // Calculer le score SEO basé sur la lisibilité (sur 15 car poids = 15)
+    let score = Math.round(fleschScore * 0.8 * 0.15); // Base sur Flesch (15% du poids)
     
     // Bonus/malus selon critères SEO
-    if (avgSentenceLength <= 20) score += 10; // Phrases courtes
-    if (avgSentenceLength > 30) score -= 10; // Phrases trop longues
+    if (avgSentenceLength <= 20) score += 1.5; // Phrases courtes (10% de 15)
+    if (avgSentenceLength > 30) score -= 1.5; // Phrases trop longues (10% de 15)
     
-    if (complexWords / wordCount < 0.15) score += 10; // Peu de mots complexes
-    if (complexWords / wordCount > 0.25) score -= 10; // Trop de mots complexes
+    if (complexWords / wordCount < 0.15) score += 1.5; // Peu de mots complexes (10% de 15)
+    if (complexWords / wordCount > 0.25) score -= 1.5; // Trop de mots complexes (10% de 15)
     
-    score = Math.max(0, Math.min(100, score));
+    score = Math.max(0, Math.min(15, score));
     
     return {
       score: Math.round(score),

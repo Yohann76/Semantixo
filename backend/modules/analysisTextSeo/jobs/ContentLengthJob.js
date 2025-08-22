@@ -28,25 +28,18 @@ class ContentLengthJobProcessor {
 
       const recommendations = ContentLengthJobProcessor.generateRecommendations(analysis);
 
-      // Mettre à jour le score global de l'analyse après completion
-      await JobUtils.updateGlobalScore(analysisId);
-
       // Mettre à jour l'enregistrement du job en base
       await ContentLengthJobModel.findOneAndUpdate(
         { analysisId, jobName: 'content-length' },
         {
           status: 'completed',
           score: analysis.score,
-          details: `Longueur analysée: ${analysis.wordCount} mots, ${analysis.charCount} caractères`,
-          metrics: {
-            wordCount: analysis.wordCount,
-            charCount: analysis.charCount,
-            paragraphCount: analysis.paragraphCount,
-            sentenceCount: analysis.sentenceCount,
-            lengthCategory: analysis.lengthCategory,
-            avgWordsPerParagraph: analysis.avgWordsPerParagraph,
-            avgWordsPerSentence: analysis.avgWordsPerSentence
-          },
+                  details: `Longueur analysée: ${analysis.charCount} caractères (${analysis.lengthCategory})`,
+        metrics: {
+          charCount: analysis.charCount,
+          lengthCategory: analysis.lengthCategory,
+          percentage: analysis.percentage
+        },
           recommendations: recommendations,
           processingTime: Date.now() - startTime,
           rawData: { text, analysis }
@@ -56,7 +49,8 @@ class ContentLengthJobProcessor {
 
       await job.progress(100);
 
-
+      // Mettre à jour le score global APRÈS la sauvegarde réussie
+      await JobUtils.updateGlobalScore(analysisId);
       
       return {
         success: true,
@@ -96,98 +90,46 @@ class ContentLengthJobProcessor {
   static async analyzeContentLength(text) {
     const cleanText = text.trim();
     
-    // Compter les mots
-    const words = cleanText.split(/\s+/).filter(word => word.length > 0);
-    const wordCount = words.length;
-    
-    // Compter les caractères
+    // Compter les caractères (critère principal)
     const charCount = cleanText.length;
     
-    // Compter les paragraphes
-    const paragraphs = cleanText.split(/\n\s*\n/).filter(p => p.trim().length > 0);
-    const paragraphCount = paragraphs.length;
-    
-    // Compter les phrases (approximatif)
-    const sentences = cleanText.split(/[.!?]+/).filter(s => s.trim().length > 10);
-    const sentenceCount = sentences.length;
-    
-    // Déterminer la catégorie de longueur
-    let lengthCategory;
+    // Calculer le score selon la logique simple
     let score = 0;
+    let lengthCategory = '';
     
-    if (wordCount < 150) {
+    if (charCount < 50) {
+      score = 0.3; // 2% de 15
       lengthCategory = 'Très court';
-      score = 20; // Trop court pour un bon SEO
-    } else if (wordCount < 300) {
+    } else if (charCount < 100) {
+      score = 7.5; // 50% de 15
       lengthCategory = 'Court';
-      score = 50; // Acceptable mais pourrait être plus long
-    } else if (wordCount < 600) {
+    } else if (charCount < 150) {
+      score = 12; // 80% de 15
       lengthCategory = 'Moyen';
-      score = 80; // Bonne longueur
-    } else if (wordCount < 1200) {
-      lengthCategory = 'Long';
-      score = 90; // Excellente longueur
-    } else if (wordCount < 2500) {
-      lengthCategory = 'Très long';
-      score = 85; // Très bien mais attention à la densité
     } else {
-      lengthCategory = 'Extrêmement long';
-      score = 70; // Risque de dilution du message
-    }
-    
-    // Bonus pour structure (paragraphes)
-    if (paragraphCount > 1) {
-      const avgWordsPerParagraph = wordCount / paragraphCount;
-      if (avgWordsPerParagraph >= 50 && avgWordsPerParagraph <= 150) {
-        score += 10; // Bonne structure de paragraphes
-      }
-    }
-    
-    // Bonus pour lisibilité (phrases)
-    if (sentenceCount > 0) {
-      const avgWordsPerSentence = wordCount / sentenceCount;
-      if (avgWordsPerSentence >= 10 && avgWordsPerSentence <= 25) {
-        score += 5; // Phrases de longueur appropriée
-      }
+      score = 15; // 100% de 15
+      lengthCategory = 'Optimal';
     }
     
     return {
-      score: Math.min(score, 100),
-      wordCount,
+      score: Math.round(score), // Score sur 15 (poids du job)
       charCount,
-      paragraphCount,
-      sentenceCount,
       lengthCategory,
-      avgWordsPerParagraph: paragraphCount > 0 ? Math.round(wordCount / paragraphCount) : 0,
-      avgWordsPerSentence: sentenceCount > 0 ? Math.round(wordCount / sentenceCount) : 0
+      percentage: Math.round((score / 15) * 100) // Pourcentage du score max
     };
   }
 
   static generateRecommendations(analysis) {
     const recommendations = [];
     
-    if (analysis.wordCount < 300) {
-      recommendations.push(`Augmentez la longueur du contenu (actuellement ${analysis.wordCount} mots, recommandé: 300+ mots)`);
-    }
-    
-    if (analysis.wordCount > 2500) {
-      recommendations.push("Considérez diviser ce contenu en plusieurs articles pour une meilleure lisibilité");
-    }
-    
-    if (analysis.paragraphCount <= 1 && analysis.wordCount > 100) {
-      recommendations.push("Structurez votre contenu en plusieurs paragraphes pour améliorer la lisibilité");
-    }
-    
-    if (analysis.avgWordsPerParagraph > 200) {
-      recommendations.push("Divisez vos longs paragraphes en sections plus courtes (150 mots max par paragraphe)");
-    }
-    
-    if (analysis.avgWordsPerSentence > 30) {
-      recommendations.push("Raccourcissez vos phrases pour améliorer la lisibilité (25 mots max par phrase)");
-    }
-    
-    if (analysis.wordCount >= 300 && analysis.wordCount <= 1200) {
-      recommendations.push("Excellente longueur de contenu pour le SEO !");
+    if (analysis.charCount < 50) {
+      recommendations.push("Votre contenu est trop court. Ajoutez au moins 50 caractères pour un meilleur SEO.");
+    } else if (analysis.charCount < 100) {
+      recommendations.push("Votre contenu pourrait être plus long. Objectif : 150+ caractères pour un score optimal.");
+    } else if (analysis.charCount < 150) {
+      recommendations.push("Presque optimal ! Ajoutez quelques caractères pour atteindre le score maximum.");
+    } else {
+      recommendations.push("Excellente longueur de contenu ! Votre texte a une taille optimale pour le SEO.");
     }
     
     return recommendations;

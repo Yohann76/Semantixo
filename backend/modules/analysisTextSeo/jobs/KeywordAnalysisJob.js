@@ -34,9 +34,6 @@ class KeywordAnalysisJobProcessor {
       await job.progress(80);
 
       // Sauvegarder les résultats
-      // Mettre à jour le score global de l'analyse après completion
-      await JobUtils.updateGlobalScore(analysisId);
-
       // Mettre à jour l'enregistrement du job en base
       await KeywordAnalysisJobModel.findOneAndUpdate(
         { analysisId, jobName: 'keyword-analysis' },
@@ -59,7 +56,8 @@ class KeywordAnalysisJobProcessor {
 
       await job.progress(100);
 
-
+      // Mettre à jour le score global APRÈS la sauvegarde réussie
+      await JobUtils.updateGlobalScore(analysisId);
       
       return {
         success: true,
@@ -125,25 +123,25 @@ class KeywordAnalysisJobProcessor {
     // Calculer la densité de mots-clés
     const keywordDensity = wordCount > 0 ? (totalKeywordCount / wordCount) * 100 : 0;
     
-    // Calculer le score final (0-100)
+    // Calculer le score final (0-40 car poids = 40)
     let score = 0;
     
     // Score basé sur la densité (optimale: 1-3%)
     if (keywordDensity >= 1 && keywordDensity <= 3) {
-      score += 40; // Densité parfaite
+      score += 16; // Densité parfaite (40% du poids)
     } else if (keywordDensity >= 0.5 && keywordDensity < 1) {
-      score += 30; // Densité correcte
+      score += 12; // Densité correcte (30% du poids)
     } else if (keywordDensity > 3 && keywordDensity <= 5) {
-      score += 20; // Légèrement sur-optimisé
+      score += 8; // Légèrement sur-optimisé (20% du poids)
     } else if (keywordDensity > 5) {
-      score += 10; // Sur-optimisation
+      score += 4; // Sur-optimisation (10% du poids)
     }
     
-    // Ajouter le score de pertinence
-    score += Math.round(relevanceScore * 0.6);
+    // Ajouter le score de pertinence (60% du poids restant)
+    score += Math.round(relevanceScore * 0.6 * 0.4);
     
     return {
-      score: Math.min(Math.round(score), 100),
+      score: Math.min(Math.round(score), 40), // Score sur 40 (poids du job)
       keywordDensity: Math.round(keywordDensity * 100) / 100,
       keywordCount: totalKeywordCount,
       wordCount: wordCount,

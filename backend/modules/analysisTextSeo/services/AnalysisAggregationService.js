@@ -101,6 +101,10 @@ class AnalysisAggregationService {
     const jobs = await this._getAllJobsDetails(analysisId);
     const jobsConfig = AnalysisTextSeo.getJobsConfig();
     
+    console.log(`🔍 [AGGREGATION] Calcul score global pour ${analysisId}`);
+    console.log(`🔍 [AGGREGATION] Jobs trouvés:`, Object.keys(jobs));
+    console.log(`🔍 [AGGREGATION] Config jobs:`, jobsConfig);
+    
     let totalScore = 0;
     let completedJobs = 0;
     let totalWeight = 0;
@@ -109,9 +113,18 @@ class AnalysisAggregationService {
       const job = jobs[config.type];
       totalWeight += config.weight;
       
+      console.log(`🔍 [AGGREGATION] Job ${config.type}:`, {
+        found: !!job,
+        status: job?.status,
+        score: job?.score,
+        weight: config.weight
+      });
+      
       if (job && job.status === 'completed') {
-        totalScore += (job.score || 0) * (config.weight / 100);
+        // Le score du job est déjà relatif au poids (ex: 12/15)
+        totalScore += (job.score || 0);
         completedJobs++;
+        console.log(`🔍 [AGGREGATION] Score ajouté: ${job.score} (total: ${totalScore})`);
       }
     }
 
@@ -148,17 +161,55 @@ class AnalysisAggregationService {
 
     const total = await AnalysisTextSeo.countDocuments({ user_id: userId });
 
+    // Mettre à jour le score global de chaque analyse avant de l'afficher
+    const updatedAnalyses = await Promise.all(
+      analyses.map(async (analysis) => {
+        try {
+          // Vérifier si le score global est à jour
+          if (analysis.status === 'completed' && analysis.scoreSeo === 0) {
+            console.log(`🔄 [AGGREGATION] Mise à jour forcée du score pour ${analysis._id}`);
+            const updatedScore = await this.updateGlobalScore(analysis._id);
+            return {
+              id: analysis._id,
+              status: updatedScore.status,
+              scoreSeo: updatedScore.score,
+              notation: this._getNotationFromScore(updatedScore.score),
+              progress: updatedScore.progress,
+              text: analysis.parameter?.text?.substring(0, 100) + '...',
+              keywords: analysis.parameter?.keywords || [],
+              createdAt: analysis.createdAt
+            };
+          }
+          
+          return {
+            id: analysis._id,
+            status: analysis.status,
+            scoreSeo: analysis.scoreSeo,
+            notation: this._getNotationFromScore(analysis.scoreSeo),
+            progress: analysis.progress,
+            text: analysis.parameter?.text?.substring(0, 100) + '...',
+            keywords: analysis.parameter?.keywords || [],
+            createdAt: analysis.createdAt
+          };
+        } catch (error) {
+          console.error(`❌ [AGGREGATION] Erreur mise à jour score pour ${analysis._id}:`, error);
+          // Retourner l'analyse originale en cas d'erreur
+          return {
+            id: analysis._id,
+            status: analysis.status,
+            scoreSeo: analysis.scoreSeo,
+            notation: this._getNotationFromScore(analysis.scoreSeo),
+            progress: analysis.progress,
+            text: analysis.parameter?.text?.substring(0, 100) + '...',
+            keywords: analysis.parameter?.keywords || [],
+            createdAt: analysis.createdAt
+          };
+        }
+      })
+    );
+
     return {
-      data: analyses.map(analysis => ({
-        id: analysis._id,
-        status: analysis.status,
-        scoreSeo: analysis.scoreSeo,
-        notation: analysis.getNotation(),
-        progress: analysis.progress,
-        text: analysis.parameter?.text?.substring(0, 100) + '...',
-        keywords: analysis.parameter?.keywords || [],
-        createdAt: analysis.createdAt
-      })),
+      data: updatedAnalyses,
       pagination: {
         page,
         limit,
@@ -199,6 +250,19 @@ class AnalysisAggregationService {
   }
 
   /**
+   * Obtenir la notation à partir du score
+   * @private
+   */
+  static _getNotationFromScore(score) {
+    if (!score || score === 0) return 'À améliorer';
+    if (score >= 85) return 'Excellent';
+    if (score >= 70) return 'Très bon';
+    if (score >= 55) return 'Bon';
+    if (score >= 40) return 'Moyen';
+    return 'Insuffisant';
+  }
+
+  /**
    * Récupérer tous les détails des jobs d'une analyse
    * @private
    */
@@ -208,16 +272,22 @@ class AnalysisAggregationService {
     for (const [jobType, JobModel] of Object.entries(this.jobModels)) {
       console.log(`🔍 [AnalysisAggregationService] Recherche job ${jobType} pour analyse ${analysisId}`);
       
-      const job = await JobModel.findOne({ 
-        analysisId, 
-        jobName: jobType 
-      });
+      // Debug : vérifier la requête exacte
+      const query = { analysisId, jobName: jobType };
+      console.log(`🔍 [AnalysisAggregationService] Requête:`, JSON.stringify(query));
+      
+      const job = await JobModel.findOne(query);
       
       if (job) {
         console.log(`✅ [AnalysisAggregationService] Job ${jobType} trouvé, status: ${job.status}, score: ${job.score}`);
         jobs[jobType] = job.toObject();
       } else {
         console.log(`❌ [AnalysisAggregationService] Job ${jobType} non trouvé`);
+        
+        // Debug : vérifier ce qui existe dans la collection
+        const allJobs = await JobModel.find({ analysisId }).select('jobName status score');
+        console.log(`🔍 [AnalysisAggregationService] Tous les jobs pour ${analysisId}:`, allJobs);
+        
         jobs[jobType] = {
           status: 'waiting',
           message: 'Job pas encore démarré'

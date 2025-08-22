@@ -29,9 +29,6 @@ class KeywordPositionJobProcessor {
       const recommendations = KeywordPositionJobProcessor.generateRecommendations(analysis);
       await job.progress(90);
 
-      // Mettre à jour le score global de l'analyse après completion
-      await JobUtils.updateGlobalScore(analysisId);
-
       // Mettre à jour l'enregistrement du job en base
       await KeywordPositionJobModel.findOneAndUpdate(
         { analysisId, jobName: 'keyword-position' },
@@ -54,7 +51,8 @@ class KeywordPositionJobProcessor {
 
       await job.progress(100);
 
-
+      // Mettre à jour le score global APRÈS la sauvegarde réussie
+      await JobUtils.updateGlobalScore(analysisId);
       
       return {
         success: true,
@@ -149,11 +147,11 @@ class KeywordPositionJobProcessor {
       }
     });
 
-    // Calculer le score final
+    // Calculer le score final (sur 15 car poids = 15)
     let finalScore = 0;
-    finalScore += titleScore * 0.4;           // 40% pour titre
-    finalScore += firstParagraphScore * 0.3;  // 30% pour premier paragraphe
-    finalScore += distributionScore * 0.3;    // 30% pour distribution
+    finalScore += titleScore * 0.4 * 0.15;           // 40% pour titre (sur 15)
+    finalScore += firstParagraphScore * 0.3 * 0.15;  // 30% pour premier paragraphe (sur 15)
+    finalScore += distributionScore * 0.3 * 0.15;    // 30% pour distribution (sur 15)
 
     return {
       score: Math.round(finalScore),

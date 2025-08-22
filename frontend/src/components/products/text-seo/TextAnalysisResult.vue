@@ -5,9 +5,9 @@
               <div class="result-meta">
         <span class="result-date">{{ formatDate(props.analysis.analysis?.createdAt || props.analysis.createdAt) }}</span>
         <div class="score-section">
-          <span class="result-score" :class="getScoreClass(props.analysis.analysis?.scoreSeo || props.analysis.seoScore)">
-            Score SEO: {{ props.analysis.analysis?.scoreSeo || props.analysis.seoScore || '0' }}/100
-          </span>
+                     <span class="result-score" :class="getScoreClass(props.analysis.analysis?.scoreSeo || props.analysis.scoreSeo || 0)">
+             Score SEO: {{ props.analysis.analysis?.scoreSeo || props.analysis.scoreSeo || '0' }}/100
+           </span>
           <span v-if="props.analysis.analysis?.notation || props.analysis.notation" class="result-notation" :class="getNotationClass(props.analysis.analysis?.notation || props.analysis.notation)">
             {{ props.analysis.analysis?.notation || props.analysis.notation }}
           </span>
@@ -54,7 +54,7 @@
                   {{ getJobStatusDisplay(jobType) }}
                 </div>
                 <div v-if="getJobStatus(jobType) === 'completed'" class="job-score">
-                  Score: {{ getJobScore(jobType) }}/100
+                  Score: {{ getJobScoreDisplay(jobType) }}
                 </div>
               </div>
             </div>
@@ -194,6 +194,8 @@ const props = defineProps({
 console.log('🔍 [DEBUG] TextAnalysisResult - Data received:', props.analysis)
 console.log('🔍 [DEBUG] Jobs structure:', props.analysis?.jobs)
 console.log('🔍 [DEBUG] Jobs length:', props.analysis?.jobs?.length || 0)
+console.log('🔍 [DEBUG] Score global analysis:', props.analysis?.analysis?.scoreSeo)
+console.log('🔍 [DEBUG] Score global direct:', props.analysis?.scoreSeo)
 
 // Formater la date
 const formatDate = (dateString) => {
@@ -314,6 +316,14 @@ const getJobScore = (jobType) => {
   }
   return 0
 }
+
+const getJobScoreDisplay = (jobType) => {
+  const score = getJobScore(jobType)
+  const weight = getJobWeight(jobType)
+  return `${score}/${weight}`
+}
+
+
 
 // Debug test des fonctions helper
 console.log('🔍 [DEBUG] Analysis structure:', props.analysis)
