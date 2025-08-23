@@ -16,9 +16,39 @@
     </div>
 
     <div class="result-content">
+      <!-- STATISTIQUES DU TEXTE -->
+      <div class="result-section">
+        <CollapsibleSection title="📊 Statistiques du texte" :defaultCollapsed="false">
+          <div class="text-stats">
+            <div class="stats-grid">
+              <div class="stat-item">
+                <span class="stat-icon">📝</span>
+                <span class="stat-label">Mots</span>
+                <span class="stat-value">{{ getWordCount() }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-icon">🔤</span>
+                <span class="stat-label">Caractères</span>
+                <span class="stat-value">{{ getCharacterCount() }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-icon">📄</span>
+                <span class="stat-label">Phrases</span>
+                <span class="stat-value">{{ getSentenceCount() }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-icon">📖</span>
+                <span class="stat-label">Paragraphes</span>
+                <span class="stat-value">{{ getParagraphCount() }}</span>
+              </div>
+            </div>
+          </div>
+        </CollapsibleSection>
+      </div>
+
       <!-- INFORMATIONS ADMINISTRATEUR -->
       <div class="result-section" v-if="isAdmin">
-        <CollapsibleSection title="🔐 Informations administrateur" :defaultCollapsed="false">
+        <CollapsibleSection title="🔐 Informations administrateur" :defaultCollapsed="true">
           <div class="json-viewer">
             <h4>Métadonnées de la requête :</h4>
             <pre>{{
@@ -369,6 +399,27 @@ const getStatusText = (status) => {
   }
 };
 
+// Méthodes pour les statistiques du texte
+const getWordCount = () => {
+  const text = props.analysis.analysis?.parameter?.text || props.analysis.parameter?.text || props.analysis.text || '';
+  return text.split(/\s+/).filter(word => word.length > 0).length;
+};
+
+const getCharacterCount = () => {
+  const text = props.analysis.analysis?.parameter?.text || props.analysis.parameter?.text || props.analysis.text || '';
+  return text.length;
+};
+
+const getSentenceCount = () => {
+  const text = props.analysis.analysis?.parameter?.text || props.analysis.parameter?.text || props.analysis.text || '';
+  return text.split(/[.!?]+/).filter(sentence => sentence.length > 0).length;
+};
+
+const getParagraphCount = () => {
+  const text = props.analysis.analysis?.parameter?.text || props.analysis.parameter?.text || props.analysis.text || '';
+  return text.split(/\n\s*\n/).filter(paragraph => paragraph.length > 0).length;
+};
+
 
 // Debug test des fonctions helper
 console.log('🔍 [DEBUG] Analysis structure:', props.analysis)
@@ -590,6 +641,48 @@ console.log('🔍 [DEBUG] Test getFullJobData("keyword-analysis"):', getFullJobD
   max-height: 300px;
   overflow-y: auto;
   white-space: pre-wrap;
+}
+
+/* Styles pour les statistiques du texte */
+.text-stats {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 15px;
+  margin-bottom: 20px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 10px;
+  border-radius: 8px;
+  background: #e9ecef;
+}
+
+.stat-icon {
+  font-size: 2rem;
+  margin-bottom: 5px;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: #6c757d;
+  margin-bottom: 5px;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #343a40;
 }
 
 /* Scrollbar personnalisée */
