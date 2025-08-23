@@ -89,15 +89,37 @@
           :defaultCollapsed="true">
           <div class="json-viewer">
             <h4>Poids: {{ getJobWeight('keyword-analysis') }} | Status: {{ getJobStatus('keyword-analysis') }}</h4>
-            <div v-if="getJobStatus('keyword-analysis') === 'completed'" class="job-completed">
-              <pre>{{ JSON.stringify(getFullJobData('keyword-analysis'), null, 2) }}</pre>
+            
+            <!-- Contenu pour les utilisateurs normaux -->
+            <div v-if="!isAdmin" class="user-info">
+              <p>📊 Analyse des mots-clés en cours de traitement...</p>
+              <p>Cette section analyse la densité et la pertinence des mots-clés dans votre texte.</p>
             </div>
-            <div v-else-if="getJobStatus('keyword-analysis') === 'active'" class="job-processing">
-              <p>🔄 Job en cours de traitement...</p>
-              <pre>{{ JSON.stringify(getJobProgress('keyword-analysis'), null, 2) }}</pre>
-            </div>
-            <div v-else class="job-waiting">
-              <p>⏳ Job en attente de démarrage...</p>
+            
+            <!-- Contenu pour les admins : informations utilisateur + JSON -->
+            <div v-else>
+              <!-- Informations utilisateur (visibles aussi pour les admins) -->
+              <div class="user-info">
+                <p>📊 Analyse des mots-clés en cours de traitement...</p>
+                <p>Cette section analyse la densité et la pertinence des mots-clés dans votre texte.</p>
+              </div>
+              
+              <!-- Séparateur pour les admins -->
+              <div class="admin-separator">
+                <span>🔐 Données techniques (Admin uniquement)</span>
+              </div>
+              
+              <!-- JSON détaillé pour les admins -->
+              <div v-if="getJobStatus('keyword-analysis') === 'completed'" class="job-completed">
+                <pre>{{ JSON.stringify(getFullJobData('keyword-analysis'), null, 2) }}</pre>
+              </div>
+              <div v-else-if="getJobStatus('keyword-analysis') === 'active'" class="job-processing">
+                <p>🔄 Job en cours de traitement...</p>
+                <pre>{{ JSON.stringify(getJobProgress('keyword-analysis'), null, 2) }}</pre>
+              </div>
+              <div v-else class="job-waiting">
+                <p>⏳ Job en attente de démarrage...</p>
+              </div>
             </div>
           </div>
         </CollapsibleSection>
@@ -112,15 +134,37 @@
           :defaultCollapsed="true">
           <div class="json-viewer">
             <h4>Poids: {{ getJobWeight('keyword-position') }} | Status: {{ getJobStatus('keyword-position') }}</h4>
-            <div v-if="getJobStatus('keyword-position') === 'completed'" class="job-completed">
-              <pre>{{ JSON.stringify(getFullJobData('keyword-position'), null, 2) }}</pre>
+            
+            <!-- Contenu pour les utilisateurs normaux -->
+            <div v-if="!isAdmin" class="user-info">
+              <p>📍 Analyse de la position des mots-clés...</p>
+              <p>Cette section évalue le positionnement stratégique des mots-clés dans votre contenu.</p>
             </div>
-            <div v-else-if="getJobStatus('keyword-position') === 'active'" class="job-processing">
-              <p>🔄 Job en cours de traitement...</p>
-              <pre>{{ JSON.stringify(getJobProgress('keyword-position'), null, 2) }}</pre>
-            </div>
-            <div v-else class="job-waiting">
-              <p>⏳ Job en attente de démarrage...</p>
+            
+            <!-- Contenu pour les admins : informations utilisateur + JSON -->
+            <div v-else>
+              <!-- Informations utilisateur (visibles aussi pour les admins) -->
+              <div class="user-info">
+                <p>📍 Analyse de la position des mots-clés...</p>
+                <p>Cette section évalue le positionnement stratégique des mots-clés dans votre contenu.</p>
+              </div>
+              
+              <!-- Séparateur pour les admins -->
+              <div class="admin-separator">
+                <span>🔐 Données techniques (Admin uniquement)</span>
+              </div>
+              
+              <!-- JSON détaillé pour les admins -->
+              <div v-if="getJobStatus('keyword-position') === 'completed'" class="job-completed">
+                <pre>{{ JSON.stringify(getFullJobData('keyword-position'), null, 2) }}</pre>
+              </div>
+              <div v-else-if="getJobStatus('keyword-position') === 'active'" class="job-processing">
+                <p>🔄 Job en cours de traitement...</p>
+                <pre>{{ JSON.stringify(getJobProgress('keyword-position'), null, 2) }}</pre>
+              </div>
+              <div v-else class="job-waiting">
+                <p>⏳ Job en attente de démarrage...</p>
+              </div>
             </div>
           </div>
         </CollapsibleSection>
@@ -135,15 +179,37 @@
           :defaultCollapsed="true">
           <div class="json-viewer">
             <h4>Poids: {{ getJobWeight('content-length') }} | Status: {{ getJobStatus('content-length') }}</h4>
-            <div v-if="getJobStatus('content-length') === 'completed'" class="job-completed">
-              <pre>{{ JSON.stringify(getFullJobData('content-length'), null, 2) }}</pre>
+            
+            <!-- Contenu pour les utilisateurs normaux -->
+            <div v-if="!isAdmin" class="user-info">
+              <p>📏 Analyse de la longueur du contenu...</p>
+              <p>Cette section évalue si votre texte a une longueur optimale pour le SEO.</p>
             </div>
-            <div v-else-if="getJobStatus('content-length') === 'active'" class="job-processing">
-              <p>🔄 Job en cours de traitement...</p>
-              <pre>{{ JSON.stringify(getJobProgress('content-length'), null, 2) }}</pre>
-            </div>
-            <div v-else class="job-waiting">
-              <p>⏳ Job en attente de démarrage...</p>
+            
+            <!-- Contenu pour les admins : informations utilisateur + JSON -->
+            <div v-else>
+              <!-- Informations utilisateur (visibles aussi pour les admins) -->
+              <div class="user-info">
+                <p>📏 Analyse de la longueur du contenu...</p>
+                <p>Cette section évalue si votre texte a une longueur optimale pour le SEO.</p>
+              </div>
+              
+              <!-- Séparateur pour les admins -->
+              <div class="admin-separator">
+                <span>🔐 Données techniques (Admin uniquement)</span>
+              </div>
+              
+              <!-- JSON détaillé pour les admins -->
+              <div v-if="getJobStatus('content-length') === 'completed'" class="job-completed">
+                <pre>{{ JSON.stringify(getFullJobData('content-length'), null, 2) }}</pre>
+              </div>
+              <div v-else-if="getJobStatus('content-length') === 'active'" class="job-processing">
+                <p>🔄 Job en cours de traitement...</p>
+                <pre>{{ JSON.stringify(getJobProgress('content-length'), null, 2) }}</pre>
+              </div>
+              <div v-else class="job-waiting">
+                <p>⏳ Job en attente de démarrage...</p>
+              </div>
             </div>
           </div>
         </CollapsibleSection>
@@ -158,15 +224,37 @@
           :defaultCollapsed="true">
           <div class="json-viewer">
             <h4>Poids: {{ getJobWeight('readability') }} | Status: {{ getJobStatus('readability') }}</h4>
-            <div v-if="getJobStatus('readability') === 'completed'" class="job-completed">
-              <pre>{{ JSON.stringify(getFullJobData('readability'), null, 2) }}</pre>
+            
+            <!-- Contenu pour les utilisateurs normaux -->
+            <div v-if="!isAdmin" class="user-info">
+              <p>📖 Analyse de la lisibilité...</p>
+              <p>Cette section évalue la facilité de lecture et la compréhension de votre texte.</p>
             </div>
-            <div v-else-if="getJobStatus('readability') === 'active'" class="job-processing">
-              <p>🔄 Job en cours de traitement...</p>
-              <pre>{{ JSON.stringify(getJobProgress('readability'), null, 2) }}</pre>
-            </div>
-            <div v-else class="job-waiting">
-              <p>⏳ Job en attente de démarrage...</p>
+            
+            <!-- Contenu pour les admins : informations utilisateur + JSON -->
+            <div v-else>
+              <!-- Informations utilisateur (visibles aussi pour les admins) -->
+              <div class="user-info">
+                <p>📖 Analyse de la lisibilité...</p>
+                <p>Cette section évalue la facilité de lecture et la compréhension de votre texte.</p>
+              </div>
+              
+              <!-- Séparateur pour les admins -->
+              <div class="admin-separator">
+                <span>🔐 Données techniques (Admin uniquement)</span>
+              </div>
+              
+              <!-- JSON détaillé pour les admins -->
+              <div v-if="getJobStatus('readability') === 'completed'" class="job-completed">
+                <pre>{{ JSON.stringify(getFullJobData('readability'), null, 2) }}</pre>
+              </div>
+              <div v-else-if="getJobStatus('readability') === 'active'" class="job-processing">
+                <p>🔄 Job en cours de traitement...</p>
+                <pre>{{ JSON.stringify(getJobProgress('readability'), null, 2) }}</pre>
+              </div>
+              <div v-else class="job-waiting">
+                <p>⏳ Job en attente de démarrage...</p>
+              </div>
             </div>
           </div>
         </CollapsibleSection>
@@ -181,15 +269,37 @@
           :defaultCollapsed="true">
           <div class="json-viewer">
             <h4>Poids: {{ getJobWeight('uniqueness') }} | Status: {{ getJobStatus('uniqueness') }}</h4>
-            <div v-if="getJobStatus('uniqueness') === 'completed'" class="job-completed">
-              <pre>{{ JSON.stringify(getFullJobData('uniqueness'), null, 2) }}</pre>
+            
+            <!-- Contenu pour les utilisateurs normaux -->
+            <div v-if="!isAdmin" class="user-info">
+              <p>🔍 Analyse de l'originalité...</p>
+              <p>Cette section vérifie l'unicité et l'originalité de votre contenu.</p>
             </div>
-            <div v-else-if="getJobStatus('uniqueness') === 'active'" class="job-processing">
-              <p>🔄 Job en cours de traitement...</p>
-              <pre>{{ JSON.stringify(getJobProgress('uniqueness'), null, 2) }}</pre>
-            </div>
-            <div v-else class="job-waiting">
-              <p>⏳ Job en attente de démarrage...</p>
+            
+            <!-- Contenu pour les admins : informations utilisateur + JSON -->
+            <div v-else>
+              <!-- Informations utilisateur (visibles aussi pour les admins) -->
+              <div class="user-info">
+                <p>🔍 Analyse de l'originalité...</p>
+                <p>Cette section vérifie l'unicité et l'originalité de votre contenu.</p>
+              </div>
+              
+              <!-- Séparateur pour les admins -->
+              <div class="admin-separator">
+                <span>🔐 Données techniques (Admin uniquement)</span>
+              </div>
+              
+              <!-- JSON détaillé pour les admins -->
+              <div v-if="getJobStatus('uniqueness') === 'completed'" class="job-completed">
+                <pre>{{ JSON.stringify(getFullJobData('uniqueness'), null, 2) }}</pre>
+              </div>
+              <div v-else-if="getJobStatus('uniqueness') === 'active'" class="job-processing">
+                <p>🔄 Job en cours de traitement...</p>
+                <pre>{{ JSON.stringify(getJobProgress('uniqueness'), null, 2) }}</pre>
+              </div>
+              <div v-else class="job-waiting">
+                <p>⏳ Job en attente de démarrage...</p>
+              </div>
             </div>
           </div>
         </CollapsibleSection>
@@ -683,6 +793,40 @@ console.log('🔍 [DEBUG] Test getFullJobData("keyword-analysis"):', getFullJobD
   font-size: 1.5rem;
   font-weight: bold;
   color: #343a40;
+}
+
+/* Styles pour les informations utilisateur */
+.user-info {
+  padding: 20px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 8px;
+  border-left: 4px solid #667eea;
+}
+
+.user-info p {
+  margin: 0 0 10px 0;
+  color: #495057;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.user-info p:last-child {
+  margin-bottom: 0;
+  font-style: italic;
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+/* Styles pour le séparateur des données admin */
+.admin-separator {
+  margin: 20px 0;
+  padding: 10px 0;
+  border-top: 1px dashed #eee;
+  border-bottom: 1px dashed #eee;
+  text-align: center;
+  color: #6c757d;
+  font-size: 0.9rem;
+  font-weight: 600;
 }
 
 /* Scrollbar personnalisée */
