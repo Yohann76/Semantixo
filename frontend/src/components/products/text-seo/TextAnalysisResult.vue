@@ -189,7 +189,7 @@
 
       <!-- TEXTE ANALYSÉ -->
       <div class="result-section">
-        <CollapsibleSection title="📄 Texte analysé" :defaultCollapsed="true">
+        <CollapsibleSection title="📄 Texte analysé" :defaultCollapsed="false">
           <div class="text-content">
             {{ props.analysis.analysis?.parameter?.text || props.analysis.parameter?.text || props.analysis.text || 'Aucun texte trouvé' }}
           </div>
