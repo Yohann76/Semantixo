@@ -1,4 +1,4 @@
-require('dotenv').config({ path: './config.env' });
+require('dotenv').config({ path: '../.env' });
 const mongoose = require('mongoose');
 const User = require('../models/User');
 
@@ -30,6 +30,13 @@ const createDefaultUsers = async () => {
       {
         name: 'Administrateur',
         email: 'admin@semantixo.com',
+        password: 'admin123456',
+        role: 'admin',
+        subscription: 'premium'
+      },
+      {
+        name: 'Administrateur1',
+        email: 'admin1@semantixo.com',
         password: 'admin123456',
         role: 'admin',
         subscription: 'premium'

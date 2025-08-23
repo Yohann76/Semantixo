@@ -16,9 +16,9 @@
     </div>
 
     <div class="result-content">
-      <!-- INFORMATIONS GÉNÉRALES -->
-      <div class="result-section">
-        <CollapsibleSection title="📋 Informations générales de l'analyse" :defaultCollapsed="false">
+      <!-- INFORMATIONS ADMINISTRATEUR -->
+      <div class="result-section" v-if="isAdmin">
+        <CollapsibleSection title="🔐 Informations administrateur" :defaultCollapsed="false">
           <div class="json-viewer">
             <h4>Métadonnées de la requête :</h4>
             <pre>{{
@@ -28,36 +28,24 @@
                 status: props.analysis.analysis?.status || props.analysis.status,
                 createdAt: props.analysis.analysis?.createdAt || props.analysis.createdAt,
                 parameter: props.analysis.analysis?.parameter || props.analysis.parameter,
-                seoScore: props.analysis.analysis?.scoreSeo || props.analysis.seoScore,
-                notation: props.analysis.analysis?.notation || props.analysis.notation,
-                progress: props.analysis.analysis?.progress || props.analysis.progress
+                scoreSeo: props.analysis.analysis?.scoreSeo || props.analysis.scoreSeo,
+                scoreSeoPercentage: props.analysis.analysis?.scoreSeoPercentage || props.analysis.scoreSeoPercentage
               }, null, 2)
             }}</pre>
-          </div>
-        </CollapsibleSection>
-      </div>
-
-      <!-- RÉSUMÉ DES JOBS -->
-      <div class="result-section">
-        <CollapsibleSection title="📊 Résumé des jobs d'analyse" :defaultCollapsed="false">
-          <div class="jobs-summary">
-            <div class="jobs-grid">
-              <div v-for="jobType in ['keyword-analysis', 'keyword-position', 'content-length', 'readability', 'uniqueness']" 
-                   :key="jobType" 
-                   class="job-card"
-                   :class="getJobStatusClass(jobType)">
-                <div class="job-header">
-                  <h4>{{ getJobDisplayName(jobType) }}</h4>
-                  <span class="job-weight">{{ getJobWeight(jobType) }}%</span>
-                </div>
-                <div class="job-status" :class="getJobStatusClass(jobType)">
-                  {{ getJobStatusDisplay(jobType) }}
-                </div>
-                <div v-if="getJobStatus(jobType) === 'completed'" class="job-score">
-                  Score: {{ getJobScoreDisplay(jobType) }}
-                </div>
+            
+            <h4>Résumé des jobs d'analyse :</h4>
+            <div class="jobs-summary">
+              <div v-for="job in getJobsSummary()" :key="job.name" class="job-summary-item">
+                <span class="job-name">{{ job.name }}</span>
+                <span class="job-status" :class="'status-' + job.status">
+                  {{ getStatusIcon(job.status) }} {{ getStatusText(job.status) }}
+                </span>
+                <span class="job-score">{{ job.score || 0 }}/{{ job.poidScoreSEO || 0 }}</span>
               </div>
             </div>
+            
+            <h4>Données complètes de l'analyse :</h4>
+            <pre>{{ JSON.stringify(props.analysis, null, 2) }}</pre>
           </div>
         </CollapsibleSection>
       </div>
@@ -177,16 +165,6 @@
         </CollapsibleSection>
       </div>
 
-      <!-- DONNÉES COMPLÈTES DE L'ANALYSE -->
-      <div class="result-section">
-        <CollapsibleSection title="🔧 Données complètes de l'analyse" :defaultCollapsed="true">
-          <div class="json-viewer">
-            <h4>Structure JSON complète reçue du backend :</h4>
-            <pre>{{ JSON.stringify(props.analysis, null, 2) }}</pre>
-          </div>
-        </CollapsibleSection>
-      </div>
-
       <!-- TEXTE ANALYSÉ -->
       <div class="result-section">
         <CollapsibleSection title="📄 Texte analysé" :defaultCollapsed="false">
@@ -200,14 +178,23 @@
 </template>
 
 <script setup>
-import { defineProps } from 'vue'
+import { defineProps, computed } from 'vue'
 import CollapsibleSection from '@/components/common/CollapsibleSection.vue'
+import { useAuthStore } from '@/stores/auth.js'
 
 const props = defineProps({
   analysis: {
     type: Object,
     required: true
   }
+})
+
+// Store d'authentification
+const authStore = useAuthStore()
+
+// Vérifier si l'utilisateur est admin
+const isAdmin = computed(() => {
+  return authStore.user?.role === 'admin'
 })
 
 // Debug : afficher la structure des données reçues
@@ -353,6 +340,34 @@ const getJobScoreDisplay = (jobType) => {
   return `${score}/${maxScore}`
 }
 
+const getJobsSummary = () => {
+  const jobs = [
+    { name: 'keyword-analysis', status: getJobStatus('keyword-analysis'), score: getJobScore('keyword-analysis'), poidScoreSEO: 40 },
+    { name: 'keyword-position', status: getJobStatus('keyword-position'), score: getJobScore('keyword-position'), poidScoreSEO: 15 },
+    { name: 'content-length', status: getJobStatus('content-length'), score: getJobScore('content-length'), poidScoreSEO: 15 },
+    { name: 'readability', status: getJobStatus('readability'), score: getJobScore('readability'), poidScoreSEO: 15 },
+    { name: 'uniqueness', status: getJobStatus('uniqueness'), score: getJobScore('uniqueness'), poidScoreSEO: 15 }
+  ];
+  return jobs;
+};
+
+const getStatusIcon = (status) => {
+  switch (status) {
+    case 'completed': return '✅';
+    case 'active': return '🔄';
+    case 'failed': return '❌';
+    default: return '⏳';
+  }
+};
+
+const getStatusText = (status) => {
+  switch (status) {
+    case 'completed': return 'Terminé';
+    case 'active': return 'En cours';
+    case 'failed': return 'Échoué';
+    default: return 'En attente';
+  }
+};
 
 
 // Debug test des fonctions helper
@@ -512,91 +527,53 @@ console.log('🔍 [DEBUG] Test getFullJobData("keyword-analysis"):', getFullJobD
   margin-top: 20px;
 }
 
-.jobs-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 15px;
-  margin-top: 15px;
-}
-
-.job-card {
-  background: white;
-  border: 2px solid #dee2e6;
-  border-radius: 8px;
-  padding: 15px;
-  transition: all 0.3s ease;
-}
-
-.job-card.job-completed {
-  border-color: #28a745;
-  background: linear-gradient(135deg, #f8fff9 0%, #e8f5e8 100%);
-}
-
-.job-card.job-processing {
-  border-color: #ffc107;
-  background: linear-gradient(135deg, #fffdf8 0%, #fff8e8 100%);
-}
-
-.job-card.job-waiting {
-  border-color: #6c757d;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-}
-
-.job-card.job-failed {
-  border-color: #dc3545;
-  background: linear-gradient(135deg, #fff8f8 0%, #ffe8e8 100%);
-}
-
-.job-header {
+.job-summary-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  padding: 10px 0;
+  border-bottom: 1px dashed #eee;
 }
 
-.job-header h4 {
-  margin: 0;
-  font-size: 14px;
+.job-summary-item:last-child {
+  border-bottom: none;
+}
+
+.job-name {
   font-weight: 600;
   color: #495057;
-}
-
-.job-weight {
-  background: #667eea;
-  color: white;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: bold;
+  font-size: 14px;
 }
 
 .job-status {
   font-size: 12px;
   font-weight: 600;
-  margin-bottom: 8px;
+  padding: 4px 8px;
+  border-radius: 15px;
+  color: white;
 }
 
-.job-status.job-completed {
-  color: #28a745;
+.job-status.status-completed {
+  background-color: #28a745;
 }
 
-.job-status.job-processing {
-  color: #856404;
+.job-status.status-active {
+  background-color: #ffc107;
 }
 
-.job-status.job-waiting {
-  color: #6c757d;
+.job-status.status-failed {
+  background-color: #dc3545;
 }
 
-.job-status.job-failed {
-  color: #dc3545;
+.job-status.status-waiting {
+  background-color: #6c757d;
 }
 
 .job-score {
   font-size: 14px;
   font-weight: bold;
   color: #495057;
-  text-align: center;
+  text-align: right;
   padding: 8px;
   background: rgba(102, 126, 234, 0.1);
   border-radius: 6px;
