@@ -64,7 +64,11 @@
 
       <!-- ANALYSE DES MOTS-CLÉS -->
       <div class="result-section">
-        <CollapsibleSection title="📊 Analyse des mots-clés" :defaultCollapsed="true">
+        <CollapsibleSection 
+          title="📊 Analyse des mots-clés" 
+          :score="getJobScore('keyword-analysis')"
+          :maxScore="40"
+          :defaultCollapsed="true">
           <div class="json-viewer">
             <h4>Poids: {{ getJobWeight('keyword-analysis') }} | Status: {{ getJobStatus('keyword-analysis') }}</h4>
             <div v-if="getJobStatus('keyword-analysis') === 'completed'" class="job-completed">
@@ -83,7 +87,11 @@
 
       <!-- POSITION DES MOTS-CLÉS -->
       <div class="result-section">
-        <CollapsibleSection title="📍 Position des mots-clés" :defaultCollapsed="true">
+        <CollapsibleSection 
+          title="📍 Position des mots-clés" 
+          :score="getJobScore('keyword-position')"
+          :maxScore="15"
+          :defaultCollapsed="true">
           <div class="json-viewer">
             <h4>Poids: {{ getJobWeight('keyword-position') }} | Status: {{ getJobStatus('keyword-position') }}</h4>
             <div v-if="getJobStatus('keyword-position') === 'completed'" class="job-completed">
@@ -102,7 +110,11 @@
 
       <!-- LONGUEUR DU CONTENU -->
       <div class="result-section">
-        <CollapsibleSection title="📏 Longueur du contenu" :defaultCollapsed="true">
+        <CollapsibleSection 
+          title="📏 Longueur du contenu" 
+          :score="getJobScore('content-length')"
+          :maxScore="15"
+          :defaultCollapsed="true">
           <div class="json-viewer">
             <h4>Poids: {{ getJobWeight('content-length') }} | Status: {{ getJobStatus('content-length') }}</h4>
             <div v-if="getJobStatus('content-length') === 'completed'" class="job-completed">
@@ -121,7 +133,11 @@
 
       <!-- LISIBILITÉ -->
       <div class="result-section">
-        <CollapsibleSection title="📖 Lisibilité" :defaultCollapsed="true">
+        <CollapsibleSection 
+          title="📖 Lisibilité" 
+          :score="getJobScore('readability')"
+          :maxScore="15"
+          :defaultCollapsed="true">
           <div class="json-viewer">
             <h4>Poids: {{ getJobWeight('readability') }} | Status: {{ getJobStatus('readability') }}</h4>
             <div v-if="getJobStatus('readability') === 'completed'" class="job-completed">
@@ -140,7 +156,11 @@
 
       <!-- ORIGINALITÉ -->
       <div class="result-section">
-        <CollapsibleSection title="🔍 Originalité" :defaultCollapsed="true">
+        <CollapsibleSection 
+          title="🔍 Originalité" 
+          :score="getJobScore('uniqueness')"
+          :maxScore="15"
+          :defaultCollapsed="true">
           <div class="json-viewer">
             <h4>Poids: {{ getJobWeight('uniqueness') }} | Status: {{ getJobStatus('uniqueness') }}</h4>
             <div v-if="getJobStatus('uniqueness') === 'completed'" class="job-completed">
@@ -319,8 +339,18 @@ const getJobScore = (jobType) => {
 
 const getJobScoreDisplay = (jobType) => {
   const score = getJobScore(jobType)
-  const weight = getJobWeight(jobType)
-  return `${score}/${weight}`
+  
+  // Score maximum selon le type de job
+  const maxScores = {
+    'keyword-analysis': 40,    // Score sur 40
+    'keyword-position': 15,    // Score sur 15  
+    'content-length': 15,      // Score sur 15 (nouveau système)
+    'readability': 15,         // Score sur 15
+    'uniqueness': 15           // Score sur 15
+  }
+  
+  const maxScore = maxScores[jobType] || 0
+  return `${score}/${maxScore}`
 }
 
 
