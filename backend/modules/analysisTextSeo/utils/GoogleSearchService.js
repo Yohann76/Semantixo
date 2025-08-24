@@ -37,17 +37,22 @@ class GoogleSearchService {
       
       // Essayer d'abord Google Custom Search (prioritaire), puis SerpAPI en secours
       let searchResults;
+      let searchMethod = 'google';
+      
       try {
         searchResults = await this.performGoogleSearch(searchQuery);
         console.log('✅ [GoogleSearchService] Google Custom Search success:', searchResults.items?.length || 0, 'results');
+        searchMethod = 'google';
       } catch (googleError) {
         console.log('⚠️ [GoogleSearchService] Google Custom Search failed, trying SerpAPI...');
         try {
           searchResults = await this.performSerpSearch(searchQuery);
           console.log('✅ [GoogleSearchService] SerpAPI success:', searchResults.organic_results?.length || 0, 'results');
+          searchMethod = 'serpapi';
         } catch (serpError) {
           console.log('❌ [GoogleSearchService] Both APIs failed, using simulation');
           searchResults = this.simulateSearch(cleanSentence);
+          searchMethod = 'simulation';
         }
       }
       
@@ -63,7 +68,7 @@ class GoogleSearchService {
         duplicateLinks: analysis.duplicateLinks,
         searchResults: analysis.searchResults,
         confidence: analysis.confidence,
-        searchMethod: searchResults.source || 'google'
+        searchMethod: searchMethod
       };
       
     } catch (error) {
@@ -124,12 +129,9 @@ class GoogleSearchService {
       key: this.apiKey,
       cx: this.searchEngineId,
       q: query,
-      num: 20, // Plus de résultats
-      safe: 'active',
-      filter: '0', // Désactiver les filtres
-      dateRestrict: 'y1', // Limiter à l'année
-      gl: 'fr', // France
-      hl: 'fr' // Français
+      num: 10, // Réduire pour éviter les erreurs
+      safe: 'active'
+      // Supprimer les paramètres problématiques
     });
     
     const response = await fetch(`${this.baseUrl}?${params}`);
@@ -195,8 +197,8 @@ class GoogleSearchService {
       const snippetSimilarity = this.calculateSimilarity(originalSentence, snippet);
       const combinedSimilarity = Math.max(titleSimilarity, snippetSimilarity);
       
-      // Seuil de détection plus strict pour éviter les faux positifs
-      if (combinedSimilarity > 0.7) { // 70% de similarité
+      // Seuil de détection très strict pour une correspondance 100%
+      if (combinedSimilarity > 0.9) { // 90% de similarité pour éviter les faux positifs
         duplicateCount++;
         duplicateLinks.push({
           title: title,
