@@ -77,6 +77,9 @@ services:
       - REDIS_PORT=6379
       - MONGODB_URI=mongodb://admin:password123@mongodb:27017/semantixo?authSource=admin
       - JWT_SECRET=votre_secret_jwt_tres_securise_ici_changez_le_en_production
+      - GOOGLE_SEARCH_API_KEY=${GOOGLE_SEARCH_API_KEY}
+      - GOOGLE_SEARCH_ENGINE_ID=${GOOGLE_SEARCH_ENGINE_ID}
+      - SERP_API_KEY=${SERP_API_KEY}
     volumes:
       - ./backend:/app
       - /app/node_modules

@@ -426,58 +426,11 @@ const getJobProgress = (jobName) => {
 }
 
 // Méthodes pour le résumé des jobs
-const getJobDisplayName = (jobType) => {
-  const names = {
-    'keyword-analysis': 'Analyse des mots-clés',
-    'keyword-position': 'Position des mots-clés',
-    'content-length': 'Longueur du contenu',
-    'readability': 'Lisibilité',
-    'uniqueness': 'Originalité'
-  }
-  return names[jobType] || jobType
-}
-
-const getJobStatusDisplay = (jobType) => {
-  const status = getJobStatus(jobType)
-  switch (status) {
-    case 'completed': return '✅ Terminé'
-    case 'active': return '🔄 En cours'
-    case 'failed': return '❌ Échoué'
-    default: return '⏳ En attente'
-  }
-}
-
-const getJobStatusClass = (jobType) => {
-  const status = getJobStatus(jobType)
-  switch (status) {
-    case 'completed': return 'job-completed'
-    case 'active': return 'job-processing'
-    case 'failed': return 'job-failed'
-    default: return 'job-waiting'
-  }
-}
-
 const getJobScore = (jobType) => {
   if (props.analysis.jobs && props.analysis.jobs[jobType]) {
     return props.analysis.jobs[jobType].score || 0
   }
   return 0
-}
-
-const getJobScoreDisplay = (jobType) => {
-  const score = getJobScore(jobType)
-  
-  // Score maximum selon le type de job
-  const maxScores = {
-    'keyword-analysis': 40,    // Score sur 40
-    'keyword-position': 15,    // Score sur 15  
-    'content-length': 15,      // Score sur 15 (nouveau système)
-    'readability': 15,         // Score sur 15
-    'uniqueness': 15           // Score sur 15
-  }
-  
-  const maxScore = maxScores[jobType] || 0
-  return `${score}/${maxScore}`
 }
 
 const getJobsSummary = () => {

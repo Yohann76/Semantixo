@@ -3,7 +3,9 @@
  */
 
 const JobProcessorUtils = require('./JobProcessorUtils');
+const GoogleSearchService = require('./GoogleSearchService');
 
 module.exports = {
-  JobProcessorUtils
+  JobProcessorUtils,
+  GoogleSearchService
 }; 

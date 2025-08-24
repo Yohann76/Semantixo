@@ -1,9 +1,11 @@
 // Worker Bull - PROCESSING ONLY selon les bonnes pratiques
+const path = require('path');
+const envPath = path.join(__dirname, '../../../.env');
+console.log('🔧 [WORKER] Loading .env from:', envPath);
+require('dotenv').config({ path: envPath });
 const Queue = require('bull');
 const mongoose = require('mongoose');
 const { bullRedisConfig } = require('../../../config/redis');
-
-
 
 async function connectMongoDB() {
   try {
