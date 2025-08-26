@@ -1,9 +1,6 @@
 // Module de CRÉATION de jobs uniquement - Backend mode
 const Queue = require('bull');
 const { bullRedisConfig } = require('../../../config/redis');
-
-
-
 // add only
 const redisConfig = {
   redis: {
@@ -13,9 +10,7 @@ const redisConfig = {
   }
 };
 
-
 const textAnalysisQueue = new Queue('text analysis', redisConfig);
-
 
 async function testConnection() {
   try {

@@ -104,6 +104,13 @@
                 <p>Cette section analyse la densité et la pertinence des mots-clés dans votre texte.</p>
               </div>
               
+              <!-- Graphiques d'analyse des mots-clés -->
+              <div v-if="getJobStatus('keyword-analysis') === 'completed'" class="keyword-charts">
+                <KeywordAnalysisChart 
+                  :analysisData="getFullJobData('keyword-analysis')"
+                />
+              </div>
+              
               <!-- Séparateur pour les admins -->
               <div class="admin-separator">
                 <span>🔐 Données techniques (Admin uniquement)</span>
@@ -320,6 +327,7 @@
 <script setup>
 import { defineProps, computed } from 'vue'
 import CollapsibleSection from '@/components/common/CollapsibleSection.vue'
+import KeywordAnalysisChart from './KeywordAnalysisChart.vue'
 import { useAuthStore } from '@/stores/auth.js'
 
 const props = defineProps({

@@ -32,7 +32,7 @@ const KeywordAnalysisJobSchema = new mongoose.Schema({
   score: {
     type: Number,
     min: 0,
-    max: 100
+    max: 40
   },
   
   details: {
@@ -41,12 +41,63 @@ const KeywordAnalysisJobSchema = new mongoose.Schema({
   
   // Métriques spécifiques à l'analyse des mots-clés
   metrics: {
+    // Métriques de base
     keywordDensity: Number,
     keywordCount: Number,
     wordCount: Number,
     relevanceScore: Number,
-    keywordDistribution: [String],
-    missingKeywords: [String]
+    
+    // Analyse SERP
+    serpAnalysis: {
+      totalPagesAnalyzed: Number,
+      averageWordCount: Number,
+      topKeywords: [{
+        keyword: String,
+        frequency: Number,
+        tfidf: Number
+      }],
+      keywordFrequencyStats: {
+        mean: Number,
+        standardDeviation: Number
+      }
+    },
+    
+    // Analyse du texte cible
+    targetTextAnalysis: {
+      keywordFrequency: [{
+        keyword: String,
+        frequency: Number,
+        density: Number
+      }],
+      keywordDistribution: [String],
+      missingKeywords: [String],
+      overusedKeywords: [String]
+    },
+    
+    // Scores SEO
+    seoScores: {
+      sosScore: Number, // Proximité avec la fréquence optimale
+      dseoScore: Number, // Mesure de la sur-utilisation
+      overallRelevance: Number
+    },
+    
+    // Graphiques et visualisations
+    visualizationData: {
+      keywordComparison: [{
+        keyword: String,
+        targetFrequency: Number,
+        actualFrequency: Number,
+        optimalRange: {
+          min: Number,
+          max: Number
+        }
+      }],
+      densityChart: [{
+        keyword: String,
+        density: Number,
+        optimalDensity: Number
+      }]
+    }
   },
   
   // Recommandations
