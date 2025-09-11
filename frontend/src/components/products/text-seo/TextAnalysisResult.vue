@@ -88,7 +88,6 @@
           :maxScore="70"
           :defaultCollapsed="true">
           <div class="json-viewer">
-            <h4>Poids: {{ getJobWeight('keyword-analysis') }} | Status: {{ getJobStatus('keyword-analysis') }}</h4>
             
             <!-- Contenu pour les utilisateurs normaux -->
             <div v-if="!isAdmin" class="user-info">
@@ -141,7 +140,6 @@
           :maxScore="10"
           :defaultCollapsed="true">
           <div class="json-viewer">
-            <h4>Poids: {{ getJobWeight('readability') }} | Status: {{ getJobStatus('readability') }}</h4>
             
             
             <!-- Affichage de la lisibilité pour tous les utilisateurs -->
@@ -343,7 +341,6 @@
           :maxScore="20"
           :defaultCollapsed="true">
           <div class="json-viewer">
-            <h4>Poids: {{ getJobWeight('uniqueness') }} | Status: {{ getJobStatus('uniqueness') }}</h4>
             
             <!-- Affichage des duplications pour tous les utilisateurs -->
             <div v-if="getJobStatus('uniqueness') === 'completed'" class="duplication-analysis">
