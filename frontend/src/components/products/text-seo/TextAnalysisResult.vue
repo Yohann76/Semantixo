@@ -833,6 +833,132 @@ const getReadabilityRecommendations = () => {
   return data.recommendations || [];
 };
 
+// Fonctions pour l'analyse des mots-clés
+// const getKeywordAnalysisData = () => {
+//   if (getJobStatus('keyword-analysis') !== 'completed') {
+//     return null;
+//   }
+//   
+//   const jobData = getFullJobData('keyword-analysis');
+//   return jobData?.metrics || jobData?.rawData?.metrics || jobData;
+// };
+
+// const getKeywordFrequencyData = () => {
+//   const data = getKeywordAnalysisData();
+//   if (!data) return [];
+//   
+//   // Essayer d'abord targetTextAnalysis.keywordFrequency
+//   let keywordFreq = data?.targetTextAnalysis?.keywordFrequency || [];
+//   
+//   // Si vide, essayer rawData.analysis.targetAnalysis.targetWordFrequencies
+//   if (keywordFreq.length === 0 && data?.rawData?.analysis?.targetAnalysis?.targetWordFrequencies) {
+//     const wordFrequencies = data.rawData.analysis.targetAnalysis.targetWordFrequencies;
+//     keywordFreq = Object.entries(wordFrequencies)
+//       .filter(([, freq]) => freq > 0) // Filtrer les mots avec fréquence > 0
+//       .map(([word, freq]) => ({
+//         keyword: word,
+//         frequency: freq,
+//         density: (freq / data.rawData.analysis.targetAnalysis.totalWords) * 100,
+//         optimalRange: { min: 0.5, max: 3.0 } // Plage standard pour les mots-clés
+//       }))
+//       .sort((a, b) => b.frequency - a.frequency) // Trier par fréquence décroissante
+//       .slice(0, 20); // Limiter à 20 mots les plus fréquents
+//   }
+//   
+//   // Si toujours vide, générer des mots-clés à partir du texte
+//   if (keywordFreq.length === 0) {
+//     const text = props.analysis.parameter?.text || '';
+//     if (text) {
+//       keywordFreq = generateKeywordsFromText(text);
+//     }
+//   }
+//   
+//   return keywordFreq;
+// };
+
+// const getKeywordSummary = () => {
+//   const data = getKeywordAnalysisData();
+//   if (!data) return null;
+//   
+//   return {
+//     totalKeywords: data?.keywordCount || 0,
+//     wordCount: data?.wordCount || 0,
+//     relevanceScore: data?.relevanceScore || 0,
+//     missingKeywords: data?.targetTextAnalysis?.missingKeywords || [],
+//     overusedKeywords: data?.targetTextAnalysis?.overusedKeywords || [],
+//     // Ajouter les mots-clés trouvés dans le texte
+//     foundKeywords: getKeywordFrequencyData().length
+//   };
+// };
+
+// const onKeywordClick = (keyword) => {
+//   console.log('Mot-clé cliqué:', keyword);
+//   // Ici vous pouvez ajouter une logique pour afficher plus d'informations sur le mot-clé
+// };
+
+// // Fonction pour générer des mots-clés à partir du texte
+// const generateKeywordsFromText = (text) => {
+//   if (!text) return [];
+//   
+//   // Mots à ignorer (stop words)
+//   const stopWords = new Set([
+//     'le', 'la', 'les', 'un', 'une', 'des', 'ce', 'cette', 'ces', 'mon', 'ma', 'mes',
+//     'ton', 'ta', 'tes', 'son', 'sa', 'ses', 'notre', 'votre', 'leur', 'leurs',
+//     'je', 'tu', 'il', 'elle', 'nous', 'vous', 'ils', 'elles', 'me', 'te', 'se',
+//     'lui', 'leur', 'y', 'en', 'ceci', 'cela', 'ça', 'qui', 'que', 'quoi', 'où',
+//     'quand', 'comment', 'pourquoi', 'combien', 'est', 'sont', 'était', 'étaient',
+//     'avoir', 'être', 'faire', 'aller', 'venir', 'voir', 'dire', 'savoir', 'pouvoir',
+//     'vouloir', 'devoir', 'falloir', 'valoir', 'paraître', 'sembler', 'devenir',
+//     'rester', 'passer', 'sortir', 'entrer', 'monter', 'descendre', 'partir',
+//     'arriver', 'revenir', 'rentrer', 'et', 'ou', 'mais', 'donc', 'car', 'ni', 'or',
+//     'puis', 'ensuite', 'alors', 'ainsi', 'donc', 'par', 'consequent', 'cest', 'pourquoi',
+//     'en', 'effet', 'fait', 'dailleurs', 'ailleurs', 'plus', 'outre', 'meme', 'egalement',
+//     'aussi', 'encore', 'deja', 'toujours', 'jamais', 'souvent', 'rarement',
+//     'parfois', 'quelquefois', 'bientot', 'maintenant', 'aujourdhui', 'hier', 'demain',
+//     'ici', 'la', 'ailleurs', 'partout', 'nulle', 'part', 'tres', 'trop', 'assez',
+//     'peu', 'beaucoup', 'plus', 'moins', 'autant', 'tellement', 'si', 'tant', 'tel',
+//     'telle', 'tels', 'telles', 'quel', 'quelle', 'quels', 'quelles', 'pas', 'ne'
+//   ]);
+//   
+//   // Nettoyer et diviser le texte en mots
+//   const words = text
+//     .toLowerCase()
+//     .replace(/[^\w\sàâäéèêëïîôöùûüÿçÀÂÄÉÈÊËÏÎÔÖÙÛÜŸÇ]/g, ' ')
+//     .split(/\s+/)
+//     .filter(word => word.length > 3 && !stopWords.has(word));
+//   
+//   // Compter les fréquences
+//   const wordFrequencies = {};
+//   words.forEach(word => {
+//     wordFrequencies[word] = (wordFrequencies[word] || 0) + 1;
+//   });
+//   
+//   // Créer des phrases de 2 mots
+//   const twoWordPhrases = {};
+//   for (let i = 0; i < words.length - 1; i++) {
+//     const phrase = `${words[i]} ${words[i + 1]}`;
+//     if (!stopWords.has(words[i]) && !stopWords.has(words[i + 1])) {
+//       twoWordPhrases[phrase] = (twoWordPhrases[phrase] || 0) + 1;
+//     }
+//   }
+//   
+//   // Combiner mots et phrases
+//   const allKeywords = { ...wordFrequencies, ...twoWordPhrases };
+//   
+//   // Convertir en format de données pour le nuage
+//   const totalWords = words.length;
+//   return Object.entries(allKeywords)
+//     .filter(([, freq]) => freq > 1) // Au moins 2 occurrences
+//     .map(([word, freq]) => ({
+//       keyword: word,
+//       frequency: freq,
+//       density: (freq / totalWords) * 100,
+//       optimalRange: { min: 0.5, max: 3.0 }
+//     }))
+//     .sort((a, b) => b.frequency - a.frequency)
+//     .slice(0, 25); // Top 25 mots-clés
+// };
+
 // Fonctions pour le calcul du score sur 10
 const getReadabilityScoreOutOf8 = () => {
   const data = getReadabilityData();

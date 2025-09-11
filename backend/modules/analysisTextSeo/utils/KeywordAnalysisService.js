@@ -91,7 +91,7 @@ class KeywordAnalysisService {
       
       try {
         // Recherche Google avec le mot-clé
-        const searchResults = await this.googleSearchService.performGoogleSearch(`"${keyword}"`);
+        const searchResults = await this.googleSearchService.performGoogleSearch(keyword);
         
         if (searchResults.items && searchResults.items.length > 0) {
           // Analyser les 10 premières pages

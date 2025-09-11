@@ -1,25 +1,23 @@
 /**
  * Service de recherche Google pour détecter la duplication de contenu
  * 
- * Options d'implémentation :
- * 1. Google Custom Search API (recommandé, payant mais fiable)
- * 2. SerpAPI (alternative payante mais très fiable)
- * 3. Scraping Google (risqué, peut être bloqué)
+ * Utilise exclusivement Google Custom Search API :
+ * - API officielle et fiable
+ * - Résultats de qualité
+ * - Gestion des quotas et erreurs
+ * - Recherche ciblée sur le contenu français
  */
 
 class GoogleSearchService {
   constructor() {
     this.apiKey = process.env.GOOGLE_SEARCH_API_KEY;
     this.searchEngineId = process.env.GOOGLE_SEARCH_ENGINE_ID;
-    this.serpApiKey = process.env.SERP_API_KEY;
     this.baseUrl = 'https://www.googleapis.com/customsearch/v1';
-    this.serpBaseUrl = 'https://serpapi.com/search';
     
     // Debug des variables d'environnement
     console.log('🔧 [GoogleSearchService] Environment variables loaded:');
     console.log('  - GOOGLE_SEARCH_API_KEY:', this.apiKey ? '✅ Loaded' : '❌ Missing');
     console.log('  - GOOGLE_SEARCH_ENGINE_ID:', this.searchEngineId ? '✅ Loaded' : '❌ Missing');
-    console.log('  - SERP_API_KEY:', this.serpApiKey ? '✅ Loaded' : '❌ Missing');
   }
   
   /**
@@ -35,7 +33,7 @@ class GoogleSearchService {
       // Utiliser des guillemets exacts pour une recherche précise
       const searchQuery = `"${cleanSentence}"`;
       
-      // Essayer d'abord Google Custom Search (prioritaire), puis SerpAPI en secours
+      // Utiliser uniquement Google Custom Search API
       let searchResults;
       let searchMethod = 'google';
       
@@ -44,16 +42,9 @@ class GoogleSearchService {
         console.log('✅ [GoogleSearchService] Google Custom Search success:', searchResults.items?.length || 0, 'results');
         searchMethod = 'google';
       } catch (googleError) {
-        console.log('⚠️ [GoogleSearchService] Google Custom Search failed, trying SerpAPI...');
-        try {
-          searchResults = await this.performSerpSearch(searchQuery);
-          console.log('✅ [GoogleSearchService] SerpAPI success:', searchResults.organic_results?.length || 0, 'results');
-          searchMethod = 'serpapi';
-        } catch (serpError) {
-          console.log('❌ [GoogleSearchService] Both APIs failed, using simulation');
-          searchResults = this.simulateSearch(cleanSentence);
-          searchMethod = 'simulation';
-        }
+        console.log('❌ [GoogleSearchService] Google Custom Search failed, using simulation');
+        searchResults = this.simulateSearch(cleanSentence);
+        searchMethod = 'simulation';
       }
       
       // Analyser les résultats avec une logique améliorée
@@ -83,36 +74,6 @@ class GoogleSearchService {
     }
   }
   
-  /**
-   * Effectue une recherche via SerpAPI (plus fiable)
-   */
-  async performSerpSearch(query) {
-    if (!this.serpApiKey) {
-      throw new Error('SerpAPI key not configured');
-    }
-    
-    const params = new URLSearchParams({
-      api_key: this.serpApiKey,
-      q: query,
-      engine: 'google',
-      num: 20, // Plus de résultats pour une meilleure détection
-      gl: 'fr', // France
-      hl: 'fr', // Français
-      safe: 'active',
-      filter: '0', // Désactiver les filtres pour plus de résultats
-      tbs: 'qdr:y' // Recherche dans l'année
-    });
-    
-    const response = await fetch(`${this.serpBaseUrl}?${params}`);
-    
-    if (!response.ok) {
-      throw new Error(`SerpAPI error: ${response.status} ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    data.source = 'serpapi';
-    return data;
-  }
   
   /**
    * Effectue une recherche Google via l'API officielle
@@ -129,29 +90,50 @@ class GoogleSearchService {
       key: this.apiKey,
       cx: this.searchEngineId,
       q: query,
-      num: 10, // Réduire pour éviter les erreurs
-      safe: 'active'
-      // Supprimer les paramètres problématiques
+      num: 10, // Nombre de résultats par page
+      safe: 'active',
+      gl: 'fr', // Pays: France
+      hl: 'fr', // Langue: Français
+      lr: 'lang_fr', // Restreindre aux pages en français
+      cr: 'countryFR' // Restreindre aux pages françaises
     });
     
-    const response = await fetch(`${this.baseUrl}?${params}`);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ [GoogleSearchService] Google API error:', response.status, errorText);
-      throw new Error(`Google Search API error: ${response.status} ${response.statusText}`);
+    try {
+      const response = await fetch(`${this.baseUrl}?${params}`);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ [GoogleSearchService] Google API error:', response.status, errorText);
+        
+        // Gestion spécifique des erreurs de quota
+        if (response.status === 429) {
+          throw new Error('Google Search API quota exceeded. Please try again later.');
+        }
+        
+        throw new Error(`Google Search API error: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      data.source = 'google';
+      
+      if (data.error) {
+        console.error('❌ [GoogleSearchService] Google API returned error:', data.error);
+        
+        // Gestion spécifique des erreurs de quota
+        if (data.error.code === 429) {
+          throw new Error('Google Search API quota exceeded. Please try again later.');
+        }
+        
+        throw new Error(`Google API error: ${data.error.message}`);
+      }
+      
+      console.log('✅ [GoogleSearchService] Google API response:', data.items?.length || 0, 'results');
+      return data;
+      
+    } catch (error) {
+      console.error('❌ [GoogleSearchService] Network or parsing error:', error);
+      throw error;
     }
-    
-    const data = await response.json();
-    data.source = 'google';
-    
-    if (data.error) {
-      console.error('❌ [GoogleSearchService] Google API returned error:', data.error);
-      throw new Error(`Google API error: ${data.error.message}`);
-    }
-    
-    console.log('✅ [GoogleSearchService] Google API response:', data.items?.length || 0, 'results');
-    return data;
   }
   
   /**
