@@ -169,7 +169,38 @@ const extractData = () => {
     if (props.analysisData.metrics?.seoScores) {
       seoScores.value = props.analysisData.metrics.seoScores
       console.log('✅ [KeywordAnalysisChart] Scores SEO trouvés:', seoScores.value)
+    } else {
+      console.log('⚠️ [KeywordAnalysisChart] Aucun score SEO trouvé dans metrics.seoScores')
+      console.log('🔍 [KeywordAnalysisChart] Structure metrics:', props.analysisData.metrics)
+      
+      // Fallback : chercher dans d'autres endroits possibles
+      if (props.analysisData.seoScores) {
+        seoScores.value = props.analysisData.seoScores
+        console.log('✅ [KeywordAnalysisChart] Scores SEO trouvés dans seoScores:', seoScores.value)
+      } else if (props.analysisData.rawData?.analysis?.seoScores) {
+        seoScores.value = props.analysisData.rawData.analysis.seoScores
+        console.log('✅ [KeywordAnalysisChart] Scores SEO trouvés dans rawData.analysis.seoScores:', seoScores.value)
+      } else {
+        console.log('❌ [KeywordAnalysisChart] Aucun score SEO trouvé, utilisation des valeurs par défaut')
+        // Garder les valeurs par défaut (0, 0, 0)
+      }
     }
+    
+    // Vérifier que les scores sont valides
+    if (seoScores.value.sosScore === undefined || seoScores.value.sosScore === null || isNaN(seoScores.value.sosScore)) {
+      console.log('⚠️ [KeywordAnalysisChart] Score SOS invalide, remise à 0')
+      seoScores.value.sosScore = 0
+    }
+    if (seoScores.value.dseoScore === undefined || seoScores.value.dseoScore === null || isNaN(seoScores.value.dseoScore)) {
+      console.log('⚠️ [KeywordAnalysisChart] Score DSEO invalide, remise à 0')
+      seoScores.value.dseoScore = 0
+    }
+    if (seoScores.value.overallRelevance === undefined || seoScores.value.overallRelevance === null || isNaN(seoScores.value.overallRelevance)) {
+      console.log('⚠️ [KeywordAnalysisChart] Score de pertinence invalide, remise à 0')
+      seoScores.value.overallRelevance = 0
+    }
+    
+    console.log('📊 [KeywordAnalysisChart] Scores SEO finaux:', seoScores.value)
 
     // Extraire les vrais mots-clés de la SERP depuis rawData.analysis.lexicalAnalysis.topKeywords
     const serpKeywords = props.analysisData.rawData?.analysis?.lexicalAnalysis?.topKeywords || []

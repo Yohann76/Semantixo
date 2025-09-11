@@ -262,19 +262,19 @@ class KeywordAnalysisService {
     const targetTokens = this.tokenize(cleanedTargetText);
     const targetWordFrequencies = this.calculateWordFrequencies(targetTokens);
     
-    // Analyser les mots-clés cibles
-    const keywordAnalysis = targetKeywords.map(keyword => {
+    // Utiliser les mots-clés du référentiel (extraits des SERP) au lieu des mots-clés utilisateur
+    const keywordsToAnalyze = referenceData.rankedKeywords.slice(0, 20); // Top 20 mots-clés des SERP
+    
+    console.log(`🔍 [KeywordAnalysisService] Analyse de ${keywordsToAnalyze.length} mots-clés des SERP`);
+    console.log('🔍 [KeywordAnalysisService] Mots-clés à analyser:', keywordsToAnalyze.map(k => k.keyword));
+    
+    // Analyser les mots-clés des SERP
+    const keywordAnalysis = keywordsToAnalyze.map(referenceKeyword => {
+      const keyword = referenceKeyword.keyword;
       const frequency = targetWordFrequencies[keyword.toLowerCase()] || 0;
       const density = (frequency / targetTokens.length) * 100;
       
-      // Trouver la fréquence optimale dans le référentiel
-      const referenceKeyword = referenceData.rankedKeywords.find(k => 
-        k.keyword.toLowerCase() === keyword.toLowerCase()
-      );
-      
-      const optimalRange = referenceKeyword ? 
-        referenceData.optimalRanges[referenceKeyword.keyword] : 
-        { min: 0, max: 0 };
+      const optimalRange = referenceData.optimalRanges[keyword] || { min: 0, max: 0 };
       
       return {
         keyword,
@@ -316,25 +316,43 @@ class KeywordAnalysisService {
     
     const { keywordAnalysis, missingKeywords, overusedKeywords } = targetAnalysis;
     
+    // Vérifier qu'il y a des mots-clés à analyser
+    if (!keywordAnalysis || keywordAnalysis.length === 0) {
+      console.log('⚠️ [KeywordAnalysisService] Aucun mot-clé à analyser, scores par défaut');
+      return {
+        sosScore: 0,
+        dseoScore: 0,
+        overallRelevance: 0
+      };
+    }
+    
     // SOS Score (proximité avec la fréquence optimale)
     let sosScore = 0;
     let totalKeywords = keywordAnalysis.length;
     
+    console.log(`🔍 [KeywordAnalysisService] Analyse de ${totalKeywords} mots-clés`);
+    
     for (const keyword of keywordAnalysis) {
       if (keyword.isOptimal) {
         sosScore += 1; // Score parfait
+        console.log(`✅ [KeywordAnalysisService] Mot-clé optimal: ${keyword.keyword}`);
       } else if (keyword.isOverused) {
         // Pénalité pour sur-utilisation
         const overuseRatio = keyword.frequency / keyword.optimalRange.max;
-        sosScore += Math.max(0, 1 - (overuseRatio - 1) * 0.5);
+        const score = Math.max(0, 1 - (overuseRatio - 1) * 0.5);
+        sosScore += score;
+        console.log(`⚠️ [KeywordAnalysisService] Mot-clé sur-utilisé: ${keyword.keyword} (ratio: ${overuseRatio.toFixed(2)}, score: ${score.toFixed(2)})`);
       } else if (keyword.isUnderused) {
         // Pénalité pour sous-utilisation
         const underuseRatio = keyword.frequency / keyword.optimalRange.min;
-        sosScore += underuseRatio * 0.8;
+        const score = underuseRatio * 0.8;
+        sosScore += score;
+        console.log(`⚠️ [KeywordAnalysisService] Mot-clé sous-utilisé: ${keyword.keyword} (ratio: ${underuseRatio.toFixed(2)}, score: ${score.toFixed(2)})`);
       }
     }
     
-    sosScore = (sosScore / totalKeywords) * 100;
+    // Éviter la division par zéro
+    sosScore = totalKeywords > 0 ? (sosScore / totalKeywords) * 100 : 0;
     
     // DSEO Score (mesure de la sur-utilisation)
     const overusePenalty = overusedKeywords.length * 10;
@@ -343,11 +361,16 @@ class KeywordAnalysisService {
     // Score global de pertinence
     const overallRelevance = (sosScore + dseoScore) / 2;
     
-    return {
+    const finalScores = {
       sosScore: Math.round(sosScore),
       dseoScore: Math.round(dseoScore),
       overallRelevance: Math.round(overallRelevance)
     };
+    
+    console.log('📊 [KeywordAnalysisService] Scores calculés:', finalScores);
+    console.log(`📊 [KeywordAnalysisService] Détail: ${totalKeywords} mots-clés, ${overusedKeywords.length} sur-utilisés, ${missingKeywords.length} manquants`);
+    
+    return finalScores;
   }
 
   /**
@@ -524,13 +547,24 @@ class KeywordAnalysisService {
     const ranges = {};
     
     rankedKeywords.forEach(keyword => {
-      const optimalMin = Math.max(1, Math.floor(mean - standardDeviation));
-      const optimalMax = Math.ceil(mean + standardDeviation);
+      // Calculer une plage optimale basée sur la fréquence réelle du mot dans les SERP
+      const serpFrequency = keyword.frequency;
+      
+      // Plage optimale : 70% à 130% de la fréquence SERP
+      const optimalMin = Math.max(1, Math.floor(serpFrequency * 0.7));
+      const optimalMax = Math.ceil(serpFrequency * 1.3);
+      
+      // Ajuster selon la longueur du mot (mots plus longs = plage plus large)
+      const lengthFactor = Math.min(keyword.keyword.length / 10, 0.5);
+      const adjustedMin = Math.max(1, Math.floor(optimalMin * (1 - lengthFactor)));
+      const adjustedMax = Math.ceil(optimalMax * (1 + lengthFactor));
       
       ranges[keyword.keyword] = {
-        min: optimalMin,
-        max: optimalMax
+        min: adjustedMin,
+        max: adjustedMax
       };
+      
+      console.log(`📊 [KeywordAnalysisService] Plage optimale pour "${keyword.keyword}": ${adjustedMin}-${adjustedMax} (fréquence SERP: ${serpFrequency})`);
     });
     
     return ranges;
