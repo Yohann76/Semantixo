@@ -37,6 +37,13 @@ class ReadabilityJobProcessor {
         { text, analysis }
       );
 
+      // Mettre à jour le score du job explicitement
+      await ReadabilityJobModel.findOneAndUpdate(
+        { analysisId, jobName: 'readability' },
+        { score: analysis.readabilityScore },
+        { new: true }
+      );
+
       await JobProcessorUtils.updateProgress(job, 100);
 
       // Mettre à jour le score global avec retry
@@ -297,70 +304,83 @@ class ReadabilityJobProcessor {
     const issues = [];
     const strengths = [];
     
-    // Score Flesch Reading Ease (0-10 points)
+    // Score Flesch Reading Ease (0-3 points)
     if (metrics.fleschReadingEase >= 80) {
-      totalScore += 10;
+      totalScore += 3;
       strengths.push('Excellent score de lisibilité Flesch');
     } else if (metrics.fleschReadingEase >= 60) {
-      totalScore += 8;
+      totalScore += 2;
       strengths.push('Bon score de lisibilité Flesch');
     } else if (metrics.fleschReadingEase >= 40) {
-      totalScore += 5;
+      totalScore += 1;
     } else {
-      totalScore += 2;
+      totalScore += 0;
       issues.push('Score de lisibilité Flesch trop faible');
     }
     
-    // Score de longueur de contenu (0-5 points)
-    totalScore += metrics.contentLengthScore;
+    // Score de longueur de contenu (0-2 points)
     if (metrics.contentLengthScore >= 4) {
+      totalScore += 2;
       strengths.push('Longueur de contenu optimale pour le SEO');
-    } else if (metrics.contentLengthScore <= 2) {
+    } else if (metrics.contentLengthScore >= 3) {
+      totalScore += 1;
+    } else {
+      totalScore += 0;
       issues.push('Longueur de contenu non optimale pour le SEO');
     }
     
-    // Score des phrases (0-3 points)
+    // Score des phrases (0-2 points)
     const optimalSentences = metrics.mediumSentences + metrics.shortSentences;
     const totalSentences = metrics.shortSentences + metrics.mediumSentences + metrics.longSentences + metrics.veryLongSentences;
     const sentenceRatio = optimalSentences / totalSentences;
     
     if (sentenceRatio >= 0.7) {
-      totalScore += 3;
+      totalScore += 2;
       strengths.push('Structure des phrases optimale');
     } else if (sentenceRatio >= 0.5) {
-      totalScore += 2;
-    } else {
       totalScore += 1;
+    } else {
+      totalScore += 0;
       issues.push('Trop de phrases longues détectées');
     }
     
-    // Score des paragraphes (0-2 points)
+    // Score des paragraphes (0-1 point)
     const optimalParagraphs = metrics.optimalParagraphs + metrics.mediumParagraphs;
     const totalParagraphs = metrics.shortParagraphs + metrics.mediumParagraphs + metrics.longParagraphs + metrics.optimalParagraphs;
     const paragraphRatio = optimalParagraphs / totalParagraphs;
     
     if (paragraphRatio >= 0.6) {
-      totalScore += 2;
+      totalScore += 1;
       strengths.push('Structure des paragraphes optimale');
-    } else if (paragraphRatio >= 0.4) {
+    } else {
+      totalScore += 0;
+      issues.push('Structure des paragraphes à améliorer');
+    }
+    
+    // Score des mots complexes (0-2 points)
+    if (metrics.complexWordsPercentage <= 10) {
+      totalScore += 2;
+      strengths.push('Utilisation appropriée des mots complexes');
+    } else if (metrics.complexWordsPercentage <= 20) {
       totalScore += 1;
     } else {
-      issues.push('Structure des paragraphes à améliorer');
+      totalScore += 0;
+      issues.push('Trop de mots complexes');
     }
     
     // Déterminer la note SEO
     let seoReadabilityGrade;
-    if (totalScore >= 18) seoReadabilityGrade = 'A+';
-    else if (totalScore >= 16) seoReadabilityGrade = 'A';
-    else if (totalScore >= 14) seoReadabilityGrade = 'B+';
-    else if (totalScore >= 12) seoReadabilityGrade = 'B';
-    else if (totalScore >= 10) seoReadabilityGrade = 'C+';
-    else if (totalScore >= 8) seoReadabilityGrade = 'C';
-    else if (totalScore >= 6) seoReadabilityGrade = 'D';
+    if (totalScore >= 9) seoReadabilityGrade = 'A+';
+    else if (totalScore >= 8) seoReadabilityGrade = 'A';
+    else if (totalScore >= 7) seoReadabilityGrade = 'B+';
+    else if (totalScore >= 6) seoReadabilityGrade = 'B';
+    else if (totalScore >= 5) seoReadabilityGrade = 'C+';
+    else if (totalScore >= 4) seoReadabilityGrade = 'C';
+    else if (totalScore >= 3) seoReadabilityGrade = 'D';
     else seoReadabilityGrade = 'F';
     
     return {
-      readabilityScore: Math.min(20, Math.max(0, totalScore)), // Score sur 20 points max
+      readabilityScore: Math.min(10, Math.max(0, totalScore)), // Score sur 10 points max
       seoReadabilityGrade,
       issues,
       strengths

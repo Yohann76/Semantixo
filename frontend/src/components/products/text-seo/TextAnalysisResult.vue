@@ -5,8 +5,8 @@
               <div class="result-meta">
         <span class="result-date">{{ formatDate(props.analysis.analysis?.createdAt || props.analysis.createdAt) }}</span>
         <div class="score-section">
-                     <span class="result-score" :class="getScoreClass(props.analysis.analysis?.scoreSeo || props.analysis.scoreSeo || 0)">
-             Score SEO: {{ props.analysis.analysis?.scoreSeo || props.analysis.scoreSeo || '0' }}/100
+                     <span class="result-score" :class="getScoreClass(getTotalScore())">
+             Score SEO: {{ getTotalScore() }}/100
            </span>
           <span v-if="props.analysis.analysis?.notation || props.analysis.notation" class="result-notation" :class="getNotationClass(props.analysis.analysis?.notation || props.analysis.notation)">
             {{ props.analysis.analysis?.notation || props.analysis.notation }}
@@ -181,26 +181,26 @@
                       <span class="metric-label">Indice Gunning Fog:</span>
                       <span class="metric-value">{{ getGunningFogIndex() }}</span>
                     </div>
-                  </div>
-                  
+              </div>
+              
                   <div class="metric-card">
                     <h5>📊 Structure du contenu</h5>
                     <div class="metric-item">
                       <span class="metric-label">Mots par phrase:</span>
                       <span class="metric-value">{{ getAvgSentenceLength() }}</span>
-                    </div>
+              </div>
                     <div class="metric-item">
                       <span class="metric-label">Mots par paragraphe:</span>
                       <span class="metric-value">{{ getAvgWordsPerParagraph() }}</span>
-                    </div>
+              </div>
                     <div class="metric-item">
                       <span class="metric-label">Mots complexes:</span>
                       <span class="metric-value">{{ getComplexWordsPercentage() }}%</span>
-                    </div>
-                  </div>
-                </div>
               </div>
-              
+            </div>
+          </div>
+      </div>
+
               <!-- Graphiques de structure -->
               <div class="structure-charts">
                 <div class="chart-container">
@@ -210,9 +210,9 @@
                       <span class="bar-label">Court (&lt; 15 mots)</span>
                       <div class="bar">
                         <div class="bar-fill" :style="{ width: getSentencePercentage('short') + '%' }"></div>
-                      </div>
+            </div>
                       <span class="bar-value">{{ getReadabilitySentenceCount('short') }}</span>
-                    </div>
+              </div>
                     <div class="bar-item">
                       <span class="bar-label">Moyen (15-25 mots)</span>
                       <div class="bar">
@@ -235,8 +235,8 @@
                       <span class="bar-value">{{ getReadabilitySentenceCount('veryLong') }}</span>
                     </div>
                   </div>
-                </div>
-                
+              </div>
+              
                 <div class="chart-container">
                   <h5>📄 Répartition des paragraphes</h5>
                   <div class="chart-bars">
@@ -244,21 +244,21 @@
                       <span class="bar-label">Court (&lt; 50 mots)</span>
                       <div class="bar">
                         <div class="bar-fill" :style="{ width: getParagraphPercentage('short') + '%' }"></div>
-                      </div>
+              </div>
                       <span class="bar-value">{{ getReadabilityParagraphCount('short') }}</span>
-                    </div>
+              </div>
                     <div class="bar-item">
                       <span class="bar-label">Moyen (50-100 mots)</span>
                       <div class="bar">
                         <div class="bar-fill" :style="{ width: getParagraphPercentage('medium') + '%' }"></div>
-                      </div>
+              </div>
                       <span class="bar-value">{{ getReadabilityParagraphCount('medium') }}</span>
-                    </div>
+            </div>
                     <div class="bar-item">
                       <span class="bar-label">Optimal (100-150 mots)</span>
                       <div class="bar">
                         <div class="bar-fill optimal" :style="{ width: getParagraphPercentage('optimal') + '%' }"></div>
-                      </div>
+          </div>
                       <span class="bar-value">{{ getReadabilityParagraphCount('optimal') }}</span>
                     </div>
                     <div class="bar-item">
@@ -270,8 +270,8 @@
                     </div>
                   </div>
                 </div>
-              </div>
-              
+      </div>
+
               <!-- Recommandations -->
               <div v-if="getReadabilityRecommendations().length > 0" class="readability-recommendations">
                 <h5>💡 Recommandations</h5>
@@ -299,8 +299,8 @@
                 <p>Analyse de la lisibilité en cours...</p>
                 <p>Calcul des métriques SEO et de la structure du contenu...</p>
               </div>
-            </div>
-            
+              </div>
+              
             <!-- Affichage en attente -->
             <div v-else class="job-waiting">
               <div class="waiting-info">
@@ -362,8 +362,8 @@
                     </div>
                   </div>
                 </div>
-              </div>
-              
+            </div>
+            
               <!-- Liste des sources de duplication -->
               <div v-if="getDuplicationSources().length > 0" class="duplication-sources">
                 <h5>🌐 Sources de duplication détectées :</h5>
@@ -504,21 +504,31 @@ const getNotationClass = (notation) => {
 }
 
 // Fonctions adaptées pour la nouvelle architecture
-const getJobWeight = (jobName) => {
-  // Configuration statique des poids
-  const weights = {
-    'keyword-analysis': 70,
-    'readability': 10,
-    'uniqueness': 20
-  }
-  return weights[jobName] || 0
-}
+// const getJobWeight = (jobName) => {
+//   // Configuration statique des poids
+//   const weights = {
+//     'keyword-analysis': 70,
+//     'readability': 10,
+//     'uniqueness': 20
+//   }
+//   return weights[jobName] || 0
+// }
 
 const getJobStatus = (jobName) => {
-  if (props.analysis.jobs && props.analysis.jobs[jobName]) {
-    return props.analysis.jobs[jobName].status || 'waiting'
+  // Chercher dans jobsSummary (nouvelle structure)
+  const jobsSummary = props.analysis.jobsSummary || props.analysis.analysis?.jobsSummary || [];
+  const jobFromSummary = jobsSummary.find(job => job.type === jobName);
+  
+  if (jobFromSummary) {
+    return jobFromSummary.status || 'waiting';
   }
-  return 'waiting'
+  
+  // Fallback vers l'ancienne structure
+  if (props.analysis.jobs && props.analysis.jobs[jobName]) {
+    return props.analysis.jobs[jobName].status || 'waiting';
+  }
+  
+  return 'waiting';
 }
 
 const getFullJobData = (jobName) => {
@@ -550,14 +560,40 @@ const getJobProgress = (jobName) => {
 
 // Méthodes pour le résumé des jobs
 const getJobScore = (jobType) => {
-  if (props.analysis.jobs && props.analysis.jobs[jobType]) {
-    // Pour la lisibilité, utiliser notre score calculé sur 10
-    if (jobType === 'readability') {
-      return getTotalReadabilityScore();
-    }
-    return props.analysis.jobs[jobType].score || 0
+  // Chercher dans jobsSummary (nouvelle structure)
+  const jobsSummary = props.analysis.jobsSummary || props.analysis.analysis?.jobsSummary || [];
+  const jobFromSummary = jobsSummary.find(job => job.type === jobType);
+  
+  console.log(`🔍 [DEBUG] getJobScore(${jobType}):`, {
+    jobsSummary,
+    jobFromSummary,
+    hasJobs: !!props.analysis.jobs,
+    jobData: props.analysis.jobs?.[jobType]
+  });
+  
+  // Pour la lisibilité, utiliser notre score calculé sur 10
+  if (jobType === 'readability') {
+    const calculatedScore = getTotalReadabilityScore();
+    console.log(`🔍 [DEBUG] Readability calculated score:`, calculatedScore);
+    return calculatedScore;
   }
-  return 0
+  
+  // Utiliser le score du backend
+  if (jobFromSummary) {
+    const jobScore = jobFromSummary.score || 0;
+    console.log(`🔍 [DEBUG] Job ${jobType} score from backend:`, jobScore);
+    return jobScore;
+  }
+  
+  // Fallback vers l'ancienne structure
+  if (props.analysis.jobs && props.analysis.jobs[jobType]) {
+    const jobScore = props.analysis.jobs[jobType].score || 0;
+    console.log(`🔍 [DEBUG] Job ${jobType} score from old structure:`, jobScore);
+    return jobScore;
+  }
+  
+  console.log(`🔍 [DEBUG] Job ${jobType} not found, returning 0`);
+  return 0;
 }
 
 
@@ -568,6 +604,15 @@ const getJobsSummary = () => {
     { name: 'uniqueness', status: getJobStatus('uniqueness'), score: getJobScore('uniqueness'), poidScoreSEO: 20 }
   ];
   return jobs;
+};
+
+// Fonction pour calculer le score total avec nos nouvelles fonctions
+const getTotalScore = () => {
+  const keywordScore = getJobScore('keyword-analysis');
+  const readabilityScore = getJobScore('readability'); // Utilise notre nouveau calcul sur 10
+  const uniquenessScore = getJobScore('uniqueness');
+  
+  return keywordScore + readabilityScore + uniquenessScore;
 };
 
 const getStatusIcon = (status) => {
@@ -674,11 +719,11 @@ const getReadabilityData = () => {
   return jobData?.metrics || jobData?.rawData?.analysis || jobData?.rawData || jobData;
 };
 
-const getReadabilityScore = () => {
-  const data = getReadabilityData();
-  if (!data) return 0;
-  return data.readabilityScore || 0;
-};
+// const getReadabilityScore = () => {
+//   const data = getReadabilityData();
+//   if (!data) return 0;
+//   return data.readabilityScore || 0;
+// };
 
 const getReadabilityGrade = () => {
   const data = getReadabilityData();
