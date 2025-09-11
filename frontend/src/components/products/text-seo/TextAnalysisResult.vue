@@ -89,33 +89,20 @@
           :defaultCollapsed="true">
           <div class="json-viewer">
             
-            <!-- Contenu pour les utilisateurs normaux -->
-            <div v-if="!isAdmin" class="user-info">
-              <p>📊 Analyse des mots-clés en cours de traitement...</p>
-              <p>Cette section analyse la densité et la pertinence des mots-clés dans votre texte.</p>
+            <!-- Graphiques d'analyse des mots-clés -->
+            <div v-if="getJobStatus('keyword-analysis') === 'completed'" class="keyword-charts">
+              <KeywordAnalysisChart 
+                :analysisData="getFullJobData('keyword-analysis')"
+              />
             </div>
             
-            <!-- Contenu pour les admins : informations utilisateur + JSON -->
-            <div v-else>
-              <!-- Informations utilisateur (visibles aussi pour les admins) -->
-              <div class="user-info">
-                <p>📊 Analyse des mots-clés en cours de traitement...</p>
-                <p>Cette section analyse la densité et la pertinence des mots-clés dans votre texte.</p>
-              </div>
-              
-              <!-- Graphiques d'analyse des mots-clés -->
-              <div v-if="getJobStatus('keyword-analysis') === 'completed'" class="keyword-charts">
-                <KeywordAnalysisChart 
-                  :analysisData="getFullJobData('keyword-analysis')"
-                />
-              </div>
-              
-              <!-- Séparateur pour les admins -->
-              <div class="admin-separator">
-                <span>🔐 Données techniques (Admin uniquement)</span>
-              </div>
-              
-              <!-- JSON détaillé pour les admins -->
+            <!-- Séparateur pour les admins -->
+            <div v-if="isAdmin" class="admin-separator">
+              <span>🔐 Données techniques (Admin uniquement)</span>
+            </div>
+            
+            <!-- JSON détaillé pour les admins -->
+            <div v-if="isAdmin">
               <div v-if="getJobStatus('keyword-analysis') === 'completed'" class="job-completed">
                 <pre>{{ JSON.stringify(getFullJobData('keyword-analysis'), null, 2) }}</pre>
               </div>
