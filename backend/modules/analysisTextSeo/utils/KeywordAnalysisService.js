@@ -27,6 +27,45 @@ class KeywordAnalysisService {
       'très', 'trop', 'assez', 'peu', 'beaucoup', 'plus', 'moins', 'autant', 'tellement',
       'si', 'tant', 'tel', 'telle', 'tels', 'telles', 'quel', 'quelle', 'quels', 'quelles'
     ]);
+    
+    // Mots génériques non pertinents pour l'analyse SEO (indépendants du domaine)
+    this.genericWords = new Set([
+      // Temps et dates
+      'semaine', 'semaines', 'jour', 'jours', 'heure', 'heures', 'minute', 'minutes',
+      '12h', '13h', '14h', '15h', '16h', '17h', '18h', '19h', '20h', '21h', '22h',
+      'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche',
+      'janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août',
+      'septembre', 'octobre', 'novembre', 'décembre',
+      'matin', 'midi', 'après-midi', 'soir', 'nuit',
+      'premier', 'deuxième', 'troisième', 'dernier', 'prochain',
+      
+      // Adjectifs génériques
+      'petit', 'grand', 'gros', 'petite', 'grande', 'grosse',
+      'bon', 'mauvais', 'bien', 'mal', 'meilleur', 'pire',
+      'nouveau', 'ancien', 'vieux', 'jeune', 'récent',
+      'gratuit', 'payant', 'cher', 'pas cher', 'bon marché',
+      
+      // Éléments d'interface web
+      'avis', 'commentaire', 'commentaires', 'note', 'étoile', 'étoiles',
+      'lien', 'liens', 'site', 'sites', 'page', 'pages', 'article', 'articles',
+      'photo', 'photos', 'image', 'images', 'vidéo', 'vidéos',
+      'télécharger', 'téléchargement', 'pdf', 'document', 'documents',
+      'contact', 'email', 'téléphone', 'adresse', 'localisation',
+      'accueil', 'menu', 'navigation', 'footer', 'header',
+      'cookie', 'cookies', 'politique', 'confidentialité', 'mentions', 'légales',
+      
+      // Mots techniques génériques
+      'système', 'systèmes', 'technologie', 'technologies', 'solution', 'solutions',
+      'service', 'services', 'produit', 'produits', 'marque', 'marques',
+      'entreprise', 'entreprises', 'société', 'sociétés', 'compagnie', 'compagnies',
+      
+      // Mots de mesure génériques
+      'prix', 'coût', 'coûts', 'argent', 'euro', 'euros', 'dollar', 'dollars',
+      'centime', 'centimes', 'pourcent', 'pourcentage', 'pourcentages',
+      'kilogramme', 'kilogrammes', 'kg', 'gramme', 'grammes', 'g',
+      'mètre', 'mètres', 'm', 'centimètre', 'centimètres', 'cm',
+      'litre', 'litres', 'l', 'millilitre', 'millilitres', 'ml'
+    ]);
   }
 
   /**
@@ -158,15 +197,19 @@ class KeywordAnalysisService {
     // Filtrage des stop words et calcul des fréquences
     const wordFrequencies = this.calculateWordFrequencies(tokens);
     
-    // Sélection des mots significatifs
+    // Sélection des mots significatifs avec filtrage intelligent
     const significantWords = this.selectSignificantWords(wordFrequencies);
+    
+    // Détection du contexte pour améliorer la pertinence
+    const contextKeywords = this.detectContextKeywords(wordFrequencies, fullText);
     
     return {
       totalWords: tokens.length,
       uniqueWords: Object.keys(wordFrequencies).length,
       wordFrequencies,
       significantWords,
-      topKeywords: this.getTopKeywords(wordFrequencies, 20)
+      topKeywords: this.getTopKeywords(wordFrequencies, 20),
+      contextKeywords
     };
   }
 
@@ -392,16 +435,56 @@ class KeywordAnalysisService {
 
   selectSignificantWords(wordFrequencies) {
     const minFrequency = 2; // Mot doit apparaître au moins 2 fois
-    return Object.keys(wordFrequencies).filter(word => 
-      wordFrequencies[word] >= minFrequency
-    );
+    const minLength = 3; // Mot doit faire au moins 3 caractères
+    
+    return Object.keys(wordFrequencies).filter(word => {
+      // Filtres de base
+      if (wordFrequencies[word] < minFrequency) return false;
+      if (word.length < minLength) return false;
+      
+      // Exclure les mots génériques non pertinents
+      if (this.genericWords.has(word.toLowerCase())) return false;
+      
+      // Exclure les mots qui sont des nombres purs
+      if (/^\d+$/.test(word)) return false;
+      
+      // Exclure les mots qui sont des heures (format 12h, 13h, etc.)
+      if (/^\d{1,2}h$/.test(word)) return false;
+      
+      // Exclure les mots qui sont des dates (format 2023, 2024, etc.)
+      if (/^(19|20)\d{2}$/.test(word)) return false;
+      
+      return true;
+    });
   }
 
   getTopKeywords(wordFrequencies, limit = 20) {
+    // Calculer un score de pertinence pour chaque mot
+    const totalWords = Object.values(wordFrequencies).reduce((sum, freq) => sum + freq, 0);
+    
     return Object.entries(wordFrequencies)
-      .sort(([,a], [,b]) => b - a)
+      .map(([keyword, frequency]) => {
+        // Score de fréquence normalisé
+        const frequencyScore = frequency / totalWords;
+        
+        // Bonus pour les mots plus longs (plus spécifiques)
+        const lengthBonus = Math.min(keyword.length / 10, 0.5);
+        
+        // Bonus pour les mots qui ne sont pas génériques
+        const specificityBonus = this.genericWords.has(keyword.toLowerCase()) ? 0 : 0.3;
+        
+        // Score final de pertinence
+        const relevanceScore = frequencyScore + lengthBonus + specificityBonus;
+        
+        return {
+          keyword,
+          frequency,
+          relevanceScore
+        };
+      })
+      .sort((a, b) => b.relevanceScore - a.relevanceScore) // Trier par score de pertinence
       .slice(0, limit)
-      .map(([keyword, frequency]) => ({ keyword, frequency }));
+      .map(({ keyword, frequency }) => ({ keyword, frequency }));
   }
 
   calculateTFIDF(wordFrequencies, significantWords) {
@@ -410,8 +493,22 @@ class KeywordAnalysisService {
     
     significantWords.forEach(word => {
       const tf = wordFrequencies[word] / totalWords;
-      const idf = Math.log(1 / 1); // Pour l'instant, on a un seul document
-      tfidf[word] = tf * idf;
+      
+      // IDF amélioré : pénaliser les mots trop fréquents dans le corpus
+      const wordFrequency = wordFrequencies[word];
+      const averageFrequency = totalWords / Object.keys(wordFrequencies).length;
+      const frequencyRatio = wordFrequency / averageFrequency;
+      
+      // IDF basé sur la rareté relative du mot
+      const idf = Math.log(1 + (1 / Math.max(frequencyRatio, 0.1)));
+      
+      // Bonus pour les mots plus longs (plus spécifiques)
+      const lengthBonus = Math.min(word.length / 15, 0.2);
+      
+      // Pénalité pour les mots génériques
+      const genericPenalty = this.genericWords.has(word.toLowerCase()) ? 0.5 : 1;
+      
+      tfidf[word] = (tf * idf + lengthBonus) * genericPenalty;
     });
     
     return tfidf;
@@ -448,6 +545,84 @@ class KeywordAnalysisService {
     }, 0);
     
     return Math.round(totalWords / content.length);
+  }
+
+  /**
+   * Détection intelligente des mots-clés de contexte
+   * Identifie les mots les plus pertinents en analysant les co-occurrences
+   */
+  detectContextKeywords(wordFrequencies, fullText) {
+    console.log('🔍 [KeywordAnalysisService] Détection du contexte...');
+    
+    // Mots-clés potentiels (fréquence > 1, longueur > 3, pas génériques)
+    const candidateWords = Object.keys(wordFrequencies).filter(word => {
+      return wordFrequencies[word] > 1 && 
+             word.length > 3 && 
+             !this.genericWords.has(word.toLowerCase()) &&
+             !this.stopWords.has(word.toLowerCase());
+    });
+    
+    // Analyser les co-occurrences pour identifier les mots-clés liés
+    const contextScores = {};
+    
+    candidateWords.forEach(word => {
+      let contextScore = 0;
+      
+      // Bonus pour les mots qui apparaissent dans des phrases importantes
+      const wordRegex = new RegExp(`\\b${word}\\b`, 'gi');
+      const matches = fullText.match(wordRegex);
+      if (matches) {
+        contextScore += matches.length * 0.5;
+      }
+      
+      // Bonus pour les mots plus longs (plus spécifiques)
+      contextScore += word.length * 0.1;
+      
+      // Bonus pour les mots qui ne sont pas des nombres ou des heures
+      if (!/^\d+$/.test(word) && !/^\d{1,2}h$/.test(word)) {
+        contextScore += 0.3;
+      }
+      
+      // Bonus pour les mots qui apparaissent dans des contextes variés
+      const contextVariations = this.findContextVariations(word, fullText);
+      contextScore += contextVariations * 0.2;
+      
+      contextScores[word] = contextScore;
+    });
+    
+    // Retourner les mots-clés triés par score de contexte
+    return Object.entries(contextScores)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 15) // Top 15 mots-clés de contexte
+      .map(([word, score]) => ({
+        keyword: word,
+        frequency: wordFrequencies[word],
+        contextScore: score
+      }));
+  }
+
+  /**
+   * Trouve les variations de contexte pour un mot
+   */
+  findContextVariations(word, text) {
+    const variations = new Set();
+    const wordRegex = new RegExp(`\\b${word}\\b`, 'gi');
+    let match;
+    
+    while ((match = wordRegex.exec(text)) !== null) {
+      const start = Math.max(0, match.index - 20);
+      const end = Math.min(text.length, match.index + word.length + 20);
+      const context = text.substring(start, end);
+      
+      // Extraire des mots-clés du contexte
+      const contextWords = context.split(/\s+/)
+        .filter(w => w.length > 3 && !this.stopWords.has(w.toLowerCase()))
+        .slice(0, 3); // Prendre les 3 premiers mots du contexte
+      
+      contextWords.forEach(cw => variations.add(cw));
+    }
+    
+    return variations.size;
   }
 }
 

@@ -107,7 +107,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, nextTick, computed } from 'vue'
+import { ref, onMounted, watch, nextTick } from 'vue'
 import Chart from 'chart.js/auto'
 
 // Définir les props avec defineProps
@@ -122,19 +122,6 @@ const densityChart = ref(null)
 const comparisonChart = ref(null)
 let densityChartInstance = null
 let comparisonChartInstance = null
-const debugMode = ref(false)
-
-// Computed property pour filtrer les mots-clés cibles
-const filteredTargetKeywords = computed(() => {
-  if (!props.analysisData?.rawData?.analysis?.targetAnalysis?.targetWordFrequencies) {
-    return []
-  }
-  
-  const frequencies = props.analysisData.rawData.analysis.targetAnalysis.targetWordFrequencies
-  return Object.keys(frequencies)
-    .filter(keyword => frequencies[keyword] > 0)
-    .slice(0, 10) // Limiter à 10 mots-clés pour l'affichage
-})
 
 // Extraire les données des props
 const seoScores = ref({
