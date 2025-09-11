@@ -345,162 +345,58 @@
           <div class="json-viewer">
             <h4>Poids: {{ getJobWeight('uniqueness') }} | Status: {{ getJobStatus('uniqueness') }}</h4>
             
-            <!-- Affichage de la lisibilité pour tous les utilisateurs -->
-            <div v-if="getJobStatus('readability') === 'completed'" class="readability-analysis">
-              <div class="readability-summary">
-                <h4>📊 Analyse de la lisibilité SEO</h4>
-                <div class="readability-stats">
-                  <div class="stat-card half-width">
+            <!-- Affichage des duplications pour tous les utilisateurs -->
+            <div v-if="getJobStatus('uniqueness') === 'completed'" class="duplication-analysis">
+              <div class="duplication-summary">
+                <h4>📊 Analyse des duplications</h4>
+                <div class="duplication-stats">
+                  <div class="stat-card">
                     <div class="stat-icon">📈</div>
                     <div class="stat-content">
-                      <div class="stat-value readability-score" :class="getReadabilityGradeClass()">{{ getReadabilityScoreOutOf8() }}/8</div>
-                      <div class="stat-label">Score de lisibilité</div>
+                      <div class="stat-value duplication-percentage" :class="getDuplicationPercentage() > 0 ? 'has-duplication' : 'no-duplication'">{{ getDuplicationPercentage() }}%</div>
+                      <div class="stat-label">Contenu dupliqué</div>
                     </div>
                   </div>
-                  <div class="stat-card half-width">
-                    <div class="stat-icon">📏</div>
+                  <div class="stat-card">
+                    <div class="stat-icon">🔗</div>
                     <div class="stat-content">
-                      <div class="stat-value length-score" :class="getLengthScoreClass()">{{ getLengthScoreOutOf2() }}/2</div>
-                      <div class="stat-label">Score de longueur</div>
+                      <div class="stat-value sources-count" :class="getDuplicationSourcesCount() > 0 ? 'has-sources' : 'no-sources'">{{ getDuplicationSourcesCount() }}</div>
+                      <div class="stat-label">Sources trouvées</div>
                     </div>
                   </div>
                 </div>
               </div>
               
-              <!-- Métriques détaillées -->
-              <div class="readability-metrics">
-                <div class="metrics-grid">
-                  <div class="metric-card">
-                    <h5>📖 Scores de lisibilité</h5>
-                    <div class="metric-item">
-                      <span class="metric-label">Flesch Reading Ease:</span>
-                      <span class="metric-value">{{ getFleschScore() }}</span>
+              <!-- Liste des sources de duplication -->
+              <div v-if="getDuplicationSources().length > 0" class="duplication-sources">
+                <h5>🌐 Sources de duplication détectées :</h5>
+                <div class="sources-list">
+                  <div v-for="(source, index) in getDuplicationSources()" :key="index" class="source-item">
+                    <div class="source-header">
+                      <span class="source-url">{{ source.url || source.domain || 'URL non disponible' }}</span>
+                      <span class="source-percentage">{{ source.percentage || source.similarity || 'N/A' }}%</span>
                     </div>
-                    <div class="metric-item">
-                      <span class="metric-label">Niveau scolaire:</span>
-                      <span class="metric-value">{{ getFleschKincaidGrade() }}</span>
-                    </div>
-                    <div class="metric-item">
-                      <span class="metric-label">Indice Gunning Fog:</span>
-                      <span class="metric-value">{{ getGunningFogIndex() }}</span>
-                    </div>
-                  </div>
-                  
-                  <div class="metric-card">
-                    <h5>📊 Structure du contenu</h5>
-                    <div class="metric-item">
-                      <span class="metric-label">Mots par phrase:</span>
-                      <span class="metric-value">{{ getAvgSentenceLength() }}</span>
-                    </div>
-                    <div class="metric-item">
-                      <span class="metric-label">Mots par paragraphe:</span>
-                      <span class="metric-value">{{ getAvgWordsPerParagraph() }}</span>
-                    </div>
-                    <div class="metric-item">
-                      <span class="metric-label">Mots complexes:</span>
-                      <span class="metric-value">{{ getComplexWordsPercentage() }}%</span>
+                    <div v-if="source.title" class="source-title">{{ source.title }}</div>
+                    <div v-if="source.description" class="source-description">{{ source.description }}</div>
+                    <div v-if="source.sentence" class="duplicated-sentence">
+                      <strong>Phrase dupliquée :</strong> "{{ source.sentence }}"
                     </div>
                   </div>
                 </div>
               </div>
               
-              <!-- Graphiques de structure -->
-              <div class="structure-charts">
-                <div class="chart-container">
-                  <h5>📝 Répartition des phrases</h5>
-                  <div class="chart-bars">
-                    <div class="bar-item">
-                      <span class="bar-label">Court (&lt; 15 mots)</span>
-                      <div class="bar">
-                        <div class="bar-fill" :style="{ width: getSentencePercentage('short') + '%' }"></div>
-                      </div>
-                      <span class="bar-value">{{ getReadabilitySentenceCount('short') }}</span>
-                    </div>
-                    <div class="bar-item">
-                      <span class="bar-label">Moyen (15-25 mots)</span>
-                      <div class="bar">
-                        <div class="bar-fill" :style="{ width: getSentencePercentage('medium') + '%' }"></div>
-                      </div>
-                      <span class="bar-value">{{ getReadabilitySentenceCount('medium') }}</span>
-                    </div>
-                    <div class="bar-item">
-                      <span class="bar-label">Long (25-40 mots)</span>
-                      <div class="bar">
-                        <div class="bar-fill" :style="{ width: getSentencePercentage('long') + '%' }"></div>
-                      </div>
-                      <span class="bar-value">{{ getReadabilitySentenceCount('long') }}</span>
-                    </div>
-                    <div class="bar-item">
-                      <span class="bar-label">Très long (> 40 mots)</span>
-                      <div class="bar">
-                        <div class="bar-fill" :style="{ width: getSentencePercentage('veryLong') + '%' }"></div>
-                      </div>
-                      <span class="bar-value">{{ getReadabilitySentenceCount('veryLong') }}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="chart-container">
-                  <h5>📄 Répartition des paragraphes</h5>
-                  <div class="chart-bars">
-                    <div class="bar-item">
-                      <span class="bar-label">Court (&lt; 50 mots)</span>
-                      <div class="bar">
-                        <div class="bar-fill" :style="{ width: getParagraphPercentage('short') + '%' }"></div>
-                      </div>
-                      <span class="bar-value">{{ getReadabilityParagraphCount('short') }}</span>
-                    </div>
-                    <div class="bar-item">
-                      <span class="bar-label">Moyen (50-100 mots)</span>
-                      <div class="bar">
-                        <div class="bar-fill" :style="{ width: getParagraphPercentage('medium') + '%' }"></div>
-                      </div>
-                      <span class="bar-value">{{ getReadabilityParagraphCount('medium') }}</span>
-                    </div>
-                    <div class="bar-item">
-                      <span class="bar-label">Optimal (100-150 mots)</span>
-                      <div class="bar">
-                        <div class="bar-fill optimal" :style="{ width: getParagraphPercentage('optimal') + '%' }"></div>
-                      </div>
-                      <span class="bar-value">{{ getReadabilityParagraphCount('optimal') }}</span>
-                    </div>
-                    <div class="bar-item">
-                      <span class="bar-label">Long (> 150 mots)</span>
-                      <div class="bar">
-                        <div class="bar-fill" :style="{ width: getParagraphPercentage('long') + '%' }"></div>
-                      </div>
-                      <span class="bar-value">{{ getReadabilityParagraphCount('long') }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Recommandations -->
-              <div v-if="getReadabilityRecommendations().length > 0" class="readability-recommendations">
-                <h5>💡 Recommandations</h5>
-                <ul class="recommendations-list">
-                  <li v-for="(recommendation, index) in getReadabilityRecommendations()" :key="index" class="recommendation-item">
-                    {{ recommendation }}
-                  </li>
-                </ul>
-              </div>
-              
-              <!-- Score total sur 10 -->
-              <div class="readability-total-score">
-                <h5>📊 Score total de lisibilité</h5>
-                <div class="total-score-display">
-                  <span class="score-label">Score final :</span>
-                  <span class="score-value total">{{ getTotalReadabilityScore() }}/10</span>
-                </div>
+              <div v-else class="no-duplications">
+                <div class="no-duplications-icon">✅</div>
+                <p>Aucune duplication détectée ! Votre contenu est original.</p>
               </div>
             </div>
             
             <!-- Affichage pendant le traitement -->
-            <div v-else-if="getJobStatus('readability') === 'active'" class="job-processing">
+            <div v-else-if="getJobStatus('uniqueness') === 'active'" class="job-processing">
               <div class="processing-info">
                 <div class="processing-icon">🔄</div>
-                <p>Analyse de la lisibilité en cours...</p>
-                <p>Calcul des métriques SEO et de la structure du contenu...</p>
+                <p>Analyse de l'originalité en cours...</p>
+                <p>Vérification des duplications de contenu...</p>
               </div>
             </div>
             
@@ -508,8 +404,8 @@
             <div v-else class="job-waiting">
               <div class="waiting-info">
                 <div class="waiting-icon">⏳</div>
-                <p>Analyse de la lisibilité en attente...</p>
-                <p>Cette section analysera la lisibilité et la structure de votre contenu pour le SEO.</p>
+                <p>Analyse de l'originalité en attente...</p>
+                <p>Cette section analysera l'originalité de votre contenu et détectera les duplications.</p>
               </div>
             </div>
             
