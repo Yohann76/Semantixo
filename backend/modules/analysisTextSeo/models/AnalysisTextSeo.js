@@ -45,11 +45,9 @@ const AnalysisTextSeoSchema = new mongoose.Schema({
 // Configuration des jobs disponibles
 AnalysisTextSeoSchema.statics.getJobsConfig = function() {
   return [
-    { type: 'keyword-analysis', weight: 40, name: 'Analyse des mots-clés' },
-    { type: 'keyword-position', weight: 15, name: 'Position des mots-clés' },
-    { type: 'content-length', weight: 15, name: 'Longueur du contenu' },
-    { type: 'readability', weight: 15, name: 'Lisibilité' },
-    { type: 'uniqueness', weight: 15, name: 'Originalité' }
+    { type: 'keyword-analysis', weight: 70, name: 'Analyse des mots-clés' },
+    { type: 'readability', weight: 10, name: 'Lisibilité' },
+    { type: 'uniqueness', weight: 20, name: 'Originalité' }
   ];
 };
 

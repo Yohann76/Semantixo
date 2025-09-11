@@ -50,8 +50,6 @@ async function startWorker() {
 
     
     const KeywordAnalysisJobProcessor = require('./KeywordAnalysisJob');
-    const KeywordPositionJobProcessor = require('./KeywordPositionJob');
-    const ContentLengthJobProcessor = require('./ContentLengthJob');
     const ReadabilityJobProcessor = require('./ReadabilityJob');
     const UniquenessJobProcessor = require('./UniquenessJob');
     
@@ -64,19 +62,7 @@ async function startWorker() {
       return result;
     });
     
-    textAnalysisQueue.process('keyword-position', 2, async (job) => {
-
-      const result = await KeywordPositionJobProcessor.process(job);
-
-      return result;
-    });
     
-    textAnalysisQueue.process('content-length', 3, async (job) => {
-
-      const result = await ContentLengthJobProcessor.process(job);
-
-      return result;
-    });
     
     textAnalysisQueue.process('readability', 2, async (job) => {
 

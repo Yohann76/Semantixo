@@ -27,7 +27,7 @@ async function testConnection() {
 async function startTextAnalysis(analysisId, text, keywords) {
 
   
-  const jobTypes = ['keyword-analysis', 'keyword-position', 'content-length', 'readability', 'uniqueness'];
+  const jobTypes = ['keyword-analysis', 'keyword-position', 'readability', 'uniqueness'];
   const jobs = [];
   
   try {

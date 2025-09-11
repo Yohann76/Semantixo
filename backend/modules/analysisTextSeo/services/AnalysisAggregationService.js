@@ -1,12 +1,10 @@
-const { AnalysisTextSeo, KeywordAnalysisJob, KeywordPositionJob, ContentLengthJob, ReadabilityJob, UniquenessJob } = require('../models');
+const { AnalysisTextSeo, KeywordAnalysisJob, ReadabilityJob, UniquenessJob } = require('../models');
 
 class AnalysisAggregationService {
   
   // Mapping des types de jobs vers leurs modèles
   static jobModels = {
     'keyword-analysis': KeywordAnalysisJob,
-    'keyword-position': KeywordPositionJob,
-    'content-length': ContentLengthJob,
     'readability': ReadabilityJob,
     'uniqueness': UniquenessJob
   };

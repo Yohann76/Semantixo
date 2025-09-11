@@ -39,19 +39,54 @@ const ReadabilityJobSchema = new mongoose.Schema({
     type: String
   },
   
-  // Métriques spécifiques à la lisibilité
+  // Métriques SEO complètes pour la lisibilité
   metrics: {
-    readabilityScore: Number,
-    fleschScore: Number,
-    readingLevel: {
+    // Scores de lisibilité
+    fleschReadingEase: Number, // Score Flesch (0-100)
+    fleschKincaidGrade: Number, // Niveau scolaire US
+    gunningFogIndex: Number, // Indice de brouillard
+    smogIndex: Number, // Indice SMOG
+    
+    // Métriques de structure
+    avgSentenceLength: Number, // Mots par phrase
+    avgWordsPerParagraph: Number, // Mots par paragraphe
+    avgSyllablesPerWord: Number, // Syllabes par mot
+    complexWordsCount: Number, // Mots complexes (3+ syllabes)
+    complexWordsPercentage: Number, // % de mots complexes
+    
+    // Métriques de longueur (intégrées de content-length)
+    wordCount: Number,
+    characterCount: Number,
+    sentenceCount: Number,
+    paragraphCount: Number,
+    contentLengthScore: Number, // Score sur 5 points pour la longueur
+    
+    // Métriques SEO avancées
+    readabilityScore: Number, // Score global sur 10 points
+    seoReadabilityGrade: {
       type: String,
-      enum: ['very-easy', 'easy', 'fairly-easy', 'standard', 'fairly-difficult', 'difficult', 'very-difficult']
+      enum: ['A+', 'A', 'B+', 'B', 'C+', 'C', 'D', 'F']
     },
-    avgSentenceLength: Number,
-    avgSyllablesPerWord: Number,
-    complexWords: Number,
-    totalSentences: Number,
-    totalSyllables: Number
+    
+    // Analyse des phrases
+    sentenceAnalysis: {
+      shortSentences: Number, // < 15 mots
+      mediumSentences: Number, // 15-25 mots
+      longSentences: Number, // > 25 mots
+      veryLongSentences: Number // > 40 mots
+    },
+    
+    // Analyse des paragraphes
+    paragraphAnalysis: {
+      shortParagraphs: Number, // < 50 mots
+      mediumParagraphs: Number, // 50-150 mots
+      longParagraphs: Number, // > 150 mots
+      optimalParagraphs: Number // 100-150 mots
+    },
+    
+    // Recommandations spécifiques
+    issues: [String], // Problèmes détectés
+    strengths: [String] // Points forts
   },
   
   // Recommandations
