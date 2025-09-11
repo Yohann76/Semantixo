@@ -210,20 +210,72 @@
           <div class="json-viewer">
             <h4>Poids: {{ getJobWeight('uniqueness') }} | Status: {{ getJobStatus('uniqueness') }}</h4>
             
-            <!-- Contenu pour les utilisateurs normaux -->
-            <div v-if="!isAdmin" class="user-info">
-              <p>🔍 Analyse de l'originalité...</p>
-              <p>Cette section vérifie l'unicité et l'originalité de votre contenu.</p>
-            </div>
-            
-            <!-- Contenu pour les admins : informations utilisateur + JSON -->
-            <div v-else>
-              <!-- Informations utilisateur (visibles aussi pour les admins) -->
-              <div class="user-info">
-                <p>🔍 Analyse de l'originalité...</p>
-                <p>Cette section vérifie l'unicité et l'originalité de votre contenu.</p>
+            <!-- Affichage des duplications pour tous les utilisateurs -->
+            <div v-if="getJobStatus('uniqueness') === 'completed'" class="duplication-analysis">
+              <div class="duplication-summary">
+                <h4>📊 Analyse des duplications</h4>
+                <div class="duplication-stats">
+                  <div class="stat-card">
+                    <div class="stat-icon">📈</div>
+                    <div class="stat-content">
+                      <div class="stat-value duplication-percentage" :class="getDuplicationPercentage() > 0 ? 'has-duplication' : 'no-duplication'">{{ getDuplicationPercentage() }}%</div>
+                      <div class="stat-label">Contenu dupliqué</div>
+                    </div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-icon">🔗</div>
+                    <div class="stat-content">
+                      <div class="stat-value sources-count" :class="getDuplicationSourcesCount() > 0 ? 'has-sources' : 'no-sources'">{{ getDuplicationSourcesCount() }}</div>
+                      <div class="stat-label">Sources trouvées</div>
+                    </div>
+                  </div>
+                </div>
               </div>
               
+              <!-- Liste des sources de duplication -->
+              <div v-if="getDuplicationSources().length > 0" class="duplication-sources">
+                <h5>🌐 Sources de duplication détectées :</h5>
+                <div class="sources-list">
+                  <div v-for="(source, index) in getDuplicationSources()" :key="index" class="source-item">
+                    <div class="source-header">
+                      <span class="source-url">{{ source.url || source.domain || 'URL non disponible' }}</span>
+                      <span class="source-percentage">{{ source.percentage || source.similarity || 'N/A' }}%</span>
+                    </div>
+                    <div v-if="source.title" class="source-title">{{ source.title }}</div>
+                    <div v-if="source.description" class="source-description">{{ source.description }}</div>
+                    <div v-if="source.sentence" class="duplicated-sentence">
+                      <strong>Phrase dupliquée :</strong> "{{ source.sentence }}"
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div v-else class="no-duplications">
+                <div class="no-duplications-icon">✅</div>
+                <p>Aucune duplication détectée ! Votre contenu est original.</p>
+              </div>
+            </div>
+            
+            <!-- Affichage pendant le traitement -->
+            <div v-else-if="getJobStatus('uniqueness') === 'active'" class="job-processing">
+              <div class="processing-info">
+                <div class="processing-icon">🔄</div>
+                <p>Analyse de l'originalité en cours...</p>
+                <p>Vérification des duplications sur le web...</p>
+              </div>
+            </div>
+            
+            <!-- Affichage en attente -->
+            <div v-else class="job-waiting">
+              <div class="waiting-info">
+                <div class="waiting-icon">⏳</div>
+                <p>Analyse de l'originalité en attente...</p>
+                <p>Cette section vérifiera l'unicité et l'originalité de votre contenu.</p>
+              </div>
+            </div>
+            
+            <!-- Données techniques pour les admins uniquement -->
+            <div v-if="isAdmin" class="admin-section">
               <!-- Séparateur pour les admins -->
               <div class="admin-separator">
                 <span>🔐 Données techniques (Admin uniquement)</span>
@@ -444,6 +496,60 @@ const getSentenceCount = () => {
 const getParagraphCount = () => {
   const text = props.analysis.analysis?.parameter?.text || props.analysis.parameter?.text || props.analysis.text || '';
   return text.split(/\n\s*\n/).filter(paragraph => paragraph.length > 0).length;
+};
+
+// Fonctions pour l'analyse des duplications
+const getDuplicationData = () => {
+  if (getJobStatus('uniqueness') !== 'completed') {
+    return null;
+  }
+  
+  const jobData = getFullJobData('uniqueness');
+  return jobData?.rawData || jobData;
+};
+
+const getDuplicationPercentage = () => {
+  const data = getDuplicationData();
+  if (!data) return 0;
+  
+  // Calculer le pourcentage de duplication (100 - uniquenessPercentage)
+  const uniquenessPercentage = data.analysis?.uniquenessPercentage || 
+                              data.metrics?.uniquenessPercentage || 
+                              0;
+  
+  // Convertir en nombre et calculer le pourcentage de duplication
+  const uniqueness = parseFloat(uniquenessPercentage);
+  return Math.round(100 - uniqueness);
+};
+
+const getDuplicationSources = () => {
+  const data = getDuplicationData();
+  if (!data || !data.uniquenessResults) return [];
+  
+  // Extraire toutes les sources de duplication des résultats
+  const sources = [];
+  
+  data.uniquenessResults.forEach(result => {
+    if (result.isDuplicated && result.duplicateLinks && result.duplicateLinks.length > 0) {
+      result.duplicateLinks.forEach(link => {
+        sources.push({
+          url: link.link,
+          title: link.title,
+          description: link.snippet,
+          percentage: Math.round(parseFloat(link.similarity) * 100),
+          similarity: link.similarity,
+          matchType: link.matchType,
+          sentence: result.sentence
+        });
+      });
+    }
+  });
+  
+  return sources;
+};
+
+const getDuplicationSourcesCount = () => {
+  return getDuplicationSources().length;
 };
 
 
@@ -711,6 +817,11 @@ console.log('🔍 [DEBUG] Test getFullJobData("keyword-analysis"):', getFullJobD
   color: #343a40;
 }
 
+/* S'assurer que les statistiques du texte gardent leur couleur originale */
+.text-stats .stat-value {
+  color: #343a40 !important; /* Force la couleur originale pour les statistiques du texte */
+}
+
 /* Styles pour les informations utilisateur */
 .user-info {
   padding: 20px;
@@ -780,6 +891,201 @@ console.log('🔍 [DEBUG] Test getFullJobData("keyword-analysis"):', getFullJobD
 
 .subsection-content p:last-child {
   margin-bottom: 0;
+}
+
+/* Styles pour l'analyse des duplications */
+.duplication-analysis {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.duplication-summary h4 {
+  margin: 0 0 20px 0;
+  color: #495057;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.duplication-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  padding: 15px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.stat-card .stat-icon {
+  font-size: 2rem;
+  margin-right: 15px;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-value {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #dc3545;
+  margin-bottom: 5px;
+}
+
+/* Classes spécifiques pour les statistiques de duplication */
+.duplication-stats .stat-value.has-duplication {
+  color: #dc3545; /* Rouge quand il y a des duplications */
+}
+
+.duplication-stats .stat-value.no-duplication {
+  color: #28a745; /* Vert quand il n'y a pas de duplications */
+}
+
+.duplication-stats .stat-value.has-sources {
+  color: #dc3545; /* Rouge quand il y a des sources de duplication */
+}
+
+.duplication-stats .stat-value.no-sources {
+  color: #28a745; /* Vert quand il n'y a pas de sources */
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.duplication-sources h5 {
+  margin: 0 0 15px 0;
+  color: #495057;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.sources-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.source-item {
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 15px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.source-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.source-url {
+  font-weight: 600;
+  color: #007bff;
+  text-decoration: none;
+  font-size: 0.95rem;
+  flex: 1;
+  margin-right: 10px;
+  word-break: break-all;
+}
+
+.source-url:hover {
+  text-decoration: underline;
+}
+
+.source-percentage {
+  background: #dc3545;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  min-width: 50px;
+  text-align: center;
+}
+
+.source-title {
+  font-weight: 600;
+  color: #495057;
+  font-size: 0.9rem;
+  margin-bottom: 5px;
+}
+
+.source-description {
+  color: #6c757d;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.duplicated-sentence {
+  margin-top: 10px;
+  padding: 10px;
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  color: #856404;
+  font-style: italic;
+}
+
+.no-duplications {
+  text-align: center;
+  padding: 30px 20px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #28a745;
+}
+
+.no-duplications-icon {
+  font-size: 3rem;
+  margin-bottom: 15px;
+}
+
+.no-duplications p {
+  margin: 0;
+  color: #28a745;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.processing-info, .waiting-info {
+  text-align: center;
+  padding: 30px 20px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+}
+
+.processing-icon, .waiting-icon {
+  font-size: 3rem;
+  margin-bottom: 15px;
+}
+
+.processing-info p, .waiting-info p {
+  margin: 5px 0;
+  color: #495057;
+}
+
+.processing-info p:first-of-type, .waiting-info p:first-of-type {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.admin-section {
+  margin-top: 20px;
 }
 
 /* Scrollbar personnalisée */
